@@ -1,0 +1,243 @@
+<script setup lang="ts">
+import { ref, reactive, onMounted, h } from 'vue'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NTimeline, NTimelineItem, useMessage, DataTableColumns } from 'naive-ui'
+import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
+import { bonusHistoryApi } from '@/api/bonus'
+import type { BonusHistoryLog, BonusHistorySearchParams } from '@/types/bonus'
+
+const message = useMessage()
+const loading = ref(false)
+const historyLogs = ref<BonusHistoryLog[]>([])
+
+const searchForm = reactive<BonusHistorySearchParams>({
+    card_id: '',
+    player_id: '',
+    status: undefined,
+    date_start: undefined,
+    date_end: undefined,
+    page: 1,
+    page_size: 10
+})
+
+const statusOptions = [
+  { label: '進行中', value: 'ACTIVE' },
+  { label: '成功', value: 'SUCCESS' },
+  { label: '失敗', value: 'FAIL' }
+]
+
+const pagination = reactive({
+  page: 1,
+  pageSize: 10,
+  itemCount: 0,
+  showSizePicker: true,
+  pageSizes: [10, 20, 50],
+  onChange: (page: number) => {
+    pagination.page = page
+    searchForm.page = page
+    fetchData()
+  },
+  onUpdatePageSize: (pageSize: number) => {
+    pagination.pageSize = pageSize
+    pagination.page = 1
+    searchForm.page_size = pageSize
+    searchForm.page = 1
+    fetchData()
+  }
+})
+
+const columns: DataTableColumns<BonusHistoryLog> = [
+  { title: 'Card ID', key: 'card_id', width: 160, ellipsis: { tooltip: true } },
+  { title: '玩家 ID', key: 'player_id', width: 100 },
+  { title: '獎勵類型', key: 'type', width: 120 },
+  { 
+    title: '初始金額', 
+    key: 'start_amount',
+    width: 100,
+    render: (row) => row.start_amount.toFixed(2)
+  },
+  { 
+    title: '目標流水', 
+    key: 'target_wagering',
+    width: 100,
+    render: (row) => row.target_wagering.toFixed(2)
+  },
+  { 
+    title: '達成流水', 
+    key: 'current_wagering',
+    width: 100,
+    render: (row) => row.current_wagering.toFixed(2)
+  },
+  { 
+    title: 'Cap 上限', 
+    key: 'cap',
+    width: 100,
+    render: (row) => row.cap.toFixed(2)
+  },
+  { 
+    title: '實際轉換', 
+    key: 'realized_amount',
+    width: 100,
+    render: (row) => {
+      const val = row.realized_amount.toFixed(2)
+      return row.status === 'SUCCESS' 
+        ? h('span', { class: 'text-green-600 font-semibold' }, val)
+        : h('span', { class: 'text-gray-400' }, val)
+    }
+  },
+  {
+    title: '狀態',
+    key: 'status',
+    width: 100,
+    render(row) {
+      const typeMap: Record<string, 'success' | 'warning' | 'error'> = {
+        'SUCCESS': 'success',
+        'ACTIVE': 'warning',
+        'FAIL': 'error'
+      }
+      const labelMap: Record<string, string> = {
+        'SUCCESS': '成功',
+        'ACTIVE': '進行中',
+        'FAIL': '失敗'
+      }
+      return h(NTag, { type: typeMap[row.status] || 'default', bordered: false }, { default: () => labelMap[row.status] || row.status })
+    }
+  },
+  {
+    title: '失敗原因',
+    key: 'fail_reason',
+    width: 150,
+    ellipsis: { tooltip: true },
+    render: (row) => row.fail_reason || '-'
+  },
+  { title: '建立時間', key: 'create_time', width: 160, render: (row) => row.create_time.replace('T', ' ').replace('Z', '') },
+  { title: '結算時間', key: 'settle_time', width: 160, render: (row) => row.settle_time ? row.settle_time.replace('T', ' ').replace('Z', '') : '-' },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 80,
+    fixed: 'right',
+    render(row) {
+      return h(NButton, { size: 'small', secondary: true, onClick: () => showDetailModal(row) }, { icon: () => h(DocumentTextOutline) })
+    }
+  }
+]
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const res = await bonusHistoryApi.getHistory(searchForm)
+    if (res.code === 0) {
+      historyLogs.value = res.data.list
+      pagination.itemCount = res.data.total
+    } else {
+      message.error(res.msg)
+    }
+  } catch (err) {
+    message.error('載入失敗')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSearch = () => {
+  searchForm.page = 1
+  pagination.page = 1
+  fetchData()
+}
+
+// Detail Modal
+const showDetail = ref(false)
+const selectedLog = ref<BonusHistoryLog | null>(null)
+
+const showDetailModal = (log: BonusHistoryLog) => {
+  selectedLog.value = log
+  showDetail.value = true
+}
+
+onMounted(() => {
+  fetchData()
+})
+</script>
+
+<template>
+  <div class="p-6">
+    <NCard title="獎勵卡歷史紀錄">
+      <NForm inline :model="searchForm" label-placement="left" class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <NFormItem label="Card ID">
+          <NInput v-model:value="searchForm.card_id" placeholder="精確搜尋" clearable />
+        </NFormItem>
+        <NFormItem label="玩家 ID">
+          <NInput v-model:value="searchForm.player_id" placeholder="玩家帳號/UID" clearable />
+        </NFormItem>
+        <NFormItem label="狀態">
+          <NSelect v-model:value="searchForm.status" :options="statusOptions" placeholder="全部" clearable style="width: 140px" />
+        </NFormItem>
+        <NFormItem>
+          <NButton type="primary" @click="handleSearch" :loading="loading">
+            <template #icon><SearchOutline /></template>
+            查詢
+          </NButton>
+        </NFormItem>
+      </NForm>
+
+      <NDataTable
+        :columns="columns"
+        :data="historyLogs"
+        :loading="loading"
+        :pagination="pagination"
+        :scroll-x="1600"
+      />
+    </NCard>
+
+    <!-- Detail Modal -->
+    <NModal
+      v-model:show="showDetail"
+      preset="card"
+      title="獎勵卡詳細資訊"
+      style="width: 700px"
+    >
+      <div v-if="selectedLog">
+        <!-- Summary Info -->
+        <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+          <div><span class="text-gray-500">Card ID:</span> <span class="font-mono">{{ selectedLog.card_id }}</span></div>
+          <div><span class="text-gray-500">玩家 ID:</span> {{ selectedLog.player_id }}</div>
+          <div><span class="text-gray-500">獎勵類型:</span> {{ selectedLog.type }}</div>
+          <div><span class="text-gray-500">狀態:</span> 
+            <NTag :type="selectedLog.status === 'SUCCESS' ? 'success' : selectedLog.status === 'FAIL' ? 'error' : 'warning'" size="small">
+              {{ selectedLog.status }}
+            </NTag>
+          </div>
+          <div><span class="text-gray-500">初始金額:</span> {{ selectedLog.start_amount.toFixed(2) }}</div>
+          <div><span class="text-gray-500">剩餘餘額:</span> {{ selectedLog.lave_balance.toFixed(2) }}</div>
+          <div><span class="text-gray-500">目標流水:</span> {{ selectedLog.target_wagering.toFixed(2) }}</div>
+          <div><span class="text-gray-500">達成流水:</span> {{ selectedLog.current_wagering.toFixed(2) }}</div>
+          <div><span class="text-gray-500">Cap 上限:</span> {{ selectedLog.cap.toFixed(2) }}</div>
+          <div><span class="text-gray-500">實際轉換:</span> 
+            <span :class="selectedLog.realized_amount > 0 ? 'text-green-600 font-semibold' : 'text-gray-400'">
+              {{ selectedLog.realized_amount.toFixed(2) }}
+            </span>
+          </div>
+          <div v-if="selectedLog.fail_reason" class="col-span-2">
+            <span class="text-gray-500">失敗原因:</span> <span class="text-red-600">{{ selectedLog.fail_reason }}</span>
+          </div>
+        </div>
+
+        <!-- Event Timeline -->
+        <div class="mt-6">
+          <h4 class="font-semibold mb-3 text-base">異動日誌 (Timeline)</h4>
+          <NTimeline>
+            <NTimelineItem
+              v-for="(event, idx) in selectedLog.events"
+              :key="idx"
+              :type="event.action === 'SETTLED' || event.action === 'CREATED' ? 'success' : event.action.includes('FAIL') || event.action.includes('ABANDON') || event.action.includes('EXPIRE') || event.action.includes('BANKRUPT') ? 'error' : 'info'"
+              :title="event.action"
+              :time="event.time.replace('T', ' ').replace('Z', '')"
+            >
+              {{ event.detail }}
+            </NTimelineItem>
+          </NTimeline>
+        </div>
+      </div>
+    </NModal>
+  </div>
+</template>

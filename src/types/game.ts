@@ -1,0 +1,141 @@
+export type GameReportStatus = 'SETTLED' | 'void' | 'PENDING'
+
+export interface GameLog {
+    id: string // UID
+    provider_id: string // PG, JILI, EVO
+    provider_round_id: string // External ID
+    game_name: string
+    player_id: string
+    bet_amount: number
+    win_amount: number
+    net_amount: number
+    valid_turnover: number
+    settle_time: string // ISO
+    create_time: string // ISO
+    status: GameReportStatus
+    raw_json: string // JSON string
+    currency: string
+}
+
+export interface GameSearchParams {
+    player_id?: string
+    provider?: string
+    game_name?: string
+    round_id?: string // provider_round_id
+    date_start?: string
+    date_end?: string
+    page: number
+    page_size: number
+}
+
+export type ProviderType = 'SLOT' | 'LIVE' | 'SPORTS' | 'LOTTERY' | 'CARD'
+export type ProviderStatus = 'ACTIVE' | 'DISABLED' | 'MAINTENANCE'
+export type WalletSupport = 'CASH' | 'BONUS' | 'DUAL'
+
+export interface GameProvider {
+    id: string
+    code: string
+    name: string
+    type: ProviderType
+    status: ProviderStatus
+    sort_order: number
+    wallet_support: WalletSupport
+    last_operator: string
+    updated_at: string
+}
+
+export interface ProviderUpdateRequest {
+    status?: ProviderStatus
+    sort_order?: number
+    reason: string
+}
+
+export type MarketingTag = 'HOT' | 'RECOMMENDED' | 'DOUBLE_TURNOVER'
+export type TagSource = 'AUTO' | 'MANUAL'
+export type GameStatus = 'ACTIVE' | 'DISABLED'
+
+export interface Game {
+    id: string
+    provider_id: string
+    provider_game_id: string
+    type_id: string
+    name: string
+    name_en: string
+    monthly_turnover: number
+    marketing_tag: MarketingTag | null
+    tag_source: TagSource
+    type_rate: number
+    tag_rate: number
+    final_rate: number
+    allowed_currencies: string[]
+    min_vip_level: number
+    sort_order: number
+    status: GameStatus
+    updated_at: string
+}
+
+export interface GameListSearchParams {
+    provider_id?: string
+    type_id?: string
+    game_id?: string
+    name?: string
+    status?: GameStatus
+    page: number
+    page_size: number
+}
+
+export interface GameUpdateRequest {
+    marketing_tag?: MarketingTag | null
+    allowed_currencies?: string[]
+    min_vip_level?: number
+    sort_order?: number
+    status?: GameStatus
+}
+
+
+// OPE-303: Tag and Type Configuration
+export type TagType = 'SYSTEM' | 'CUSTOM'
+export type TagConfigStatus = 'ACTIVE' | 'DISABLED'
+
+export interface GameType {
+    id: string
+    name: string
+    code: string
+    rate: number
+    updated_at: string
+}
+
+export interface MarketingTagConfig {
+    id: string
+    name: string
+    tag_type: TagType
+    has_rate: boolean
+    rate: number
+    status: TagConfigStatus
+    description: string
+    games_using: number
+    created_at: string
+    updated_at: string
+}
+
+export interface GameTypeUpdateRequest {
+    rate: number
+}
+
+export interface MarketingTagCreateRequest {
+    name: string
+    has_rate: boolean
+    rate?: number
+    description: string
+}
+
+export interface MarketingTagUpdateRequest {
+    name?: string
+    has_rate?: boolean
+    rate?: number
+    status?: TagConfigStatus
+    description?: string
+}
+
+
+
