@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <NCard title="遊戲對局紀錄 (OPE-204)">
+    <NCard title="遊戲對局紀錄">
       <!-- Advanced Filters -->
       <NForm inline label-placement="left" class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <NFormItem label="玩家 ID">

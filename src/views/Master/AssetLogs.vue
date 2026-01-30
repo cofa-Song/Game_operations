@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <NCard title="資產與流水變動日誌 (OPE-203)">
+    <NCard title="資產與流水變動日誌">
       <NForm inline label-placement="left" class="mb-4">
         <NFormItem label="玩家 ID">
            <NInput v-model:value="searchForm.player_id" placeholder="ID / 帳號" clearable />
