@@ -42,6 +42,7 @@ export interface PermissionGroup {
   status?: 'ENABLED' | 'DISABLED'
   deleted_at?: string
   deleted_by?: string
+  sensitive_permissions?: Record<string, boolean> // module_name -> boolean
 }
 
 export interface AdminAccount {

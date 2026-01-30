@@ -66,7 +66,7 @@ const pagination = reactive({
 const currencyOptions = [
     { label: '金幣 (Gold)', value: 'GOLD' },
     { label: '銀幣 (Silver)', value: 'SILVER' },
-    { label: '銅幣 (Copper)', value: 'COPPER' }
+    { label: '銅幣 (Bronze)', value: 'BRONZE' }
 ]
 
 const typeOptions = [
@@ -117,17 +117,17 @@ const columns = [
     { 
         title: '變動金額', 
         key: 'amount', 
-        align: 'right',
+        align: 'right' as const,
         render: (row: AssetLog) => {
             const isPos = row.amount > 0
             return h('span', { class: isPos ? 'text-green-600 font-bold' : 'text-red-600 font-bold' }, (isPos ? '+' : '') + row.amount)
         }
     },
-    { title: '變更後餘額', key: 'post_balance', align: 'right' },
+    { title: '變更後餘額', key: 'post_balance', align: 'right' as const },
     { 
         title: '有效流水', 
         key: 'valid_turnover', 
-        align: 'right',
+        align: 'right' as const,
         render: (row: AssetLog) => {
             if (row.valid_turnover > 0) {
                 return h('span', { class: 'text-blue-600 font-bold' }, row.valid_turnover)

@@ -1,68 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
   NCard, NTabs, NTabPane, NGrid, NGridItem, NDescriptions, NDescriptionsItem,
   NTag, NButton, NSpace, NAvatar, NStatistic, NList, NListItem, NThing,
-  NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage, useDialog,
-  NProgress, NPopconfirm, NDivider
+  NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage,
+  NProgress, NDivider 
 } from 'naive-ui'
 import { 
-  PersonOutline, WalletOutline, TimeOutline, AlertCircleOutline, CheckmarkCircleOutline,
-  PlayOutline, RefreshOutline
+  WalletOutline, AlertCircleOutline
 } from '@vicons/ionicons5'
 import { playerApi } from '@/api/player'
 import { Player, PlayerAuditLog, UpdatePlayerRequest, PlayerStatus } from '@/types/player'
 import { RolloverEngine } from '@/mocks/engine'
-import { mockPlayers } from '@/mocks/player' // For P2P Simulation
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
-const dialog = useDialog()
+const { t } = useI18n()
 
 const playerId = route.params.id as string
 const player = ref<Player | null>(null)
 // ... existing refs ...
-
-const simulateExchange = (type: 'GOLD_TO_SILVER' | 'SILVER_TO_GOLD', amount: number) => {
-    if (!player.value) return
-    try {
-        if (type === 'GOLD_TO_SILVER') {
-             RolloverEngine.exchangeCurrency(player.value, 'GOLD', 'SILVER', amount)
-             message.success(`模擬金轉銀 ${amount}G -> ${amount*100}S 成功`)
-        } else {
-             RolloverEngine.exchangeCurrency(player.value, 'SILVER', 'GOLD', amount)
-             message.success(`模擬銀轉金 ${amount}S -> ${amount/100}G 成功`)
-        }
-    } catch (e: any) {
-        message.error(e.message || '兌換失敗')
-    }
-}
-
-const simulateP2P = (amount: number) => {
-    if (!player.value) return
-    // Find a receiver (first one that isn't me)
-    const receiver = mockPlayers.find(p => p.id !== player.value!.id)
-    if (!receiver) {
-        message.error('找不到轉帳對象')
-        return
-    }
-    
-    try {
-        RolloverEngine.p2pTransfer(player.value, receiver, amount)
-        message.success(`模擬 P2P 轉出 ${amount} 給 ${receiver.id} 成功 (-${amount * 1.08})`)
-    } catch (e: any) {
-        message.error(e.message || '轉帳失敗')
-    }
-}
 
 const auditLogs = ref<PlayerAuditLog[]>([])
 const loading = ref(false)
 
 // Edit State
 const showEditModal = ref(false)
-const editFormRef = ref(null)
 const editModel = reactive<UpdatePlayerRequest>({})
 
 // Status Change State
@@ -182,27 +148,14 @@ const submitAbandonBonus = async () => {
     }
 }
 
-const getWalletBalance = (type: string) => {
+const getWalletBalance = (type: string, currency?: string) => {
     if (!player.value) return 0
-    const wallet = player.value.wallets.find(w => w.type === type)
+    const wallet = player.value.wallets.find(w => w.type === type && (!currency || w.currency === currency))
     return wallet ? wallet.balance : 0
 }
 
-// OPE-202 Simulation
-const simulateBet = (amount: number, type: 'CASH' | 'BONUS') => {
-    if (!player.value) return
-    try {
-        RolloverEngine.processBet(player.value, type, amount)
-        message.success(`模擬投注 ${amount} (${type}) 成功`)
-    } catch (e: any) {
-        message.error(e.message || '投注失敗')
-    }
-}
-
-const simulateWin = (amount: number, type: 'CASH' | 'BONUS') => {
-    if (!player.value) return
-    RolloverEngine.processWin(player.value, type, amount)
-    message.success(`模擬派彩 ${amount} (${type}) 成功`)
+const formatAmount = (val: number) => {
+    return val.toLocaleString()
 }
 
 
@@ -220,7 +173,7 @@ onMounted(() => {
     <NGrid :x-gap="12" :y-gap="12" cols="1 240:1 800:3">
       <!-- Left Column: Basic Info -->
       <NGridItem span="1">
-        <NCard title="基本資料" class="mb-4">
+        <NCard :title="t('player.list.basicInfo')" class="mb-4">
           <div class="flex flex-col items-center mb-6">
             <NAvatar round :size="80" class="mb-2">{{ player.username.substring(0, 1).toUpperCase() }}</NAvatar>
             <div class="text-xl font-bold">{{ player.display_name }}</div>
@@ -242,9 +195,9 @@ onMounted(() => {
              <NDescriptionsItem label="最後登入">{{ player.last_login_at?.split('T')[0] || '-' }}</NDescriptionsItem>
           </NDescriptions>
           
-          <div class="mt-4 flex gap-2">
-            <NButton block type="primary" @click="handleEdit">編輯資料</NButton>
-            <NButton block type="warning" @click="handleStatusChange">狀態管理</NButton>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <NButton block class="flex-1 min-w-[120px]" type="primary" @click="handleEdit">{{ t('common.editInfo') }}</NButton>
+            <NButton block class="flex-1 min-w-[120px]" type="warning" @click="handleStatusChange">{{ t('player.list.statusManagement') }}</NButton>
           </div>
         </NCard>
         
@@ -264,54 +217,49 @@ onMounted(() => {
       <NGridItem span="2">
         <NCard content-style="padding: 0;">
           <NTabs type="line" size="large" :tabs-padding="20" pane-style="padding: 20px;">
-            <NTabPane name="wallet" tab="錢包監控">
+            <NTabPane name="wallet" :tab="t('player.list.walletMonitor')">
               <NGrid cols="2" :x-gap="12" :y-gap="12">
                  <NGridItem>
-                    <NCard size="small" title="儲值錢包 (金幣)">
-                        <template #header-extra><WalletOutline class="w-5 h-5" /></template>
-                        <NStatistic label="餘額" :value="getWalletBalance('CASH')">
-                            <template #suffix>G</template>
+                    <NCard size="small" :title="t('player.list.depositWallet')">
+                        <template #header-extra><WalletOutline class="w-5 h-5 text-blue-500" /></template>
+                        <NSpace vertical size="small">
+                            <NStatistic :label="t('common.goldBalance')" :value="formatAmount(getWalletBalance('CASH', 'GOLD'))">
+                                <template #prefix>$ </template>
+                            </NStatistic>
+                            <NStatistic :label="t('common.silverBalance')" :value="formatAmount(getWalletBalance('CASH', 'SILVER'))">
+                                <template #prefix>$ </template>
+                            </NStatistic>
+                        </NSpace>
+                    </NCard>
+                 </NGridItem>
+                 <NGridItem>
+                    <NCard size="small" :title="t('player.list.activityWallet')">
+                         <template #header-extra><WalletOutline class="w-5 h-5 text-orange-400" /></template>
+                         <NStatistic :label="t('common.silverBalance')" :value="formatAmount(getWalletBalance('BONUS', 'SILVER'))">
+                            <template #prefix>$ </template>
                         </NStatistic>
                     </NCard>
                  </NGridItem>
                  <NGridItem>
-                    <NCard size="small" title="保險箱 (金幣)">
+                    <NCard size="small" :title="t('player.list.gameWallet')">
+                        <template #header-extra><WalletOutline class="w-5 h-5 text-yellow-800" /></template>
+                        <NStatistic :label="t('common.bronzeBalance')" :value="formatAmount(getWalletBalance('GAME', 'BRONZE'))">
+                            <template #prefix>$ </template>
+                        </NStatistic>
+                    </NCard>
+                 </NGridItem>
+                 <NGridItem>
+                    <NCard size="small" :title="t('player.list.safeWallet')">
                         <template #header-extra><WalletOutline class="w-5 h-5 text-yellow-500" /></template>
-                        <NStatistic label="餘額" :value="getWalletBalance('SAFE')">
-                            <template #suffix>G</template>
+                        <NStatistic :label="t('common.balance')" :value="formatAmount(getWalletBalance('SAFE', 'GOLD'))">
+                            <template #prefix>$ </template>
                         </NStatistic>
                     </NCard>
                  </NGridItem>
-                 <NGridItem>
-                    <NCard size="small" title="通用錢包 (銀幣)">
-                         <template #header-extra><WalletOutline class="w-5 h-5 text-gray-400" /></template>
-                         <NStatistic label="餘額" :value="getWalletBalance('BONUS')">
-                            <template #suffix>S</template>
-                        </NStatistic>
-                    </NCard>
-                 </NGridItem>
-                 <NGridItem>
-                    <NCard size="small" title="流水活動錢包" class="col-span-2">
+                 <NGridItem class="col-span-2">
+                    <NCard size="small" :title="t('player.list.rolloverMonitor')" class="mt-2">
                         <template #header-extra>
-                            <NSpace>
-                                <NPopconfirm @positive-click="simulateBet(10, 'BONUS')">
-                                    <template #trigger><NButton size="tiny" tertiary type="warning">模擬投注(10)</NButton></template>
-                                    確認模擬投注 10 銀幣?
-                                </NPopconfirm>
-                                <NPopconfirm @positive-click="simulateWin(20, 'BONUS')">
-                                    <template #trigger><NButton size="tiny" tertiary type="success">模擬派彩(20)</NButton></template>
-                                    確認模擬派彩 20 銀幣?
-                                </NPopconfirm>
-                                <NPopconfirm @positive-click="simulateExchange('GOLD_TO_SILVER', 1)">
-                                    <template #trigger><NButton size="tiny" tertiary type="info">金轉銀(1)</NButton></template>
-                                    確認將 1 金幣 兌換為 100 銀幣?
-                                </NPopconfirm>
-                                <NPopconfirm @positive-click="simulateP2P(100)">
-                                    <template #trigger><NButton size="tiny" tertiary type="error">P2P轉出(100)</NButton></template>
-                                    確認 P2P 轉出 100 金幣 (手續費 8%)?
-                                </NPopconfirm>
-                                <NButton size="tiny" type="error" ghost @click="handleAbandonBonus">放棄獎勵</NButton>
-                            </NSpace>
+                            <NButton size="tiny" type="error" ghost @click="handleAbandonBonus">放棄獎勵</NButton>
                         </template>
                         
                         <div v-if="player.rollover_container?.status === 'ACTIVE'" class="mb-4">
@@ -327,15 +275,15 @@ onMounted(() => {
                             <NGrid cols="3" class="mt-3 text-center">
                                 <NGridItem>
                                     <div class="text-xs text-gray-400">當前餘額</div>
-                                    <div class="text-lg font-bold">{{ player.rollover_container.lave_balance }} S</div>
+                                    <div class="text-lg font-bold">$ {{ formatAmount(player.rollover_container.lave_balance) }}</div>
                                 </NGridItem>
                                 <NGridItem>
                                     <div class="text-xs text-gray-400">初始金額</div>
-                                    <div class="text-md">{{ player.rollover_container.start_balance }} S</div>
+                                    <div class="text-md">$ {{ formatAmount(player.rollover_container.start_balance) }}</div>
                                 </NGridItem>
                                 <NGridItem>
                                     <div class="text-xs text-gray-400">轉出上限</div>
-                                    <div class="text-md">{{ player.rollover_container.cap }} G</div>
+                                    <div class="text-md">$ {{ formatAmount(player.rollover_container.cap) }}</div>
                                 </NGridItem>
                             </NGrid>
                         </div>
@@ -351,13 +299,13 @@ onMounted(() => {
                              <NListItem v-for="card in player.bonus_queue" :key="card.id">
                                  <div class="flex justify-between items-center">
                                      <div>
-                                         <NTag size="small" type="warning" class="mr-2">{{ card.currency }}</NTag>
+                                         <NTag size="small" type="warning" class="mr-2">{{ t(`common.${card.currency.toLowerCase()}`) }}</NTag>
                                          <span class="text-xs">{{ card.id }}</span>
                                          <div class="text-xs text-gray-400">
-                                            Roll: {{ card.multiplier }}x | Cap: {{ card.cap }} | Exp: {{ card.end_time.split('T')[0] }}
+                                            Roll: {{ card.multiplier }}x | Cap: $ {{ formatAmount(card.cap) }} | Exp: {{ card.end_time.split('T')[0] }}
                                          </div>
                                      </div>
-                                     <div class="font-bold">+{{ card.lave_amount }}</div>
+                                     <div class="font-bold">$ +{{ formatAmount(card.lave_amount) }}</div>
                                  </div>
                              </NListItem>
                              <NListItem v-if="!player.bonus_queue?.length">

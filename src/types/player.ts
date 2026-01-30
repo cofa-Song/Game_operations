@@ -20,7 +20,7 @@ export type PlayerTag = string
 
 export interface Wallet {
     type: WalletType
-    currency: 'GOLD' | 'SILVER' | 'COPPER'
+    currency: 'GOLD' | 'SILVER' | 'BRONZE'
     balance: number
     is_locked?: boolean // For SAFE
 }
@@ -34,6 +34,9 @@ export interface Player {
     tags: PlayerTag[]
     vip_level: number
     referrer_id?: string // 推薦人
+    agent_name?: string // 代理帳號 (所屬)
+    invite_code?: string // 邀請碼
+    rtp?: number // RPT (Return To Player)
     register_source: string // 註冊來源 (e.g., SEO, Admin_Manual)
     register_ip: string
     register_at: string
@@ -55,7 +58,10 @@ export interface Player {
 }
 
 export interface PlayerSearchParams {
+    search_type?: 'id' | 'username' | 'phone'
     q?: string // ID / Phone / Username
+    affiliation_type?: 'invite_code' | 'referrer_id'
+    affiliation_query?: string
     status?: PlayerStatus
     tags?: PlayerTag[]
     register_date_start?: string

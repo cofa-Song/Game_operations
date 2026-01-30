@@ -25,19 +25,57 @@ export const playerApi = {
 
         if (params.q) {
             const q = params.q.toLowerCase()
-            filtered = filtered.filter(p =>
-                p.id.toLowerCase().includes(q) ||
-                p.username.toLowerCase().includes(q) ||
-                p.phone.includes(q)
-            )
+            if (params.search_type) {
+                switch (params.search_type) {
+                    case 'id':
+                        filtered = filtered.filter(p => p.id.toLowerCase().includes(q))
+                        break
+                    case 'username':
+                        filtered = filtered.filter(p => p.username.toLowerCase().includes(q))
+                        break
+                    case 'phone':
+                        filtered = filtered.filter(p => p.phone.includes(q))
+                        break
+                }
+            } else {
+                // Fallback to all fields if no type specified (though UI will enforce one)
+                filtered = filtered.filter(p =>
+                    p.id.toLowerCase().includes(q) ||
+                    p.username.toLowerCase().includes(q) ||
+                    p.phone.includes(q)
+                )
+            }
         }
 
         if (params.status) {
             filtered = filtered.filter(p => p.status === params.status)
         }
 
+        if (params.affiliation_query) {
+            const aq = params.affiliation_query.toLowerCase()
+            if (params.affiliation_type === 'invite_code') {
+                filtered = filtered.filter(p => p.invite_code?.toLowerCase().includes(aq))
+            } else if (params.affiliation_type === 'referrer_id') {
+                filtered = filtered.filter(p => p.referrer_id?.toLowerCase().includes(aq))
+            }
+        }
+
         if (params.tags && params.tags.length > 0) {
             filtered = filtered.filter(p => params.tags!.some(tag => p.tags.includes(tag)))
+        }
+
+        if (params.register_ip) {
+            filtered = filtered.filter(p => p.register_ip.includes(params.register_ip!))
+        }
+
+        if (params.register_date_start) {
+            const start = new Date(params.register_date_start).getTime()
+            filtered = filtered.filter(p => new Date(p.register_at).getTime() >= start)
+        }
+
+        if (params.register_date_end) {
+            const end = new Date(params.register_date_end).getTime()
+            filtered = filtered.filter(p => new Date(p.register_at).getTime() <= end)
         }
 
         const total = filtered.length
@@ -81,8 +119,9 @@ export const playerApi = {
             register_at: new Date().toISOString(),
             wallets: [
                 { type: 'CASH', currency: 'GOLD', balance: 0 },
+                { type: 'CASH', currency: 'SILVER', balance: 0 },
                 { type: 'BONUS', currency: 'SILVER', balance: 0 },
-                { type: 'GAME', currency: 'COPPER', balance: 0 },
+                { type: 'GAME', currency: 'BRONZE', balance: 0 },
                 { type: 'SAFE', currency: 'GOLD', balance: 0 }
             ],
             is_online: false,

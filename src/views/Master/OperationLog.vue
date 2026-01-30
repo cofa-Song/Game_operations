@@ -17,12 +17,28 @@ import {
 } from 'naive-ui'
 import { VisibilityOutlined as EyeIcon } from '@vicons/material'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { mockOperationLogs } from '@/mocks/admin'
+import { mockOperationLogs, mockPermissions } from '@/mocks/admin'
 import type { OperationLog } from '@/types'
 
 const EyeOutline = EyeIcon
 
 const authStore = useAuthStore()
+
+// 模組代碼對應名稱
+const moduleNameMap = computed(() => {
+  const map: Record<string, string> = {}
+  mockPermissions.forEach(p => {
+    map[p.code] = p.name
+  })
+  // 補全一些可能不在 mockPermissions 中的基本行為
+  map['LOGIN'] = '系統登錄'
+  map['LOGOUT'] = '系統登出'
+  return map
+})
+
+const getModuleName = (code: string) => {
+  return moduleNameMap.value[code] || code
+}
 
 // 數據狀態
 const logs = ref<OperationLog[]>([...mockOperationLogs].reverse()) // 最新的在前
@@ -65,7 +81,7 @@ const moduleOptions = computed(() => {
     { label: '全部', value: '' },
     ...Array.from(modules)
       .sort()
-      .map(m => ({ label: m, value: m }))
+      .map(m => ({ label: getModuleName(m), value: m }))
   ]
 })
 
@@ -327,12 +343,12 @@ const handleResetFilters = () => {
                     row.operator_role === 'DEVELOPER'
                       ? '技術開發'
                       : row.operator_role === 'MANAGER'
-                        ? '營運總監'
-                        : '一般使用者'
+                        ? '營運主管'
+                        : '一般職員'
                   }}
                 </NTag>
               </td>
-              <td class="border border-gray-300 px-4 py-2">{{ row.module }}</td>
+              <td class="border border-gray-300 px-4 py-2">{{ getModuleName(row.module) }}</td>
               <td class="border border-gray-300 px-4 py-2">
                 <NTag :type="getOperationTypeColor(row.operation_type)">
                   {{
@@ -462,8 +478,8 @@ const handleResetFilters = () => {
                 <span class="font-mono">{{ selectedLog.id }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-700">操作模組：</span>
-                <span>{{ selectedLog.module }}</span>
+                <span class="text-gray-700">操作功能：</span>
+                <span>{{ getModuleName(selectedLog.module) }}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-gray-700">操作類型：</span>

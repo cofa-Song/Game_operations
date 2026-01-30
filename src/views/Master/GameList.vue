@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSwitch, NModal, NCheckboxGroup, NCheckbox,NInputNumber, useMessage, DataTableColumns } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSwitch, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, useMessage, DataTableColumns } from 'naive-ui'
 import { SearchOutline, RefreshOutline, CreateOutline } from '@vicons/ionicons5'
 import { gameListApi } from '@/api/game'
 import { providerApi } from '@/api/provider'
-import type { Game, GameListSearchParams, GameUpdateRequest, MarketingTag, GameStatus } from '@/types/game'
+import { configApi } from '@/api/config'
+import type { Game, GameListSearchParams, GameUpdateRequest, MarketingTag, GameStatus, GameType } from '@/types/game'
 import type { GameProvider } from '@/types/game'
 
 const { t } = useI18n()
@@ -13,16 +14,26 @@ const message = useMessage()
 const loading = ref(false)
 const games = ref<Game[]>([])
 const providers = ref<GameProvider[]>([])
+const gameTypes = ref<GameType[]>([])
 
 const searchForm = reactive<GameListSearchParams>({
     provider_id: undefined,
     type_id: undefined,
+    marketing_tag: undefined,
+    tag_source: undefined,
     game_id: '',
     name: '',
     status: undefined,
+    date_start: undefined,
+    date_end: undefined,
     page: 1,
     page_size: 20
 })
+
+const dateRange = ref<[number, number] | null>(null)
+const pendingChanges = ref<Record<string, GameStatus>>({})
+const hasPendingChanges = computed(() => Object.keys(pendingChanges.value).length > 0)
+const showSaveConfirmModal = ref(false)
 
 const pagination = reactive({
     page: 1,
@@ -55,33 +66,55 @@ const editForm = ref<GameUpdateRequest>({
 })
 
 const tagOptions = computed(() => [
-    { label: t('game.list.tagOptions.none'), value: null },
+    { label: t('game.list.tagOptions.none'), value: null as any },
     { label: t('game.list.tagOptions.hot'), value: 'HOT' as MarketingTag },
     { label: t('game.list.tagOptions.recommended'), value: 'RECOMMENDED' as MarketingTag },
     { label: t('game.list.tagOptions.double'), value: 'DOUBLE_TURNOVER' as MarketingTag }
 ])
 
-const currencyOptions = [
-    { label: '金幣', value: 'GOLD' },
-    { label: '銀幣', value: 'SILVER' }
+// currencyOptions was unused, removed.
+
+const providerOptions = computed(() => providers.value.map(p => ({ label: `${p.name} (${p.code})`, value: p.id })))
+const statusFilterOptions = [
+    { label: t('common.all'), value: undefined },
+    { label: t('common.enable'), value: 'ACTIVE' as GameStatus },
+    { label: t('common.disable'), value: 'DISABLED' as GameStatus },
+    { label: t('game.list.maintenance'), value: 'MAINTENANCE' as GameStatus }
 ]
 
-const providerOptions = computed(() => providers.value.map(p => ({ label: p.name, value: p.id })))
-const statusFilterOptions = [
-    { label: t('common.search'), value: undefined }, // Fallback for "All"
-    { label: t('common.enable'), value: 'ACTIVE' as GameStatus },
-    { label: t('common.disable'), value: 'DISABLED' as GameStatus }
-]
+const typeOptions = computed(() => [
+    { label: t('common.all'), value: undefined },
+    ...gameTypes.value.map(t => ({ label: t.name, value: t.id }))
+])
 
 const columns: DataTableColumns<Game> = [
     { title: 'ID', key: 'id', width: 80, fixed: 'left' },
-    { title: t('game.provider.title'), key: 'provider_id', width: 100 },
-    { title: t('game.list.gameName'), key: 'name', width: 150, ellipsis: { tooltip: true } },
     { 
-        title: t('game.list.turnover'), 
-        key: 'monthly_turnover', 
+        title: t('game.list.vendor'), 
+        key: 'provider_id', 
+        width: 100,
+        render: (row) => {
+            const provider = providers.value.find(p => p.id === row.provider_id)
+            return provider ? provider.code : row.provider_id
+        }
+    },
+    { title: t('game.list.gameName'), key: 'name', width: 150, ellipsis: { tooltip: true } },
+    {
+        title: t('game.list.winRate'),
+        key: 'win_rate',
+        width: 100,
+        render: (row) => {
+            if (row.total_bet === 0) return '0.00%'
+            const winRate = ((row.total_bet - row.total_payout) / row.total_bet) * 100
+            const color = winRate >= 0 ? 'text-green-600' : 'text-red-600'
+            return h('span', { class: `font-mono font-bold ${color}` }, `${winRate.toFixed(2)}%`)
+        }
+    },
+    { 
+        title: t('game.list.cumulativeTurnover'), 
+        key: 'cumulative_turnover', 
         width: 120,
-        render: (row) => h('span', { class: 'font-mono text-blue-600 font-semibold' }, row.monthly_turnover.toLocaleString())
+        render: (row) => h('span', { class: 'font-mono text-blue-600 font-semibold' }, row.cumulative_turnover.toLocaleString())
     },
     {
         title: t('game.list.tag'),
@@ -98,37 +131,68 @@ const columns: DataTableColumns<Game> = [
             return h(NTag, { type: tag.type, size: 'small' }, { default: () => tag.label })
         }
     },
+
     {
-        title: t('game.list.tagSource'),
-        key: 'tag_source',
+        title: t('game.list.effectiveTurnoverRate'),
+        key: 'final_rate',
+        width: 120,
+        render: (row) => h('span', { class: row.final_rate > 100 ? 'text-green-600 font-bold' : 'font-mono' }, `${row.final_rate}%`)
+    },
+    {
+        title: t('game.list.enable'),
+        key: 'is_enabled',
         width: 100,
         render: (row) => {
-            const isManual = row.tag_source === 'MANUAL'
-            return h(NTag, { size: 'small', type: isManual ? 'info' : 'default', bordered: false }, { default: () => isManual ? '手動' : '系統' })
+            const currentStatus = pendingChanges.value[row.id] || row.status
+            const isEnabled = currentStatus !== 'DISABLED'
+            return h(NSwitch, {
+                value: isEnabled,
+                onUpdateValue: (val: boolean) => {
+                    handleStatusChange(row, val ? 'ACTIVE' : 'DISABLED')
+                }
+            })
         }
     },
     {
-        title: t('game.list.finalRate'),
-        key: 'final_rate',
+        title: t('game.list.maintenance'),
+        key: 'is_maintenance',
         width: 100,
-        render: (row) => h('span', { class: row.final_rate > 100 ? 'text-green-600 font-bold' : 'font-mono' }, `${row.final_rate}%`)
+        render: (row) => {
+            const currentStatus = pendingChanges.value[row.id] || row.status
+            const isMaintenance = currentStatus === 'MAINTENANCE'
+            const isEnabled = currentStatus !== 'DISABLED'
+            return h(NSwitch, {
+                value: isMaintenance,
+                disabled: !isEnabled,
+                onUpdateValue: (val: boolean) => {
+                    handleStatusChange(row, val ? 'MAINTENANCE' : 'ACTIVE')
+                }
+            })
+        }
     },
     {
         title: t('game.list.currency'),
         key: 'allowed_currencies',
-        width: 100,
-        render: (row) => row.allowed_currencies.join(', ')
+        width: 120,
+        render: (row) => {
+            const labelMap: Record<string, string> = {
+                'GOLD': t('common.gold'),
+                'SILVER': t('common.silver'),
+                'BRONZE': t('common.bronze')
+            }
+            return row.allowed_currencies.map(c => labelMap[c] || c).join(', ')
+        }
     },
     { title: t('game.list.vip'), key: 'min_vip_level', width: 60 },
     { title: t('game.provider.sortOrder'), key: 'sort_order', width: 70 },
     {
-        title: t('common.status'),
-        key: 'status',
-        width: 80,
-        render: (row) => h(NSwitch, {
-            value: row.status === 'ACTIVE',
-            onUpdateValue: (val: boolean) => handleQuickToggle(row, val ? 'ACTIVE' : 'DISABLED')
-        })
+        title: t('game.list.typeTag'),
+        key: 'type_id',
+        width: 120,
+        render: (row) => {
+            const type = gameTypes.value.find(t => t.id === row.type_id)
+            return h(NTag, { size: 'small', type: 'info', bordered: false }, { default: () => type ? type.name : row.type_id })
+        }
     },
     {
         title: t('common.action'),
@@ -141,6 +205,16 @@ const columns: DataTableColumns<Game> = [
 
 const fetchData = async () => {
     loading.value = true
+    pendingChanges.value = {} // Clear pending changes on fresh fetch
+    
+    if (dateRange.value) {
+        searchForm.date_start = new Date(dateRange.value[0]).toISOString()
+        searchForm.date_end = new Date(dateRange.value[1]).toISOString()
+    } else {
+        searchForm.date_start = undefined
+        searchForm.date_end = undefined
+    }
+
     try {
         const res = await gameListApi.getGames(searchForm)
         if (res.code === 0) {
@@ -156,10 +230,50 @@ const fetchData = async () => {
     }
 }
 
-const fetchProviders = async () => {
-    const res = await providerApi.getProviders()
-    if (res.code === 0) {
-        providers.value = res.data
+onMounted(async () => {
+    // Default to past week
+    const now = new Date()
+    const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    dateRange.value = [lastWeek.getTime(), now.getTime()]
+
+    const [pRes, tRes] = await Promise.all([
+        providerApi.getProviders(),
+        configApi.getGameTypes()
+    ])
+    if (pRes.code === 0) providers.value = pRes.data
+    if (tRes.code === 0) gameTypes.value = tRes.data
+    fetchData()
+})
+
+const handleStatusChange = (row: Game, newStatus: GameStatus) => {
+    if (row.status === newStatus) {
+        delete pendingChanges.value[row.id]
+    } else {
+        pendingChanges.value[row.id] = newStatus
+    }
+}
+
+const handleBatchSave = async () => {
+    loading.value = true
+    try {
+        const promises = Object.entries(pendingChanges.value).map(([id, status]) => 
+            gameListApi.updateGame(id, { status })
+        )
+        const results = await Promise.all(promises)
+        const successCount = results.filter(r => r.code === 0).length
+        
+        if (successCount === results.length) {
+            message.success(t('common.success'))
+        } else {
+            message.warning(`部分存取失敗 (${successCount}/${results.length})`)
+        }
+        
+        showSaveConfirmModal.value = false
+        fetchData()
+    } catch (err) {
+        message.error(t('common.error'))
+    } finally {
+        loading.value = false
     }
 }
 
@@ -180,19 +294,6 @@ const handleEdit = (game: Game) => {
     showEditModal.value = true
 }
 
-const handleQuickToggle = async (game: Game, newStatus: GameStatus) => {
-    try {
-        const res = await gameListApi.updateGame(game.id, { status: newStatus })
-        if (res.code === 0) {
-            message.success(t('common.success'))
-            fetchData()
-        } else {
-            message.error(res.msg)
-        }
-    } catch (err) {
-        message.error(t('common.error'))
-    }
-}
 
 const handleSubmit = async () => {
     if (!selectedGame.value) return
@@ -211,45 +312,84 @@ const handleSubmit = async () => {
     }
 }
 
-onMounted(() => {
-    fetchProviders()
-    fetchData()
-})
+
 </script>
 
 <template>
     <div class="p-6">
-        <NCard :title="t('game.list.title')">
-            <NForm inline :model="searchForm" label-placement="left" class="mb-4">
-                <NFormItem :label="t('game.provider.title')">
-                    <NSelect v-model:value="searchForm.provider_id" :options="providerOptions" :placeholder="t('common.search')" clearable style="width: 160px" />
-                </NFormItem>
-                <NFormItem :label="t('game.list.gameId')">
-                    <NInput v-model:value="searchForm.game_id" :placeholder="t('common.search')" clearable style="width: 140px" />
-                </NFormItem>
-                <NFormItem :label="t('game.list.gameName')">
-                    <NInput v-model:value="searchForm.name" :placeholder="t('common.search')" clearable style="width: 140px" />
-                </NFormItem>
-                <NFormItem :label="t('common.status')">
-                    <NSelect v-model:value="searchForm.status" :options="statusFilterOptions" :placeholder="t('common.search')" clearable style="width: 120px" />
-                </NFormItem>
-                <NFormItem>
-                    <NButton type="primary" @click="handleSearch" :loading="loading">
-                        <template #icon><SearchOutline /></template>
-                        {{ t('common.search') }}
-                    </NButton>
-                    <NButton secondary @click="fetchData" :loading="loading" class="ml-2">
-                        <template #icon><RefreshOutline /></template>
-                    </NButton>
-                </NFormItem>
+        <NCard :title="t('game.list.title')" class="mb-4">
+            <NForm :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="handleSearch">
+                <NGrid :cols="24" :x-gap="12">
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.list.vendor')">
+                            <NSelect v-model:value="searchForm.provider_id" :options="providerOptions" :placeholder="t('common.all')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.list.gameId')">
+                            <NInput v-model:value="searchForm.game_id" :placeholder="t('common.search')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.list.gameName')">
+                            <NInput v-model:value="searchForm.name" :placeholder="t('common.search')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.list.tag')">
+                            <NSelect v-model:value="searchForm.marketing_tag" :options="tagOptions" :placeholder="t('common.all')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.list.typeTag')">
+                            <NSelect v-model:value="searchForm.type_id" :options="typeOptions" :placeholder="t('common.all')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('common.status')">
+                            <NSelect v-model:value="searchForm.status" :options="statusFilterOptions" :placeholder="t('common.all')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="8">
+                        <NFormItem :label="t('game.list.dateRange')">
+                            <NDatePicker v-model:value="dateRange" type="datetimerange" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="4">
+                        <div class="flex justify-end gap-2 h-full items-start pt-1">
+                            <NButton type="primary" @click="handleSearch" :loading="loading">
+                                <template #icon><SearchOutline /></template>
+                                {{ t('common.search') }}
+                            </NButton>
+                            <NButton secondary @click="() => { dateRange = null; fetchData() }" :loading="loading">
+                                <template #icon><RefreshOutline /></template>
+                                {{ t('common.all') }}
+                            </NButton>
+                        </div>
+                    </NGridItem>
+                </NGrid>
             </NForm>
+        </NCard>
 
+        <NCard>
+            <div class="mb-4 flex gap-2">
+                <NButton 
+                    type="warning" 
+                    :disabled="!hasPendingChanges" 
+                    @click="showSaveConfirmModal = true"
+                    :loading="loading"
+                >
+                    <template #icon><CreateOutline /></template>
+                    {{ t('game.list.accessOperation') }}
+                    <span v-if="hasPendingChanges" class="ml-1">({{ Object.keys(pendingChanges).length }})</span>
+                </NButton>
+            </div>
             <NDataTable
                 :columns="columns"
                 :data="games"
                 :loading="loading"
                 :pagination="pagination"
-                :scroll-x="1400"
+                :scroll-x="1600"
             />
         </NCard>
 
@@ -266,8 +406,9 @@ onMounted(() => {
                 </NFormItem>
                 <NFormItem :label="t('game.list.currency')">
                     <NCheckboxGroup v-model:value="editForm.allowed_currencies">
-                        <NCheckbox value="GOLD" :label="t('game.list.currency')" /> <!-- Simplified -->
-                        <NCheckbox value="SILVER" :label="t('game.list.currency')" />
+                        <NCheckbox value="GOLD" :label="t('common.gold')" />
+                        <NCheckbox value="SILVER" :label="t('common.silver')" />
+                        <NCheckbox value="BRONZE" :label="t('common.bronze')" />
                     </NCheckboxGroup>
                 </NFormItem>
                 <NFormItem :label="t('game.list.vip')">
@@ -285,5 +426,17 @@ onMounted(() => {
                 </div>
             </template>
         </NModal>
+
+        <!-- Status Batch Save Confirm -->
+        <NModal
+            v-model:show="showSaveConfirmModal"
+            preset="dialog"
+            type="warning"
+            :title="t('common.warning')"
+            :content="t('game.list.saveConfirm')"
+            :positive-text="t('common.confirm')"
+            :negative-text="t('common.cancel')"
+            @positive-click="handleBatchSave"
+        />
     </div>
 </template>

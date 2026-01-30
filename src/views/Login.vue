@@ -45,7 +45,7 @@ const quickLoginOptions: QuickLoginOption[] = [
   },
   {
     id: 'manager',
-    name: '營運總監',
+    name: '營運主管',
     tag: 'MANAGER',
     description: '營運管理 / 業務主管',
     credentials: {
@@ -55,7 +55,7 @@ const quickLoginOptions: QuickLoginOption[] = [
   },
   {
     id: 'user',
-    name: '一般使用者',
+    name: '一般職員',
     tag: 'USER',
     description: '一般員工 / 基礎權限',
     credentials: {

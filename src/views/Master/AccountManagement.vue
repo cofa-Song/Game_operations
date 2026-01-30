@@ -11,7 +11,6 @@ import {
   NForm,
   NFormItem,
   NSelect,
-  NSwitch,
   NIcon,
   NPopconfirm,
   NDrawer,
@@ -74,15 +73,16 @@ const accountForm = reactive({
   groups: [] as string[],
   password: '',
   confirmPassword: '',
-  status: 'ENABLED' as 'ENABLED' | 'DISABLED' | 'LOCKED'
+  status: 'ENABLED' as 'ENABLED' | 'DISABLED' | 'LOCKED',
+  reason: ''
 })
 
 // 可見的角色選項（依據當前用戶）
 const visibleRoles = computed(() => {
   const allRoles = [
     { label: '技術開發', value: 'DEVELOPER' },
-    { label: '營運總監', value: 'MANAGER' },
-    { label: '一般使用者', value: 'USER' }
+    { label: '營運主管', value: 'MANAGER' },
+    { label: '一般職員', value: 'USER' }
   ]
 
   if (authStore.user?.role === 'DEVELOPER') {
@@ -233,6 +233,7 @@ const handleAddAccount = () => {
   accountForm.password = ''
   accountForm.confirmPassword = ''
   accountForm.status = 'ENABLED'
+  accountForm.reason = ''
   showAccountModal.value = true
 }
 
@@ -246,6 +247,7 @@ const handleEditAccount = (account: AdminAccount) => {
   accountForm.password = ''
   accountForm.confirmPassword = ''
   accountForm.status = account.status
+  accountForm.reason = ''
   showAccountModal.value = true
 }
 
@@ -259,6 +261,12 @@ const handleSaveAccount = async () => {
     }
     if (!accountForm.display_name.trim()) {
       message.error('顯示名稱不可為空')
+      return
+    }
+
+    // 編輯時必須填寫異動原因
+    if (editingAccountId.value && !accountForm.reason.trim()) {
+      message.error('請輸入異動原因')
       return
     }
 
@@ -356,31 +364,6 @@ const handleDeleteAccount = async (account: AdminAccount) => {
   }
 }
 
-// 切換帳號狀態
-const handleToggleStatus = async (account: AdminAccount) => {
-  try {
-    loading.value = true
-    await delay()
-
-    const index = accounts.value.findIndex(a => a.id === account.id)
-    if (index !== -1) {
-      const newStatus =
-        account.status === 'ENABLED'
-          ? 'DISABLED'
-          : account.status === 'DISABLED'
-            ? 'LOCKED'
-            : 'ENABLED'
-      accounts.value[index].status = newStatus
-      accounts.value[index].updated_at = new Date().toLocaleString()
-      message.success('狀態更新成功')
-    }
-  } catch (error) {
-    message.error('狀態更新失敗')
-  } finally {
-    loading.value = false
-  }
-}
-
 // 打開權限稽核抽屜
 const handleOpenAudit = (account: AdminAccount) => {
   auditingAccount.value = account
@@ -399,7 +382,7 @@ const validatePassword = (pwd: string): boolean => {
     <!-- 頁面標題 -->
     <div>
       <h1 class="text-3xl font-bold text-gray-900">
-        管理員帳號與權限綜合管理
+        管理員列表
       </h1>
       <p class="text-gray-600 mt-1">
         管理後台帳號、分配權限群組、進行權限稽核
@@ -414,8 +397,8 @@ const validatePassword = (pwd: string): boolean => {
           authStore.user?.role === 'DEVELOPER'
             ? '技術開發'
             : authStore.user?.role === 'MANAGER'
-              ? '營運總監'
-              : '一般使用者'
+              ? '營運主管'
+              : '一般職員'
         }}
       </NTag>
     </NAlert>
@@ -483,8 +466,8 @@ const validatePassword = (pwd: string): boolean => {
                     row.role === 'DEVELOPER'
                       ? '技術開發'
                       : row.role === 'MANAGER'
-                        ? '營運總監'
-                        : '一般使用者'
+                        ? '營運主管'
+                        : '一般職員'
                   }}
                 </NTag>
               </td>
@@ -505,18 +488,9 @@ const validatePassword = (pwd: string): boolean => {
                 <span v-else class="text-gray-400">-</span>
               </td>
               <td class="border border-gray-300 px-4 py-2">
-                <div class="flex items-center space-x-2">
-                  <NTag :type="getStatusColor(row.status)">
-                    {{ getStatusLabel(row.status) }}
-                  </NTag>
-                  <NSwitch
-                    :value="row.status === 'ENABLED'"
-                    @update:value="() => handleToggleStatus(row)"
-                    :disabled="authStore.user?.role === 'USER' || !!row.deleted_at"
-                    :loading="loading"
-                    size="small"
-                  />
-                </div>
+                <NTag :type="getStatusColor(row.status)">
+                  {{ getStatusLabel(row.status) }}
+                </NTag>
               </td>
               <td class="border border-gray-300 px-4 py-2">{{ row.last_login || '-' }}</td>
               <td class="border border-gray-300 px-4 py-2">
@@ -673,6 +647,16 @@ const validatePassword = (pwd: string): boolean => {
               ]"
             />
           </NFormItem>
+
+          <NFormItem v-if="editingAccountId" label="異動原因" path="reason" required>
+            <NInput
+              v-model:value="accountForm.reason"
+              type="textarea"
+              placeholder="請輸入此次修改的原因"
+              maxlength="200"
+              :rows="2"
+            />
+          </NFormItem>
         </NForm>
       </NSpin>
 
@@ -714,8 +698,8 @@ const validatePassword = (pwd: string): boolean => {
                       auditingAccount.role === 'DEVELOPER'
                         ? '技術開發'
                         : auditingAccount.role === 'MANAGER'
-                          ? '營運總監'
-                          : '一般使用者'
+                          ? '營運主管'
+                          : '一般職員'
                     }}
                   </NTag>
                 </p>

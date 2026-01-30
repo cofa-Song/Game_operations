@@ -4,7 +4,6 @@ import { useMessage, useDialog } from 'naive-ui'
 import {
   NCard,
   NButton,
-  NTable,
   NSpace,
   NTag,
   NInput,
@@ -18,9 +17,11 @@ import {
   NDrawerContent,
   NGrid,
   NGridItem,
-  NAlert,
   NSpin,
-  NEmpty
+  NEmpty,
+  NCheckbox,
+  NRadioGroup,
+  NRadioButton
 } from 'naive-ui'
 import {
   EditOutlined as EditIcon,
@@ -64,7 +65,8 @@ const currentGroup = ref<PermissionGroup | null>(null)
 const groupForm = reactive({
   name: '',
   description: '',
-  permissions: {} as Record<string, 'NONE' | 'READ' | 'WRITE'>
+  permissions: {} as Record<string, 'NONE' | 'READ' | 'WRITE'>,
+  sensitivePermissions: {} as Record<string, boolean>
 })
 
 // 計算可見的權限（營運管理者看不到系統設定）
@@ -118,9 +120,12 @@ const handleAddGroup = () => {
   editingGroupId.value = null
   groupForm.name = ''
   groupForm.description = ''
-  groupForm.permissions = {}
   visiblePermissions.value.forEach(p => {
     groupForm.permissions[p.code] = 'NONE'
+  })
+  groupForm.sensitivePermissions = {}
+  permissionTreeData.value.forEach(m => {
+    groupForm.sensitivePermissions[m.key] = false
   })
   showGroupModal.value = true
 }
@@ -131,6 +136,14 @@ const handleEditGroup = (group: PermissionGroup) => {
   groupForm.name = group.name
   groupForm.description = group.description || ''
   groupForm.permissions = { ...group.permissions }
+  groupForm.sensitivePermissions = { ...(group.sensitive_permissions || {}) }
+  
+  // 確保所有顯示的模組都有對應的敏感資料設定（預設為 false）
+  permissionTreeData.value.forEach(m => {
+    if (groupForm.sensitivePermissions[m.key] === undefined) {
+      groupForm.sensitivePermissions[m.key] = false
+    }
+  })
   showGroupModal.value = true
 }
 
@@ -166,6 +179,7 @@ const handleSaveGroup = async () => {
           name: groupForm.name,
           description: groupForm.description,
           permissions: groupForm.permissions,
+          sensitive_permissions: groupForm.sensitivePermissions,
           updated_by: authStore.user?.user_id || 'admin',
           updated_at: new Date().toLocaleString()
         }
@@ -178,6 +192,7 @@ const handleSaveGroup = async () => {
         name: groupForm.name,
         description: groupForm.description,
         permissions: groupForm.permissions,
+        sensitive_permissions: groupForm.sensitivePermissions,
         member_count: 0,
         status: 'ENABLED',
         created_by: authStore.user?.user_id || 'admin',
@@ -264,7 +279,7 @@ const getGroupMembers = () => {
   )
 }
 
-// 取得待選成員（不在該群組中的一般使用者）
+// 取得待選成員（不在該群組中的一般職員）
 const getAvailableMembers = () => {
   if (!currentGroup.value) return []
   const groupMemberIds = mockAdminAccounts
@@ -275,7 +290,8 @@ const getAvailableMembers = () => {
     acc =>
       acc.role === 'USER' &&
       !groupMemberIds.includes(acc.id) &&
-      !acc.deleted_at
+      !acc.deleted_at &&
+      acc.status !== 'DISABLED'
   )
 }
 
@@ -353,8 +369,8 @@ const handleAddMember = async (memberId: string) => {
   <div class="p-6 space-y-4">
     <!-- 頁面標題 -->
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">群組與帳號管理</h1>
-      <p class="text-gray-600 mt-1">管理權限群組，為一般使用者分配功能權限</p>
+      <h1 class="text-3xl font-bold text-gray-900">群組管理</h1>
+      <p class="text-gray-600 mt-1">管理權限群組，為一般職員分配功能權限</p>
     </div>
 
     <!-- 權限提示（營運管理者） -->
@@ -522,7 +538,12 @@ const handleAddMember = async (memberId: string) => {
                 :key="module.key"
                 class="border rounded p-3 bg-gray-50"
               >
-                <p class="font-semibold text-gray-900 mb-2">{{ module.label }}</p>
+                <div class="flex justify-between items-center mb-2">
+                  <p class="font-semibold text-gray-900">{{ module.label }}</p>
+                  <NCheckbox v-model:checked="groupForm.sensitivePermissions[module.key]">
+                    敏感資料
+                  </NCheckbox>
+                </div>
                 <div class="space-y-2 ml-3">
                   <div
                     v-for="perm in module.children"
@@ -530,32 +551,11 @@ const handleAddMember = async (memberId: string) => {
                     class="flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:bg-blue-50"
                   >
                     <span class="text-sm">{{ perm.label }}</span>
-                    <NSpace :size="8">
-                      <NButton
-                        text
-                        :type="groupForm.permissions[perm.key] === 'NONE' ? 'default' : 'primary'"
-                        size="small"
-                        @click="groupForm.permissions[perm.key] = 'NONE'"
-                      >
-                        無
-                      </NButton>
-                      <NButton
-                        text
-                        :type="groupForm.permissions[perm.key] === 'READ' ? 'warning' : 'default'"
-                        size="small"
-                        @click="groupForm.permissions[perm.key] = 'READ'"
-                      >
-                        唯讀
-                      </NButton>
-                      <NButton
-                        text
-                        :type="groupForm.permissions[perm.key] === 'WRITE' ? 'success' : 'default'"
-                        size="small"
-                        @click="groupForm.permissions[perm.key] = 'WRITE'"
-                      >
-                        操作
-                      </NButton>
-                    </NSpace>
+                    <NRadioGroup v-model:value="groupForm.permissions[perm.key]" size="small">
+                      <NRadioButton value="NONE">無</NRadioButton>
+                      <NRadioButton value="READ">唯讀</NRadioButton>
+                      <NRadioButton value="WRITE">操作</NRadioButton>
+                    </NRadioGroup>
                   </div>
                 </div>
               </div>

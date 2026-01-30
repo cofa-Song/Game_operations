@@ -7,20 +7,16 @@ const masterRoutes: RouteRecordRaw[] = [
     path: '/admin',
     name: 'AdminLayout',
     component: () => import('@/views/Master/Layout.vue'),
+    redirect: '/admin/dashboard',
     meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] },
     children: [
       {
         path: 'dashboard',
-        name: 'AdminDashboard',
-        component: () => import('@/views/Master/Dashboard.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+        name: 'AdminHome',
+        component: () => import('@/views/Master/PersonalAccount.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'], breadcrumb: '首頁' }
       },
-      {
-        path: 'merchants',
-        name: 'MerchantManagement',
-        component: () => import('@/views/Master/MerchantManagement.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
-      },
+
       {
         path: 'account',
         name: 'PersonalAccount',
@@ -49,7 +45,7 @@ const masterRoutes: RouteRecordRaw[] = [
         path: 'players/:id',
         name: 'PlayerDetail',
         component: () => import('@/views/Master/PlayerDetail.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'] }
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'], breadcrumb: '詳情' }
       },
       {
         path: 'logs',
@@ -67,12 +63,6 @@ const masterRoutes: RouteRecordRaw[] = [
         path: 'game-logs',
         name: 'GameLogs',
         component: () => import('@/views/Master/GameLogs.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'] }
-      },
-      {
-        path: 'player-logs',
-        name: 'PlayerLogs',
-        component: () => import('@/views/Master/PlayerLogs.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'] }
       },
       {

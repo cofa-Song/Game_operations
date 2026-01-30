@@ -18,7 +18,7 @@ const mockUsers: Record<string, { password: string; user: UserInfo }> = {
     password: 'manager123456',
     user: {
       user_id: 'admin-002',
-      name: '營運總監',
+      name: '營運主管',
       role: 'MANAGER',
       permissions: ['OPE-102', 'OPE-103', 'OPE-104', 'OPE-105', 'OPS-601', 'OPS-602', 'OPS-603'],
       email: 'manager@example.com'

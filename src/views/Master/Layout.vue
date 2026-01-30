@@ -7,12 +7,10 @@ import { computed, ref, watch, nextTick, h, Component } from 'vue'
 import { NIcon } from 'naive-ui'
 import {
   HomeOutline,
-  BusinessOutline,
   PeopleOutline,
   PersonOutline,
   GameControllerOutline,
   WalletOutline,
-  DocumentTextOutline,
   CashOutline,
   GiftOutline,
   ExtensionPuzzleOutline,
@@ -21,11 +19,12 @@ import {
   OptionsOutline,
   PricetagsOutline,
   LockClosedOutline,
-  PersonCircleOutline,
+  SettingsOutline,
   PeopleCircleOutline,
   ShieldCheckmarkOutline,
   ReaderOutline
 } from '@vicons/ionicons5'
+import { NBreadcrumb, NBreadcrumbItem } from 'naive-ui'
 
 function renderIcon(icon: Component) {
   return () => h(NIcon, null, { default: () => h(icon) })
@@ -38,41 +37,59 @@ const { t } = useI18n()
 
 const selectedKey = ref<string>('admin-dashboard')
 
-// 根据当前路由更新选中的菜单项
-watch(() => route.path, (newPath) => {
-  const pathMap: Record<string, string> = {
-    '/admin/dashboard': 'admin-dashboard',
-    '/admin/merchants': 'merchant-management',
-    '/admin/account': 'personal-account',
-    '/admin/groups': 'group-management',
-    '/admin/accounts': 'account-management',
-    '/admin/players': 'player-list',
-    '/admin/game-logs': 'game-logs',
-    '/admin/asset-logs': 'asset-logs',
-    '/admin/player-logs': 'operation-log',
-    '/admin/logs': 'admin-operation-log',
-    '/admin/bonus-history': 'bonus-history',
-    '/admin/game-providers': 'game-providers',
-    '/admin/game-list': 'game-list',
-    '/admin/game-type-config': 'game-type-config',
-    '/admin/marketing-tag-config': 'marketing-tag-config'
+// 菜單結構類型定義
+interface MenuOption {
+  label: string
+  key: string
+  icon?: any
+  children?: MenuOption[]
+}
+
+// 遞迴查找選單路徑
+const findMenuPath = (menus: MenuOption[], targetKey: string): { label: string; key: string }[] | null => {
+  for (const menu of menus) {
+    if (menu.key === targetKey) {
+      return [{ label: menu.label, key: menu.key }]
+    }
+    if (menu.children) {
+      const childPath = findMenuPath(menu.children, targetKey)
+      if (childPath) {
+        return [{ label: menu.label, key: menu.key }, ...childPath]
+      }
+    }
   }
-  if (pathMap[newPath]) {
-    selectedKey.value = pathMap[newPath]
+  return null
+}
+
+// 根據當前路由更新選中的菜單項
+watch(() => route.path, (newPath) => {
+  // 優先檢查是否有完全匹配的路由
+  const exactMatch = Object.entries(menuKeyToRoute).find(([_, path]) => path === newPath)
+  if (exactMatch) {
+    selectedKey.value = exactMatch[0]
+    return
+  }
+
+  // 模糊匹配：如果當前路徑包含某個基礎路徑（處理詳情頁）
+  // 例如 /admin/players/123 應該選中 /admin/players (player-list)
+  const partialMatch = Object.entries(menuKeyToRoute).find(([_, path]) => {
+    // 忽略 dashboard 避免誤判
+    if (path === '/admin/dashboard') return false
+    return newPath.startsWith(path + '/')
+  })
+  
+  if (partialMatch) {
+    selectedKey.value = partialMatch[0]
   }
 }, { immediate: true })
 
 const menuOptions = computed(() => [
   {
-    label: t('navigation.dashboard'),
+    label: t('navigation.homepage'),
     key: 'admin-dashboard',
     icon: renderIcon(HomeOutline)
   },
-  {
-    label: t('navigation.merchants'),
-    key: 'merchant-management',
-    icon: renderIcon(BusinessOutline)
-  },
+
   {
     label: t('navigation.playerManagement'),
     key: 'player-management-group',
@@ -93,11 +110,6 @@ const menuOptions = computed(() => [
         key: 'asset-logs',
         icon: renderIcon(WalletOutline)
       },
-      {
-        label: t('navigation.playerOperationLog'),
-        key: 'operation-log',
-        icon: renderIcon(DocumentTextOutline)
-      }
     ]
   },
   {
@@ -142,22 +154,22 @@ const menuOptions = computed(() => [
   {
     label: t('navigation.permissionManagement'),
     key: 'permission-management',
-    icon: renderIcon(LockClosedOutline),
+    icon: renderIcon(SettingsOutline),
     children: [
       {
-        label: t('navigation.personalAccount'),
-        key: 'personal-account',
-        icon: renderIcon(PersonCircleOutline)
+        label: t('navigation.accountManagement'),
+        key: 'account-management',
+        icon: renderIcon(PeopleCircleOutline)
       },
       {
         label: t('navigation.groupManagement'),
         key: 'group-management',
-        icon: renderIcon(PeopleCircleOutline)
+        icon: renderIcon(ShieldCheckmarkOutline)
       },
       {
-        label: t('navigation.accountManagement'),
-        key: 'account-management',
-        icon: renderIcon(ShieldCheckmarkOutline)
+        label: t('navigation.personalAccount'),
+        key: 'personal-account',
+        icon: renderIcon(LockClosedOutline)
       },
       {
         label: t('navigation.operationLog'),
@@ -170,14 +182,12 @@ const menuOptions = computed(() => [
 
 const menuKeyToRoute: Record<string, string> = {
   'admin-dashboard': '/admin/dashboard',
-  'merchant-management': '/admin/merchants',
   'personal-account': '/admin/account',
   'group-management': '/admin/groups',
   'account-management': '/admin/accounts',
   'player-list': '/admin/players',
   'game-logs': '/admin/game-logs',
   'asset-logs': '/admin/asset-logs',
-  'operation-log': '/admin/player-logs', // Changed from '/admin/logs'
   'admin-operation-log': '/admin/logs',
   'bonus-history': '/admin/bonus-history',
   'game-providers': '/admin/game-providers',
@@ -185,6 +195,35 @@ const menuKeyToRoute: Record<string, string> = {
   'game-type-config': '/admin/game-type-config',
   'marketing-tag-config': '/admin/marketing-tag-config'
 }
+
+// 計算麵包屑項目
+const breadcrumbItems = computed(() => {
+  const pathItems: { label: string, to?: string }[] = []
+  
+  // 1. 查找選單路徑
+  const menuPath = findMenuPath(menuOptions.value, selectedKey.value)
+  
+  if (menuPath) {
+    menuPath.forEach(item => {
+      // 檢查該選單項是否有對應的路由連接
+      const routePath = menuKeyToRoute[item.key]
+      pathItems.push({
+        label: item.label,
+        to: routePath // 如果有的話就加上連結
+      })
+    })
+  }
+
+  // 2. 處理詳情頁等動態子頁面
+  // 如果當前路由有 breadcrumb meta 且當前路徑不等於選中菜單的路徑
+  if (route.meta.breadcrumb && menuKeyToRoute[selectedKey.value] !== route.path) {
+    pathItems.push({
+      label: route.meta.breadcrumb as string
+    })
+  }
+
+  return pathItems
+})
 
 const handleMenuSelect = (key: string) => {
   const route = menuKeyToRoute[key]
@@ -203,8 +242,8 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <NLayout has-sider>
-    <NLayoutSider collapse-mode="width" :width="240" :collapsed-width="0" show-trigger="bar">
+  <NLayout has-sider class="h-screen">
+    <NLayoutSider collapse-mode="width" :width="240" :collapsed-width="0" show-trigger="bar" class="border-r border-gray-200">
       <NMenu 
         :options="menuOptions"
         :value="selectedKey"
@@ -212,7 +251,7 @@ const handleLogout = () => {
       />
     </NLayoutSider>
 
-    <NLayout>
+    <NLayout class="h-screen">
       <NLayoutHeader class="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
         <h1 class="text-xl font-bold">{{ t('navigation.dashboard') }}</h1>
         <button @click="handleLogout" class="text-sm text-red-600 hover:text-red-700">
@@ -221,6 +260,16 @@ const handleLogout = () => {
       </NLayoutHeader>
 
       <NLayoutContent class="p-6">
+        <!-- 麵包屑導覽 -->
+        <NBreadcrumb class="mb-4">
+          <NBreadcrumbItem v-for="(item, index) in breadcrumbItems" :key="index">
+            <RouterLink v-if="item.to && index !== breadcrumbItems.length - 1" :to="item.to">
+              {{ item.label }}
+            </RouterLink>
+            <span v-else>{{ item.label }}</span>
+          </NBreadcrumbItem>
+        </NBreadcrumb>
+
         <RouterView />
       </NLayoutContent>
     </NLayout>

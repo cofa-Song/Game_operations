@@ -5,7 +5,7 @@ export interface AssetLog {
     timestamp: string
     player_id: string
     username: string
-    currency: 'GOLD' | 'SILVER' | 'COPPER'
+    currency: 'GOLD' | 'SILVER' | 'BRONZE'
     wallet_type: 'CASH' | 'BONUS' | 'SAFE' | 'GAME'
     change_type: AssetLogChangeType
     amount: number

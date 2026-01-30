@@ -18,7 +18,7 @@ export const mockPermissions: Permission[] = [
   },
   {
     id: 'ope-102',
-    name: '群組與帳號管理',
+    name: '群組管理',
     code: 'OPE-102',
     module: '2. 帳號管理',
     level: 'NONE',
@@ -26,7 +26,7 @@ export const mockPermissions: Permission[] = [
   },
   {
     id: 'ope-103',
-    name: '管理員帳號與權限綜合管理',
+    name: '管理員列表',
     code: 'OPE-103',
     module: '2. 帳號管理',
     level: 'NONE',
@@ -114,7 +114,8 @@ export const mockPermissionGroups: PermissionGroup[] = [
       'OPS-603': 'NONE',
       'SYS-801': 'NONE',
       'SYS-802': 'NONE'
-    }
+    },
+    sensitive_permissions: {}
   },
   {
     id: 'group-002',
@@ -137,7 +138,8 @@ export const mockPermissionGroups: PermissionGroup[] = [
       'OPS-603': 'WRITE',
       'SYS-801': 'NONE',
       'SYS-802': 'NONE'
-    }
+    },
+    sensitive_permissions: {}
   },
   {
     id: 'group-003',
@@ -160,7 +162,8 @@ export const mockPermissionGroups: PermissionGroup[] = [
       'OPS-603': 'WRITE',
       'SYS-801': 'READ',
       'SYS-802': 'NONE'
-    }
+    },
+    sensitive_permissions: {}
   },
   {
     id: 'group-004',
@@ -183,7 +186,8 @@ export const mockPermissionGroups: PermissionGroup[] = [
       'OPS-603': 'NONE',
       'SYS-801': 'NONE',
       'SYS-802': 'NONE'
-    }
+    },
+    sensitive_permissions: {}
   }
 ]
 
@@ -205,7 +209,7 @@ export const mockAdminAccounts: AdminAccount[] = [
   {
     id: 'admin-002',
     username: 'manager_admin',
-    display_name: '營運總監',
+    display_name: '營運主管',
     role: 'MANAGER',
     status: 'ENABLED',
     email: 'manager@example.com',

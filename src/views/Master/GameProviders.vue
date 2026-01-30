@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
-import { NCard, NDataTable, NTag, NButton, NModal, NForm, NFormItem, NSelect, NInputNumber, NInput, useMessage, DataTableColumns } from 'naive-ui'
-import { RefreshOutline, CreateOutline } from '@vicons/ionicons5'
+import { ref, onMounted, reactive, computed, h } from 'vue'
+import { 
+    NCard, NDataTable, NTag, NButton, NModal, NForm, NFormItem, 
+    NSelect, NInputNumber, NInput, useMessage, DataTableColumns,
+    NGrid, NGridItem, NDatePicker 
+} from 'naive-ui'
+import { RefreshOutline, CreateOutline, SearchOutline } from '@vicons/ionicons5'
 import { providerApi } from '@/api/provider'
-import type { GameProvider, ProviderStatus, ProviderUpdateRequest } from '@/types/game'
+import type { GameProvider, ProviderStatus, ProviderUpdateRequest, ProviderSearchParams, ProviderType } from '@/types/game'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useI18n } from 'vue-i18n'
 
@@ -14,6 +18,51 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const providers = ref<GameProvider[]>([])
 
+// Search Form State
+const searchForm = reactive<ProviderSearchParams>({
+    code: '',
+    type: undefined,
+    status: undefined,
+    date_start: undefined,
+    date_end: undefined
+})
+
+const getDefaultDateRange = (): [number, number] => {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(end.getDate() - 7)
+    return [start.getTime(), end.getTime()]
+}
+
+const allProviders = ref<GameProvider[]>([])
+
+const vendorOptions = computed(() => {
+    return allProviders.value.map(p => ({
+        label: `${p.name} (${p.code})`,
+        value: p.code
+    }))
+})
+
+const dateRange = ref<[number, number] | null>(getDefaultDateRange())
+
+const typeOptions = [
+    { label: t('game.provider.types.SLOT'), value: 'SLOT' as ProviderType },
+    { label: t('game.provider.types.LIVE'), value: 'LIVE' as ProviderType },
+    { label: t('game.provider.types.SPORTS'), value: 'SPORTS' as ProviderType },
+    { label: t('game.provider.types.LOTTERY'), value: 'LOTTERY' as ProviderType },
+    { label: t('game.provider.types.CARD'), value: 'CARD' as ProviderType }
+]
+
+const statusOptions = [
+    { label: t('common.enable'), value: 'ACTIVE' as ProviderStatus },
+    { label: t('common.disable'), value: 'DISABLED' as ProviderStatus },
+    { label: t('game.provider.maintenance'), value: 'MAINTENANCE' as ProviderStatus }
+]
+
+const formatAmount = (val: number) => {
+    return '$ ' + val.toLocaleString()
+}
+
 // Edit Modal State
 const showEditModal = ref(false)
 const selectedProvider = ref<GameProvider | null>(null)
@@ -23,18 +72,12 @@ const editForm = ref<ProviderUpdateRequest>({
     reason: ''
 })
 
-const statusOptions = [
-    { label: t('common.enable'), value: 'ACTIVE' as ProviderStatus },
-    { label: t('common.disable'), value: 'DISABLED' as ProviderStatus },
-    { label: t('game.provider.maintenance'), value: 'MAINTENANCE' as ProviderStatus }
-]
-
 const columns: DataTableColumns<GameProvider> = [
     { title: t('game.provider.id'), key: 'id', width: 100 },
-    { title: t('game.provider.code'), key: 'code', width: 80 },
-    { title: t('game.provider.name'), key: 'name', width: 180 },
+    { title: t('game.provider.vendorCode'), key: 'code', width: 100 },
+    { title: t('game.provider.name'), key: 'name', width: 150 },
     {
-        title: t('game.provider.type'),
+        title: t('game.provider.platformType'),
         key: 'type',
         width: 100,
         render: (row) => {
@@ -65,16 +108,24 @@ const columns: DataTableColumns<GameProvider> = [
         width: 80,
         render: (row) => h('span', { class: 'font-mono' }, row.sort_order)
     },
-    {
-        title: t('game.provider.walletSupport'),
-        key: 'wallet_support',
+    { 
+        title: t('game.provider.currentPlayers'), 
+        key: 'current_players', 
         width: 120,
-        render: (row) => {
-            return h(NTag, { size: 'small', type: row.wallet_support === 'DUAL' ? 'info' : 'default' }, { default: () => t(`game.provider.wallets.${row.wallet_support}`) })
-        }
+        render: (row) => h('span', row.current_players.toLocaleString())
     },
-    { title: t('game.provider.lastOperator'), key: 'last_operator', width: 120 },
-    { title: t('game.provider.updatedAt'), key: 'updated_at', width: 160, render: (row) => row.updated_at.replace('T', ' ').replace('Z', '').slice(0, 19) },
+    { 
+        title: t('game.provider.totalBet'), 
+        key: 'total_bet', 
+        width: 150,
+        render: (row) => h('span', { class: 'text-orange-600 font-semibold' }, formatAmount(row.total_bet))
+    },
+    { 
+        title: t('game.provider.totalPayout'), 
+        key: 'total_payout', 
+        width: 150,
+        render: (row) => h('span', { class: 'text-green-600 font-semibold' }, formatAmount(row.total_payout))
+    },
     {
         title: t('common.action'),
         key: 'actions',
@@ -89,7 +140,15 @@ const columns: DataTableColumns<GameProvider> = [
 const fetchData = async () => {
     loading.value = true
     try {
-        const res = await providerApi.getProviders()
+        if (dateRange.value) {
+            searchForm.date_start = new Date(dateRange.value[0]).toISOString()
+            searchForm.date_end = new Date(dateRange.value[1]).toISOString()
+        } else {
+            searchForm.date_start = undefined
+            searchForm.date_end = undefined
+        }
+        
+        const res = await providerApi.getProviders(searchForm)
         if (res.code === 0) {
             providers.value = res.data
         } else {
@@ -100,6 +159,14 @@ const fetchData = async () => {
     } finally {
         loading.value = false
     }
+}
+
+const handleReset = () => {
+    searchForm.code = ''
+    searchForm.type = undefined
+    searchForm.status = undefined
+    dateRange.value = getDefaultDateRange()
+    fetchData()
 }
 
 const handleEdit = (provider: GameProvider) => {
@@ -138,18 +205,60 @@ const handleSubmit = async () => {
     }
 }
 
-onMounted(() => {
+onMounted(async () => {
+    // Fetch all providers once for the filter dropdown
+    const res = await providerApi.getProviders()
+    if (res.code === 0) {
+        allProviders.value = res.data
+    }
     fetchData()
 })
 </script>
 
 <template>
     <div class="p-6">
-        <NCard :title="t('game.provider.title')">
+        <NCard :title="t('game.provider.title')" class="mb-4">
+            <NForm inline :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="fetchData">
+                <NGrid :cols="24" :x-gap="12">
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.provider.vendorCode')">
+                            <NSelect v-model:value="searchForm.code" :options="vendorOptions" :placeholder="t('common.all')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.provider.platformType')">
+                            <NSelect v-model:value="searchForm.type" :options="typeOptions" :placeholder="t('common.all')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('common.status')">
+                            <NSelect v-model:value="searchForm.status" :options="statusOptions" :placeholder="t('common.all')" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="6">
+                        <NFormItem :label="t('game.provider.date')">
+                            <NDatePicker v-model:value="dateRange" type="datetimerange" clearable />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem :span="24">
+                        <div class="flex justify-end gap-2">
+                            <NButton secondary @click="handleReset">
+                                {{ t('common.all') }}
+                            </NButton>
+                            <NButton type="primary" @click="fetchData" :loading="loading">
+                                <template #icon><SearchOutline /></template>
+                                {{ t('common.search') }}
+                            </NButton>
+                        </div>
+                    </NGridItem>
+                </NGrid>
+            </NForm>
+        </NCard>
+
+        <NCard>
             <template #header-extra>
-                <NButton secondary @click="fetchData" :loading="loading">
+                <NButton secondary circle @click="fetchData" :loading="loading">
                     <template #icon><RefreshOutline /></template>
-                    {{ t('common.search') }}
                 </NButton>
             </template>
 

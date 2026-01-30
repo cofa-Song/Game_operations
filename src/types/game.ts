@@ -42,6 +42,17 @@ export interface GameProvider {
     wallet_support: WalletSupport
     last_operator: string
     updated_at: string
+    current_players: number
+    total_bet: number
+    total_payout: number
+}
+
+export interface ProviderSearchParams {
+    code?: string
+    type?: ProviderType
+    status?: ProviderStatus
+    date_start?: string
+    date_end?: string
 }
 
 export interface ProviderUpdateRequest {
@@ -52,7 +63,7 @@ export interface ProviderUpdateRequest {
 
 export type MarketingTag = 'HOT' | 'RECOMMENDED' | 'DOUBLE_TURNOVER'
 export type TagSource = 'AUTO' | 'MANUAL'
-export type GameStatus = 'ACTIVE' | 'DISABLED'
+export type GameStatus = 'ACTIVE' | 'DISABLED' | 'MAINTENANCE'
 
 export interface Game {
     id: string
@@ -61,7 +72,7 @@ export interface Game {
     type_id: string
     name: string
     name_en: string
-    monthly_turnover: number
+    cumulative_turnover: number
     marketing_tag: MarketingTag | null
     tag_source: TagSource
     type_rate: number
@@ -72,6 +83,8 @@ export interface Game {
     sort_order: number
     status: GameStatus
     updated_at: string
+    total_bet: number
+    total_payout: number
 }
 
 export interface GameListSearchParams {
@@ -80,6 +93,10 @@ export interface GameListSearchParams {
     game_id?: string
     name?: string
     status?: GameStatus
+    marketing_tag?: MarketingTag | null
+    tag_source?: TagSource
+    date_start?: string
+    date_end?: string
     page: number
     page_size: number
 }
