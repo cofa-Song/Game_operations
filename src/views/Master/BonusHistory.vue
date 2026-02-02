@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h } from 'vue'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NTimeline, NTimelineItem, useMessage, DataTableColumns } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NTimeline, NTimelineItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NDatePicker } from 'naive-ui'
 import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import { bonusHistoryApi } from '@/api/bonus'
 import type { BonusHistoryLog, BonusHistorySearchParams } from '@/types/bonus'
@@ -9,9 +9,12 @@ const message = useMessage()
 const loading = ref(false)
 const historyLogs = ref<BonusHistoryLog[]>([])
 
+const dateRange = ref<[number, number] | null>(null)
+
 const searchForm = reactive<BonusHistorySearchParams>({
     card_id: '',
-    player_id: '',
+    search_type: 'id',
+    q: '',
     status: undefined,
     date_start: undefined,
     date_end: undefined,
@@ -54,6 +57,12 @@ const columns: DataTableColumns<BonusHistoryLog> = [
     key: 'start_amount',
     width: 100,
     render: (row) => row.start_amount.toFixed(2)
+  },
+  { 
+    title: '剩餘金額', 
+    key: 'lave_balance',
+    width: 100,
+    render: (row) => row.lave_balance.toFixed(2)
   },
   { 
     title: '目標流水', 
@@ -140,6 +149,15 @@ const fetchData = async () => {
 }
 
 const handleSearch = () => {
+  // Convert dateRange to date_start and date_end
+  if (dateRange.value) {
+    searchForm.date_start = new Date(dateRange.value[0]).toISOString().split('T')[0]
+    searchForm.date_end = new Date(dateRange.value[1]).toISOString().split('T')[0]
+  } else {
+    searchForm.date_start = undefined
+    searchForm.date_end = undefined
+  }
+  
   searchForm.page = 1
   pagination.page = 1
   fetchData()
@@ -162,16 +180,30 @@ onMounted(() => {
 <template>
   <div class="p-6">
     <NCard title="獎勵卡歷史紀錄">
-      <NForm inline :model="searchForm" label-placement="left" class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <NForm inline :model="searchForm" label-placement="left" class="flex-wrap gap-4 mb-4">
         <NFormItem label="Card ID">
-          <NInput v-model:value="searchForm.card_id" placeholder="精確搜尋" clearable />
+          <NInput v-model:value="searchForm.card_id" placeholder="精確搜尋" clearable style="width: 200px" />
         </NFormItem>
-        <NFormItem label="玩家 ID">
-          <NInput v-model:value="searchForm.player_id" placeholder="玩家帳號/UID" clearable />
+        
+        <NFormItem label="玩家搜尋">
+          <div class="relative">
+            <NRadioGroup v-model:value="searchForm.search_type" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
+              <NRadio value="id">ID</NRadio>
+              <NRadio value="username">使用者名稱</NRadio>
+              <NRadio value="phone">手機</NRadio>
+            </NRadioGroup>
+            <NInput v-model:value="searchForm.q" placeholder="請輸入搜尋關鍵字" clearable style="width: 200px" />
+          </div>
         </NFormItem>
+        
         <NFormItem label="狀態">
           <NSelect v-model:value="searchForm.status" :options="statusOptions" placeholder="全部" clearable style="width: 140px" />
         </NFormItem>
+        
+        <NFormItem label="建立時間">
+          <NDatePicker v-model:value="dateRange" type="daterange" clearable style="width: 280px" />
+        </NFormItem>
+        
         <NFormItem>
           <NButton type="primary" @click="handleSearch" :loading="loading">
             <template #icon><SearchOutline /></template>

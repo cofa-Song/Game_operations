@@ -35,6 +35,11 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
         wallets: generateWallets(),
         is_muted: false,
         is_gift_disabled: false,
+        // Extended Profile
+        gender: i % 3 === 0 ? 'MALE' : (i % 3 === 1 ? 'FEMALE' : 'UNKNOWN'),
+        birthday: '1990-01-01',
+        email: `player${i}@example.com`,
+        is_retention_active: i % 2 === 0,
         // Init Bonus Queue
         bonus_queue: i % 4 === 0 ? [
             RolloverEngine.createBonusCard(100, 10, 500, 7),

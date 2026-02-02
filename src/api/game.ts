@@ -225,19 +225,24 @@ export const gameListApi = {
         // Update fields
         if (updates.marketing_tag !== undefined) {
             game.marketing_tag = updates.marketing_tag
-            game.tag_source = 'MANUAL'
+            game.tag_source = 'MANUAL' // Setting tag_source to MANUAL if marketing_tag is updated
 
-            // Update tag_rate and final_rate
-            if (updates.marketing_tag === 'HOT') {
-                game.tag_rate = 150
-            } else if (updates.marketing_tag === 'RECOMMENDED') {
-                game.tag_rate = 120
-            } else if (updates.marketing_tag === 'DOUBLE_TURNOVER') {
-                game.tag_rate = 200
-            } else {
-                game.tag_rate = 0
+            // Update tag_rate based on new tag
+            // const tagConfig = configApi.mockMarketingTags.find(t => t.id === updates.marketing_tag) // Wait, configApi is not imported here?
+            // Simplified mock logic:
+            if (updates.marketing_tag === 'HOT') game.tag_rate = 150
+            else if (updates.marketing_tag === 'RECOMMENDED') game.tag_rate = 120
+            else if (updates.marketing_tag === 'DOUBLE_TURNOVER') game.tag_rate = 200
+            else game.tag_rate = 0
+
+            // Only recalculate if final_rate is NOT being manually set in this request
+            if (updates.final_rate === undefined) {
+                game.final_rate = calculateFinalRate(game.type_rate, game.tag_rate)
             }
-            game.final_rate = calculateFinalRate(game.type_rate, game.tag_rate)
+        }
+
+        if (updates.final_rate !== undefined) {
+            game.final_rate = updates.final_rate
         }
 
         if (updates.allowed_currencies) {

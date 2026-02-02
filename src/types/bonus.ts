@@ -56,7 +56,8 @@ export interface BonusHistoryLog {
 
 export interface BonusHistorySearchParams {
     card_id?: string
-    player_id?: string
+    search_type?: 'id' | 'username' | 'phone'
+    q?: string // Player search query
     status?: string
     date_start?: string
     date_end?: string

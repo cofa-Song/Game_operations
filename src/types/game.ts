@@ -107,6 +107,7 @@ export interface GameUpdateRequest {
     min_vip_level?: number
     sort_order?: number
     status?: GameStatus
+    final_rate?: number
 }
 
 

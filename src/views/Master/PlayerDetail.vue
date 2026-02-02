@@ -5,7 +5,7 @@ import {
   NCard, NTabs, NTabPane, NGrid, NGridItem, NDescriptions, NDescriptionsItem,
   NTag, NButton, NSpace, NAvatar, NStatistic, NList, NListItem, NThing,
   NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage,
-  NProgress, NDivider 
+  NProgress, NDivider, NDatePicker, NInputNumber
 } from 'naive-ui'
 import { 
   WalletOutline, AlertCircleOutline
@@ -19,6 +19,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const { t } = useI18n()
+import { computed } from 'vue' // Ensure computed is imported if not already
 
 const playerId = route.params.id as string
 const player = ref<Player | null>(null)
@@ -44,6 +45,12 @@ const statusOptions = [
   { label: '凍結', value: 'FROZEN' },
   { label: '停權', value: 'SUSPENDED' }
 ]
+
+const genderOptions = computed(() => [
+    { label: t('player.gender.MALE'), value: 'MALE' },
+    { label: t('player.gender.FEMALE'), value: 'FEMALE' },
+    { label: t('player.gender.UNKNOWN'), value: 'UNKNOWN' }
+])
 
 // Abandon Bonus State
 const showAbandonModal = ref(false)
@@ -78,6 +85,11 @@ const handleEdit = () => {
     editModel.phone = player.value.phone
     editModel.is_muted = player.value.is_muted
     editModel.is_gift_disabled = player.value.is_gift_disabled
+    editModel.gender = player.value.gender
+    editModel.birthday = player.value.birthday
+    editModel.email = player.value.email
+    editModel.vip_level = player.value.vip_level
+    editModel.is_retention_active = player.value.is_retention_active
     showEditModal.value = true
 }
 
@@ -191,8 +203,13 @@ onMounted(() => {
             <NDescriptionsItem label="VIP 等級">LV.{{ player.vip_level }}</NDescriptionsItem>
             <NDescriptionsItem label="推薦人">{{ player.referrer_id || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="註冊來源">{{ player.register_source }}</NDescriptionsItem>
-            <NDescriptionsItem label="註冊時間">{{ player.register_at.split('T')[0] }}</NDescriptionsItem>
-             <NDescriptionsItem label="最後登入">{{ player.last_login_at?.split('T')[0] || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('player.list.gender')">{{ player.gender ? t(`player.gender.${player.gender}`) : '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('player.list.birthday')">{{ player.birthday || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('player.list.email')">{{ player.email || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('player.list.registerDate')">{{ player.register_at.split('T')[0] }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('player.list.registerIp')">{{ player.register_ip }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('player.list.lastLoginDate')">{{ player.last_login_at?.split('T')[0] || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem :label="t('player.list.lastLoginIp')">{{ player.last_login_ip || '-' }}</NDescriptionsItem>
           </NDescriptions>
           
           <div class="mt-4 flex flex-wrap gap-2">
@@ -349,11 +366,29 @@ onMounted(() => {
             <NFormItem label="手機號碼">
                 <NInput v-model:value="editModel.phone" />
             </NFormItem>
+            <NFormItem :label="t('player.list.gender')">
+                <NSelect v-model:value="editModel.gender" :options="genderOptions" />
+            </NFormItem>
+            <NFormItem :label="t('player.list.birthday')">
+                <NDatePicker v-model:formatted-value="editModel.birthday" value-format="yyyy-MM-dd" type="date" clearable />
+            </NFormItem>
+            <NFormItem :label="t('player.list.email')">
+                 <NInput v-model:value="editModel.email" />
+            </NFormItem>
+            <NFormItem label="密碼">
+                 <NInput v-model:value="editModel.password" type="password" show-password-on="click" placeholder="留空表示不修改密碼" clearable />
+            </NFormItem>
+            <NFormItem :label="t('player.list.vipLevel')">
+                 <NInputNumber v-model:value="editModel.vip_level" :min="0" style="width: 100%" />
+            </NFormItem>
              <NFormItem label="全服禁言">
                 <NSwitch v-model:value="editModel.is_muted" />
             </NFormItem>
             <NFormItem label="禁止贈禮">
                 <NSwitch v-model:value="editModel.is_gift_disabled" />
+            </NFormItem>
+            <NFormItem :label="t('player.list.retentionCheck')">
+                <NSwitch v-model:value="editModel.is_retention_active" />
             </NFormItem>
         </NForm>
         <template #footer>

@@ -62,7 +62,8 @@ const editForm = ref<GameUpdateRequest>({
     marketing_tag: undefined,
     allowed_currencies: [],
     min_vip_level: 0,
-    sort_order: 999
+    sort_order: 999,
+    final_rate: 100
 })
 
 const tagOptions = computed(() => [
@@ -289,7 +290,8 @@ const handleEdit = (game: Game) => {
         marketing_tag: game.marketing_tag,
         allowed_currencies: game.allowed_currencies,
         min_vip_level: game.min_vip_level,
-        sort_order: game.sort_order
+        sort_order: game.sort_order,
+        final_rate: game.final_rate
     }
     showEditModal.value = true
 }
@@ -413,6 +415,11 @@ const handleSubmit = async () => {
                 </NFormItem>
                 <NFormItem :label="t('game.list.vip')">
                     <NInputNumber v-model:value="editForm.min_vip_level" :min="0" :max="10" style="width: 100%" />
+                </NFormItem>
+                <NFormItem :label="t('game.list.effectiveTurnoverRate')">
+                    <NInputNumber v-model:value="editForm.final_rate" :min="0" :max="1000" style="width: 100%">
+                        <template #suffix>%</template>
+                    </NInputNumber>
                 </NFormItem>
                 <NFormItem :label="t('game.provider.sortOrder')">
                     <NInputNumber v-model:value="editForm.sort_order" :min="1" :max="999" style="width: 100%" />

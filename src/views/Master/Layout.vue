@@ -11,7 +11,6 @@ import {
   PersonOutline,
   GameControllerOutline,
   WalletOutline,
-  CashOutline,
   GiftOutline,
   ExtensionPuzzleOutline,
   LayersOutline,
@@ -101,6 +100,11 @@ const menuOptions = computed(() => [
         icon: renderIcon(PersonOutline)
       },
       {
+        label: t('navigation.bonusHistory'),
+        key: 'bonus-history',
+        icon: renderIcon(GiftOutline)
+      },
+      {
         label: t('navigation.gameLogs'),
         key: 'game-logs',
         icon: renderIcon(GameControllerOutline)
@@ -110,18 +114,6 @@ const menuOptions = computed(() => [
         key: 'asset-logs',
         icon: renderIcon(WalletOutline)
       },
-    ]
-  },
-  {
-    label: t('navigation.financeManagement'),
-    key: 'finance-management',
-    icon: renderIcon(CashOutline),
-    children: [
-      {
-        label: t('navigation.bonusHistory'),
-        key: 'bonus-history',
-        icon: renderIcon(GiftOutline)
-      }
     ]
   },
   {

@@ -42,6 +42,13 @@ export interface Player {
     register_at: string
     last_login_at?: string
     last_login_ip?: string
+
+    // Extended Profile
+    gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
+    birthday?: string
+    email?: string
+    is_retention_active?: boolean // 保級判定
+
     wallets: Wallet[]
     is_online: boolean
 
@@ -98,4 +105,8 @@ export interface UpdatePlayerRequest {
     vip_level?: number
     is_muted?: boolean
     is_gift_disabled?: boolean
+    gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
+    birthday?: string
+    email?: string
+    is_retention_active?: boolean
 }

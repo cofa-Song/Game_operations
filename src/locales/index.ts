@@ -66,6 +66,13 @@ export const zhTW = {
       nicknamePlaceholder: '請輸入暱稱',
       registerIp: '註冊 IP',
       registerDate: '註冊時間',
+      lastLoginIp: '最後登入 IP',
+      lastLoginDate: '最後登入時間',
+      gender: '性別',
+      birthday: '生日',
+      email: 'Email',
+      vipLevel: 'VIP 等級',
+      retentionCheck: '保級判定',
       walletMonitor: '錢包監控',
       depositWallet: '儲值錢包',
       activityWallet: '活動錢包',
@@ -83,7 +90,16 @@ export const zhTW = {
       TEST: '測試帳號',
       VIP: 'VIP',
       NORMAL: '一般',
-      RISK: '風險'
+      RISK: '風險',
+      一般玩家: '一般玩家',
+      測試帳號: '測試帳號',
+      幣商帳號: '幣商帳號',
+      高風險: '高風險'
+    },
+    gender: {
+      MALE: '男',
+      FEMALE: '女',
+      UNKNOWN: '未知'
     }
   },
   auth: {
