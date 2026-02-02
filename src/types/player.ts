@@ -94,6 +94,15 @@ export interface CreatePlayerRequest {
     username: string
     display_name: string
     password?: string // Optional, system generated if empty? Spec says fillable.
+    phone?: string
+    gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
+    birthday?: string
+    email?: string
+    vip_level?: number
+    is_muted?: boolean
+    is_gift_disabled?: boolean
+    is_retention_active?: boolean
+    referrer_id?: string
     tags: PlayerTag[] // Usually ['TEST'] for admin created
 }
 

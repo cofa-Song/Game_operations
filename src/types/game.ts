@@ -85,6 +85,7 @@ export interface Game {
     updated_at: string
     total_bet: number
     total_payout: number
+    profit_rate: number
 }
 
 export interface GameListSearchParams {
@@ -108,6 +109,7 @@ export interface GameUpdateRequest {
     sort_order?: number
     status?: GameStatus
     final_rate?: number
+    profit_rate?: number
 }
 
 

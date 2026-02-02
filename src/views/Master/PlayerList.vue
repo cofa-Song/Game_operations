@@ -4,7 +4,7 @@ import { ref, reactive, onMounted, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   NCard, NInput, NSelect, NDatePicker, NButton, NDataTable, NSpace, NTag,
-  NBadge, NModal, NForm, NFormItem, useMessage, DataTableColumns, NRadioGroup, NRadio 
+  NBadge, NModal, NForm, NFormItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NSwitch, NInputNumber
 } from 'naive-ui'
 import { 
   SearchOutline, AddOutline, EyeOutline, ListOutline, GameControllerOutline, PricetagOutline 
@@ -198,21 +198,41 @@ const showCreateModal = ref(false)
 const createModel = reactive({
   username: '',
   display_name: '',
-  tags: ['測試帳號'] // Default to Test Account name if exists, relying on strings now
+  tags: ['測試帳號'], // Default to Test Account name if exists, relying on strings now
+  phone: '',
+  gender: undefined,
+  birthday: undefined,
+  email: '',
+  password: '',
+  vip_level: 0,
+  is_muted: false,
+  is_gift_disabled: false,
+  is_retention_active: false,
+  referrer_id: ''
 })
 
 const handleCreate = async () => {
-    if(!createModel.username || !createModel.display_name) {
+  if(!createModel.username || !createModel.display_name) {
         message.warning(t('common.fillRequired'))
         return
     }
     
     try {
-        const res = await playerApi.createPlayer({
-            username: createModel.username,
-            display_name: createModel.display_name,
-            tags: createModel.tags
-        })
+    const res = await playerApi.createPlayer({
+      username: createModel.username,
+      display_name: createModel.display_name,
+      password: createModel.password,
+      phone: createModel.phone,
+      gender: createModel.gender,
+      birthday: createModel.birthday,
+      email: createModel.email,
+      vip_level: createModel.vip_level,
+      is_muted: createModel.is_muted,
+      is_gift_disabled: createModel.is_gift_disabled,
+      is_retention_active: createModel.is_retention_active,
+      referrer_id: createModel.referrer_id,
+      tags: createModel.tags
+    })
         if(res.code === 0) {
             message.success(t('player.list.createSuccess'))
             showCreateModal.value = false
@@ -224,6 +244,12 @@ const handleCreate = async () => {
         message.error(t('player.list.createFailed'))
     }
 }
+
+const genderOptions = [
+  { label: t('player.gender.MALE'), value: 'MALE' },
+  { label: t('player.gender.FEMALE'), value: 'FEMALE' },
+  { label: t('player.gender.UNKNOWN'), value: 'UNKNOWN' }
+]
 
 onMounted(() => {
   fetchTagOptions()
@@ -313,10 +339,51 @@ onMounted(() => {
                 <NInput v-model:value="createModel.username" :placeholder="t('auth.username')" />
             </NFormItem>
             <NFormItem :label="t('player.list.displayName')" path="display_name" required>
-                <NInput v-model:value="createModel.display_name" :placeholder="t('player.list.nicknamePlaceholder')" />
+              <NInput v-model:value="createModel.display_name" :placeholder="t('player.list.nicknamePlaceholder')" />
             </NFormItem>
+
+            <NFormItem label="手機號碼">
+              <NInput v-model:value="createModel.phone" placeholder="0912xxxxxx" />
+            </NFormItem>
+
+            <NFormItem :label="t('player.list.gender')">
+              <NSelect v-model:value="createModel.gender" :options="genderOptions" clearable style="width: 140px" />
+            </NFormItem>
+
+            <NFormItem :label="t('player.list.birthday')">
+              <NDatePicker v-model:formatted-value="createModel.birthday" value-format="yyyy-MM-dd" type="date" clearable />
+            </NFormItem>
+
+            <NFormItem :label="t('player.list.email')">
+              <NInput v-model:value="createModel.email" placeholder="email@example.com" />
+            </NFormItem>
+
+            <NFormItem label="密碼">
+              <NInput v-model:value="createModel.password" type="password" show-password-on="click" placeholder="留空則系統自動產生" clearable />
+            </NFormItem>
+
+            <NFormItem :label="t('player.list.vipLevel')">
+              <NInputNumber v-model:value="createModel.vip_level" :min="0" style="width: 100%" />
+            </NFormItem>
+
+            <NFormItem label="全服禁言">
+              <NSwitch v-model:value="createModel.is_muted" />
+            </NFormItem>
+
+            <NFormItem label="禁止贈禮">
+              <NSwitch v-model:value="createModel.is_gift_disabled" />
+            </NFormItem>
+
+            <NFormItem :label="t('player.list.retentionCheck')">
+              <NSwitch v-model:value="createModel.is_retention_active" />
+            </NFormItem>
+
+            <NFormItem label="推薦人 ID">
+              <NInput v-model:value="createModel.referrer_id" placeholder="Referrer ID" />
+            </NFormItem>
+
             <NFormItem :label="t('player.list.tags')">
-                <NSelect v-model:value="createModel.tags" multiple :options="tagOptions" />
+              <NSelect v-model:value="createModel.tags" multiple :options="tagOptions" />
             </NFormItem>
         </NForm>
         <template #footer>

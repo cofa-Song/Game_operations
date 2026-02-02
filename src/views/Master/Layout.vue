@@ -21,7 +21,11 @@ import {
   SettingsOutline,
   PeopleCircleOutline,
   ShieldCheckmarkOutline,
-  ReaderOutline
+  ReaderOutline,
+  KeyOutline,
+  PhonePortraitOutline,
+  ShieldOutline,
+  BuildOutline
 } from '@vicons/ionicons5'
 import { NBreadcrumb, NBreadcrumbItem } from 'naive-ui'
 
@@ -114,6 +118,11 @@ const menuOptions = computed(() => [
         key: 'asset-logs',
         icon: renderIcon(WalletOutline)
       },
+      {
+        label: t('navigation.guildManagement'),
+        key: 'guild-management',
+        icon: renderIcon(PeopleOutline)
+      },
     ]
   },
   {
@@ -169,6 +178,55 @@ const menuOptions = computed(() => [
         icon: renderIcon(ReaderOutline)
       }
     ]
+  },
+  {
+    label: t('navigation.frontendSetting'),
+    key: 'frontend-setting',
+    icon: renderIcon(PhonePortraitOutline),
+    children: [
+      {
+        label: t('navigation.operationConfig'),
+        key: 'operation-config',
+        icon: renderIcon(BuildOutline)
+      },
+      {
+        label: t('navigation.announcement'),
+        key: 'announcement-manager',
+        icon: renderIcon(ListOutline)
+      },
+      {
+        label: '圖片管理',
+        key: 'image-config',
+        icon: renderIcon(LayersOutline)
+      },
+      {
+        label: t('navigation.articleManagement'),
+        key: 'article-manager',
+        icon: renderIcon(ReaderOutline)
+      }
+    ]
+  },
+  {
+    label: t('navigation.systemConfig'),
+    key: 'system-config',
+    icon: renderIcon(SettingsOutline),
+    children: [
+      {
+        label: t('navigation.thirdPartyKeys'),
+        key: 'thirdparty-keys',
+        icon: renderIcon(KeyOutline)
+      },
+      {
+        label: t('navigation.appVersionManager'),
+        key: 'app-versions',
+        icon: renderIcon(PhonePortraitOutline)
+      },
+      {
+        label: t('navigation.adminWhitelist'),
+        key: 'admin-whitelist',
+        icon: renderIcon(ShieldOutline)
+      }
+    ]
   }
 ])
 
@@ -185,7 +243,15 @@ const menuKeyToRoute: Record<string, string> = {
   'game-providers': '/admin/game-providers',
   'game-list': '/admin/game-list',
   'game-type-config': '/admin/game-type-config',
-  'marketing-tag-config': '/admin/marketing-tag-config'
+  'marketing-tag-config': '/admin/marketing-tag-config',
+  'thirdparty-keys': '/admin/thirdparty-keys',
+  'app-versions': '/admin/app-versions',
+  'admin-whitelist': '/admin/admin-whitelist',
+  'operation-config': '/admin/operation-config',
+  'announcement-manager': '/admin/announcements',
+  'image-config': '/admin/image-config',
+  'guild-management': '/admin/guilds',
+  'article-manager': '/admin/articles'
 }
 
 // 計算麵包屑項目

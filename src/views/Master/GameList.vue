@@ -63,7 +63,8 @@ const editForm = ref<GameUpdateRequest>({
     allowed_currencies: [],
     min_vip_level: 0,
     sort_order: 999,
-    final_rate: 100
+    final_rate: 100,
+    profit_rate: 5.0
 })
 
 const tagOptions = computed(() => [
@@ -138,6 +139,12 @@ const columns: DataTableColumns<Game> = [
         key: 'final_rate',
         width: 120,
         render: (row) => h('span', { class: row.final_rate > 100 ? 'text-green-600 font-bold' : 'font-mono' }, `${row.final_rate}%`)
+    },
+    {
+        title: t('game.list.setProfitRate'),
+        key: 'profit_rate',
+        width: 100,
+        render: (row) => h('span', { class: 'text-purple-600 font-mono font-bold' }, `${row.profit_rate.toFixed(2)}%`)
     },
     {
         title: t('game.list.enable'),
@@ -291,7 +298,8 @@ const handleEdit = (game: Game) => {
         allowed_currencies: game.allowed_currencies,
         min_vip_level: game.min_vip_level,
         sort_order: game.sort_order,
-        final_rate: game.final_rate
+        final_rate: game.final_rate,
+        profit_rate: game.profit_rate
     }
     showEditModal.value = true
 }
@@ -418,6 +426,11 @@ const handleSubmit = async () => {
                 </NFormItem>
                 <NFormItem :label="t('game.list.effectiveTurnoverRate')">
                     <NInputNumber v-model:value="editForm.final_rate" :min="0" :max="1000" style="width: 100%">
+                        <template #suffix>%</template>
+                    </NInputNumber>
+                </NFormItem>
+                <NFormItem :label="t('game.list.profitRate')">
+                    <NInputNumber v-model:value="editForm.profit_rate" :min="0" :max="100" style="width: 100%">
                         <template #suffix>%</template>
                     </NInputNumber>
                 </NFormItem>

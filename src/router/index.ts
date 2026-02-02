@@ -95,6 +95,58 @@ const masterRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/Master/MarketingTagConfig.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
       }
+      ,
+      {
+        path: 'thirdparty-keys',
+        name: 'ThirdPartyKeys',
+        component: () => import('@/views/Master/ThirdPartyKeys.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      }
+      ,
+      {
+        path: 'app-versions',
+        name: 'AppVersionManager',
+        component: () => import('@/views/Master/AppVersionManager.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      }
+      ,
+      {
+        path: 'admin-whitelist',
+        name: 'AdminWhitelist',
+        component: () => import('@/views/Master/AdminWhitelist.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      }
+      ,
+      {
+        path: 'operation-config',
+        name: 'OperationConfig',
+        component: () => import('@/views/Master/OperationConfig.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      },
+      {
+        path: 'announcements',
+        name: 'AnnouncementManager',
+        component: () => import('@/views/Master/Announcement.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      },
+      {
+        path: 'image-config',
+        name: 'ImageConfig',
+        component: () => import('@/views/Master/ImageConfig.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      },
+      {
+        path: 'guilds',
+        name: 'GuildManagement',
+        component: () => import('@/views/Master/GuildManagement.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      },
+      {
+        path: 'articles',
+        name: 'ArticleManager',
+        component: () => import('@/views/Master/ArticleManager.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      }
     ]
   }
 ]

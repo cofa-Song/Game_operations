@@ -110,10 +110,17 @@ export const playerApi = {
             id: `P${Math.floor(Math.random() * 100000)}`,
             username: data.username,
             display_name: data.display_name,
-            phone: '',
+            phone: data.phone || '',
             status: 'ACTIVE',
-            tags: data.tags,
-            vip_level: 0,
+            tags: data.tags || [],
+            vip_level: data.vip_level || 0,
+            referrer_id: data.referrer_id,
+            gender: data.gender,
+            birthday: data.birthday,
+            email: data.email,
+            is_retention_active: data.is_retention_active,
+            is_muted: data.is_muted || false,
+            is_gift_disabled: data.is_gift_disabled || false,
             register_source: 'Admin_Manual',
             register_ip: '127.0.0.1',
             register_at: new Date().toISOString(),
@@ -124,9 +131,7 @@ export const playerApi = {
                 { type: 'GAME', currency: 'BRONZE', balance: 0 },
                 { type: 'SAFE', currency: 'GOLD', balance: 0 }
             ],
-            is_online: false,
-            is_muted: false,
-            is_gift_disabled: false
+            is_online: false
         }
         mockPlayers.unshift(newPlayer)
         return { code: 0, msg: 'success', data: newPlayer }
