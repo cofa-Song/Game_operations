@@ -5,19 +5,16 @@ import { whitelistApi } from '@/api/whitelist'
 import { WhitelistEntry, CreateWhitelistRequest } from '@/types/whitelist'
 import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSwitch, useMessage, DataTableColumns, NSpace, NTag } from 'naive-ui'
 
-const { t } = useI18n()
+useI18n()
 const message = useMessage()
 
 const items = ref<WhitelistEntry[]>([])
 const loading = ref(false)
 
-const currentIp = ref<string | null>(null)
-
 const showModal = ref(false)
 const editing = ref<WhitelistEntry | null>(null)
 
 const formModel = reactive<CreateWhitelistRequest>({ cidr: '', remark: '', enabled: true })
-const twoFa = ref('')
 
 const columns = computed<DataTableColumns<WhitelistEntry>>(() => [
   {
@@ -53,11 +50,10 @@ const columns = computed<DataTableColumns<WhitelistEntry>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 200,
+    width: 160,
     align: 'center',
     render: (row) => h(NSpace, {}, {
       default: () => [
-        h(NSwitch, { value: row.enabled, onUpdate: () => toggleEnabled(row) }),
         h(NButton, { size: 'small', onClick: () => openEdit(row) }, { default: () => '編輯' }),
         h(NButton, { size: 'small', type: 'error', onClick: () => remove(row.id) }, { default: () => '刪除' })
       ]
@@ -72,28 +68,15 @@ const load = async () => {
   loading.value = false
 }
 
-// Try to detect client IP via ipify; fallback to null
-const detectIp = async () => {
-  try {
-    const r = await fetch('https://api.ipify.org?format=json')
-    const j = await r.json()
-    currentIp.value = j.ip
-  } catch (e) {
-    currentIp.value = null
-  }
-}
-
 const openCreate = () => {
   editing.value = null
   Object.assign(formModel, { cidr: '', remark: '', enabled: true })
-  twoFa.value = ''
   showModal.value = true
 }
 
 const openEdit = (row: WhitelistEntry) => {
   editing.value = row
   Object.assign(formModel, { cidr: row.cidr, remark: row.remark, enabled: row.enabled })
-  twoFa.value = ''
   showModal.value = true
 }
 
@@ -103,14 +86,8 @@ const save = async () => {
     return
   }
 
-  // mock 2FA: require non-empty
-  if (!twoFa.value) {
-    message.warning('請輸入二階驗證')
-    return
-  }
-
   if (editing.value) {
-    const res = await whitelistApi.update(editing.value.id, formModel, currentIp || undefined)
+    const res = await whitelistApi.update(editing.value.id, formModel)
     if (res.code === 0) message.success('已更新')
     else message.error(res.msg)
   } else {
@@ -124,7 +101,7 @@ const save = async () => {
 
 const remove = async (id: string) => {
   if (!confirm('確定刪除？')) return
-  const res = await whitelistApi.remove(id, currentIp || undefined)
+  const res = await whitelistApi.remove(id)
   if (res.code === 0) {
     message.success('已刪除')
     load()
@@ -133,18 +110,7 @@ const remove = async (id: string) => {
   }
 }
 
-const toggleEnabled = async (row: WhitelistEntry) => {
-  const res = await whitelistApi.update(row.id, { enabled: !row.enabled }, currentIp || undefined)
-  if (res.code === 0) {
-    message.success('已更新狀態')
-    load()
-  } else {
-    message.error(res.msg)
-  }
-}
-
 onMounted(() => {
-  detectIp()
   load()
 })
 </script>
@@ -155,11 +121,8 @@ onMounted(() => {
       <template #header-extra>
         <div class="flex gap-2">
           <NButton type="primary" @click="openCreate">新增白名單</NButton>
-          <NButton @click="() => { if (currentIp) { formModel.cidr = currentIp; formModel.remark = 'Add my IP'; openCreate() } else { alert('無法取得本機 IP') } }">加入當前 IP</NButton>
         </div>
       </template>
-
-      <div class="mb-3">當前偵測 IP: <strong>{{ currentIp || '無法取得' }}</strong></div>
 
       <NDataTable :columns="columns" :data="items" :loading="loading" :bordered="false" :single-line="false" />
     </NCard>
@@ -174,9 +137,6 @@ onMounted(() => {
         </NFormItem>
         <NFormItem label="啟用狀態">
           <NSwitch v-model:value="formModel.enabled" />
-        </NFormItem>
-        <NFormItem label="二階驗證 (模擬)">
-          <NInput v-model:value="twoFa" placeholder="輸入二階驗證碼或密碼" />
         </NFormItem>
       </NForm>
 

@@ -6,6 +6,7 @@ const delay = (ms = 200) => new Promise(res => setTimeout(res, ms))
 
 // Very small IPv4 CIDR helper (supports single IP or a.b.c.d/n)
 function ipToInt(ip: string) {
+  if (typeof ip !== 'string') return null
   const parts = ip.split('.').map(s => parseInt(s, 10))
   if (parts.length !== 4 || parts.some(isNaN)) return null
   return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3]
