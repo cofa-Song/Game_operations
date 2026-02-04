@@ -37,8 +37,16 @@ const showStatusModal = ref(false)
 const statusModel = reactive({
   status: 'ACTIVE' as PlayerStatus,
   reason: '',
-  forceKick: false
+  forceKick: false,
+  tags: [] as string[]
 })
+const tagOptions = [
+    { label: '一般玩家 (NORMAL)', value: 'NORMAL' },
+    { label: '測試帳號 (TEST)', value: 'TEST' },
+    { label: 'VIP客戶 (VIP)', value: 'VIP' },
+    { label: '高風險 (RISK)', value: 'RISK' },
+    { label: '高價值 (HIGH_VALUE)', value: 'HIGH_VALUE' }
+]
 const statusOptions = [
   { label: '正常', value: 'ACTIVE' },
   { label: '鎖定', value: 'LOCKED' },
@@ -111,6 +119,7 @@ const submitEdit = async () => {
 const handleStatusChange = () => {
     if (!player.value) return
     statusModel.status = player.value.status
+    statusModel.tags = [...player.value.tags]
     statusModel.reason = ''
     statusModel.forceKick = false
     showStatusModal.value = true
@@ -122,13 +131,27 @@ const submitStatusChange = async () => {
         return
     }
     try {
-        const res = await playerApi.updatePlayerStatus(playerId, statusModel.status, statusModel.reason, statusModel.forceKick)
-        if (res.code === 0) {
-            message.success('狀態更新成功')
+        // Create an array of promises to execute
+        const promises = []
+        
+        // Always update status
+        promises.push(playerApi.updatePlayerStatus(playerId, statusModel.status, statusModel.reason, statusModel.forceKick))
+        
+        // Update tags if changed (simple comparison or just always update for now to keep reason sync)
+        if (JSON.stringify(statusModel.tags) !== JSON.stringify(player.value?.tags)) {
+             promises.push(playerApi.updatePlayer(playerId, { tags: statusModel.tags }, statusModel.reason))
+        }
+
+        const results = await Promise.all(promises)
+        const allSuccess = results.every(r => r.code === 0)
+
+        if (allSuccess) {
+            message.success('更新成功')
             showStatusModal.value = false
             fetchData()
         } else {
-            message.error(res.msg)
+            const errorMsg = results.find(r => r.code !== 0)?.msg || '更新失敗'
+            message.error(errorMsg)
         }
     } catch (e) {
         message.error('狀態更新失敗')
@@ -201,7 +224,9 @@ onMounted(() => {
             <NDescriptionsItem label="帳號">{{ player.username }}</NDescriptionsItem>
             <NDescriptionsItem label="手機號碼">{{ player.phone || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="VIP 等級">LV.{{ player.vip_level }}</NDescriptionsItem>
-            <NDescriptionsItem label="推薦人">{{ player.referrer_id || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem label="歸屬代理">{{ player.agent_name || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem label="歸屬玩家">{{ player.referrer_id || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem label="自身邀請碼">{{ player.invite_code || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="註冊來源">{{ player.register_source }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('player.list.gender')">{{ player.gender ? t(`player.gender.${player.gender}`) : '-' }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('player.list.birthday')">{{ player.birthday || '-' }}</NDescriptionsItem>
@@ -407,6 +432,9 @@ onMounted(() => {
              <NFormItem label="強制踢線">
                 <NSwitch v-model:value="statusModel.forceKick" />
                 <span class="ml-2 text-xs text-gray-500">若勾選，玩家將被強制登出</span>
+             </NFormItem>
+             <NFormItem label="玩家標籤">
+                 <NSelect v-model:value="statusModel.tags" multiple filterable tag :options="tagOptions" placeholder="選擇或輸入標籤" />
              </NFormItem>
              <NFormItem label="異動原因" required>
                  <NInput type="textarea" v-model:value="statusModel.reason" placeholder="請詳細說明原因..." />
