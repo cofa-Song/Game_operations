@@ -14,6 +14,7 @@
     "@vicons/material": "^0.13.0",
     "axios": "^1.6.2",
     "big.js": "^6.2.1",
+    "echarts": "^6.0.0",
     "naive-ui": "^2.36.0",
     "pinia": "^2.1.6",
     "vue": "^3.3.4",

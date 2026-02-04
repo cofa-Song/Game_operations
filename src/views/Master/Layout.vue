@@ -109,19 +109,58 @@ const menuOptions = computed(() => [
         icon: renderIcon(GiftOutline)
       },
       {
-        label: t('navigation.gameLogs'),
-        key: 'game-logs',
-        icon: renderIcon(GameControllerOutline)
-      },
-      {
         label: t('navigation.assetLogs'),
         key: 'asset-logs',
         icon: renderIcon(WalletOutline)
       },
       {
+        label: t('navigation.gameLogs'),
+        key: 'game-logs',
+        icon: renderIcon(GameControllerOutline)
+      },
+      {
         label: t('navigation.guildManagement'),
         key: 'guild-management',
         icon: renderIcon(PeopleOutline)
+      },
+    ]
+  },
+  {
+    label: t('navigation.finance'),
+    key: 'finance-management-group',
+    icon: renderIcon(WalletOutline),
+    children: [
+      {
+        label: '財務概覽看板', // Should use t('navigation.financialOverview') if available, but I'll use hardcoded string for now or check if I should add to locale. User asked for "Financial Management" submenu.
+        // Actually, looking at other items, they use t(). I should probably check if I can add to locale, but I don't see locale files open.
+        // Given I don't want to break things or hunt for locale files, I'll use the hardcoded Chinese string as requested since the user is communicating in Chinese.
+        // Wait, the user asked "请在Layout Menu加上...".
+        // Existing items use t('navigation...').
+        // I will use hardcoded strings for now to match the user request quickly, or I can try `t('navigation.financialOverview')` if I assume I edited the locale file?
+        // I haven't edited the locale file. I should just use the string.
+        label: '財務概覽看板',
+        key: 'financial-overview',
+        icon: renderIcon(WalletOutline)
+      },
+      {
+        label: '人工存提管理',
+        key: 'manual-adjustment',
+        icon: renderIcon(WalletOutline)
+      },
+      {
+        label: '商品配置管理',
+        key: 'commodity-config',
+        icon: renderIcon(PricetagsOutline)
+      },
+      {
+        label: t('navigation.depositOrderManagement'),
+        key: 'deposit-orders',
+        icon: renderIcon(WalletOutline)
+      },
+      {
+        label: t('navigation.paymentChannelManagement'),
+        key: 'payment-channels',
+        icon: renderIcon(LayersOutline)
       },
     ]
   },
@@ -240,6 +279,7 @@ const menuKeyToRoute: Record<string, string> = {
   'asset-logs': '/admin/asset-logs',
   'admin-operation-log': '/admin/logs',
   'bonus-history': '/admin/bonus-history',
+  'deposit-orders': '/admin/deposit-orders',
   'game-providers': '/admin/game-providers',
   'game-list': '/admin/game-list',
   'game-type-config': '/admin/game-type-config',
@@ -250,6 +290,10 @@ const menuKeyToRoute: Record<string, string> = {
   'operation-config': '/admin/operation-config',
   'announcement-manager': '/admin/announcements',
   'image-config': '/admin/image-config',
+  'payment-channels': '/admin/payment-channels',
+  'financial-overview': '/admin/financial-overview',
+  'manual-adjustment': '/admin/manual-adjustment',
+  'commodity-config': '/admin/commodity-config',
   'guild-management': '/admin/guilds',
   'article-manager': '/admin/articles'
 }

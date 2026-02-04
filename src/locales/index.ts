@@ -131,6 +131,8 @@ export const zhTW = {
     playerOperationLog: '玩家異動日誌',
     financeManagement: '帳務管理',
     bonusHistory: '獎勵卡歷史紀錄',
+    depositOrderManagement: '儲值訂單',
+    paymentChannelManagement: '金流通道',
     gameManagement: '遊戲管理',
     gameProviders: '廠商管理',
     gameList: '遊戲列表',
@@ -407,6 +409,53 @@ export const zhTW = {
     code_3002: '超出單注限額',
     code_4001: '日期範圍無效或過長',
     code_5000: '系統繁忙'
+  },
+  finance: {
+    paymentChannel: {
+      title: '金流通道管理',
+      name: '通道顯示名稱',
+      provider: '金流供應商',
+      type: '通道類型',
+      status: '通道狀態',
+      limitRange: '單筆限額',
+      dailyLimit: '每日總額上限',
+      dailyAccomplished: '今日累計金額',
+      vipLevel: '開放 VIP 等級',
+      vipLevelShort: 'VIP {level} 以上',
+      auditMask: '審核遮蔽',
+      sort: '排序',
+      addChannel: '新增金流通道',
+      editChannel: '編輯金流通道',
+      resetConfirm: '確定重置今日累計額度？此舉將重新啟動熔斷的通道。',
+      saveReason: '異動原因',
+      accessOperation: '存取操作',
+      saveConfirm: '確定要存取狀態變更?',
+      platforms: '適用平台',
+      status_fused: '額度熔斷',
+      deleteConfirm: '確定要刪除通道?',
+      apiConfig: 'API 參數配置',
+      riskStrategy: '風控與額度',
+      trafficControl: '顯示與投放控制',
+      merchantId: '商戶 ID (Merchant ID)',
+      merchantPlaceholder: '特店帳號 / 商戶唯一識別碼',
+      appId: 'App ID / API Key',
+      appIdPlaceholder: '身分識別金鑰',
+      secretKey: 'Secret Key / 加密金鑰',
+      secretKeyPlaceholder: '用於簽名驗證的敏感金鑰',
+      notifyUrl: 'Notify URL (Webhook)',
+      notifyUrlPlaceholder: '異步回調通知網址',
+      platformOptions: {
+        ios: 'iOS APP',
+        android: 'Android APP',
+        web: '桌面網頁 (Web)',
+        mobileWeb: '手機網頁 (H5)'
+      },
+      typeOptions: {
+        iap: 'IAP (內購)',
+        web_redirect: 'Web-Redirect (網頁跳轉)',
+        manual: 'Manual (手動轉帳)'
+      }
+    }
   }
 }
 
@@ -527,6 +576,8 @@ export const zhCN = {
     playerOperationLog: '玩家异动日志',
     financeManagement: '账务管理',
     bonusHistory: '奖励卡历史纪录',
+    depositOrderManagement: '储值订单',
+    paymentChannelManagement: '金流通道',
     gameManagement: '游戏管理',
     gameProviders: '厂商管理',
     gameList: '游戏列表',
@@ -784,6 +835,53 @@ export const zhCN = {
     code_3002: '超出单注限额',
     code_4001: '日期范围无效或过长',
     code_5000: '系统繁忙'
+  },
+  finance: {
+    paymentChannel: {
+      title: '金流通道管理',
+      name: '通道显示名称',
+      provider: '金流供应商',
+      type: '通道类型',
+      status: '通道状态',
+      limitRange: '单笔限额',
+      dailyLimit: '每日总额上限',
+      dailyAccomplished: '今日累计金额',
+      vipLevel: '开放 VIP 等级',
+      vipLevelShort: 'VIP {level} 以上',
+      auditMask: '审核遮蔽',
+      sort: '排序',
+      addChannel: '新增金流通道',
+      editChannel: '编辑金流通道',
+      resetConfirm: '确定重置今日累计额度？此举将重新启动熔断的通道。',
+      saveReason: '异动原因',
+      accessOperation: '存取操作',
+      saveConfirm: '确定要存取状态变更?',
+      platforms: '适用平台',
+      status_fused: '额度熔断',
+      deleteConfirm: '确定要删除通道?',
+      apiConfig: 'API 参数配置',
+      riskStrategy: '风控与额度',
+      trafficControl: '显示与投放控制',
+      merchantId: '商户 ID (Merchant ID)',
+      merchantPlaceholder: '特店账号 / 商户唯一识别码',
+      appId: 'App ID / API Key',
+      appIdPlaceholder: '身份识别金钥',
+      secretKey: 'Secret Key / 加密金钥',
+      secretKeyPlaceholder: '用于签名验证的敏感金钥',
+      notifyUrl: 'Notify URL (Webhook)',
+      notifyUrlPlaceholder: '异步回调通知网址',
+      platformOptions: {
+        ios: 'iOS APP',
+        android: 'Android APP',
+        web: '桌面网页 (Web)',
+        mobileWeb: '手机网页 (H5)'
+      },
+      typeOptions: {
+        iap: 'IAP (内购)',
+        web_redirect: 'Web-Redirect (网页跳转)',
+        manual: 'Manual (手动转账)'
+      }
+    }
   }
 }
 
@@ -904,6 +1002,8 @@ export const en = {
     playerOperationLog: 'Player Operation Logs',
     financeManagement: 'Finance Management',
     bonusHistory: 'Bonus Card History',
+    depositOrderManagement: 'Deposit Orders',
+    paymentChannelManagement: 'Payment Channels',
     gameManagement: 'Game Management',
     gameProviders: 'Provider Management',
     gameList: 'Game List',
@@ -1158,5 +1258,52 @@ export const en = {
     code_3002: 'Bet limit exceeded',
     code_4001: 'Invalid date range',
     code_5000: 'System busy'
+  },
+  finance: {
+    paymentChannel: {
+      title: 'Payment Channel Management',
+      name: 'Display Name',
+      provider: 'Provider',
+      type: 'Channel Type',
+      status: 'Status',
+      limitRange: 'Transaction Limit',
+      dailyLimit: 'Daily Limit',
+      dailyAccomplished: 'Today\'s Total',
+      vipLevel: 'VIP Permission',
+      vipLevelShort: 'VIP {level}+',
+      auditMask: 'Audit Mask',
+      sort: 'Sort',
+      addChannel: 'Add Channel',
+      editChannel: 'Edit Channel',
+      resetConfirm: 'Are you sure to reset today\'s total limit? This will restart fused channels.',
+      saveReason: 'Change Reason',
+      accessOperation: 'Access Operation',
+      saveConfirm: 'Confirm to save state changes?',
+      platforms: 'Platforms',
+      status_fused: 'Quota Fused',
+      deleteConfirm: 'Are you sure to delete this channel?',
+      apiConfig: 'API Configuration',
+      riskStrategy: 'Risk & Strategy',
+      trafficControl: 'Traffic Control',
+      merchantId: 'Merchant ID',
+      merchantPlaceholder: 'Unique Merchant Identifier',
+      appId: 'App ID / API Key',
+      appIdPlaceholder: 'Public Access Identity',
+      secretKey: 'Secret Key / Token',
+      secretKeyPlaceholder: 'Private Key for Signature',
+      notifyUrl: 'Notify URL (Webhook)',
+      notifyUrlPlaceholder: 'Callback Notification URL',
+      platformOptions: {
+        ios: 'iOS APP',
+        android: 'Android APP',
+        web: 'Desktop Web',
+        mobileWeb: 'Mobile H5'
+      },
+      typeOptions: {
+        iap: 'IAP (In-App)',
+        web_redirect: 'Web-Redirect',
+        manual: 'Manual Transfer'
+      }
+    }
   }
 }

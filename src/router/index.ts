@@ -16,6 +16,12 @@ const masterRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/Master/PersonalAccount.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'], breadcrumb: '首頁' }
       },
+      {
+        path: 'financial-overview',
+        name: 'FinancialOverview',
+        component: () => import('@/views/Master/FinancialOverview.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '財務概覽' }
+      },
 
       {
         path: 'account',
@@ -70,6 +76,18 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'BonusHistory',
         component: () => import('@/views/Master/BonusHistory.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'] }
+      },
+      {
+        path: 'deposit-orders',
+        name: 'DepositOrders',
+        component: () => import('@/views/Master/DepositOrders.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'], breadcrumb: '儲值訂單管理' }
+      },
+      {
+        path: 'payment-channels',
+        name: 'PaymentChannels',
+        component: () => import('@/views/Master/PaymentChannels.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '金流通道管理' }
       },
       {
         path: 'game-providers',
@@ -146,6 +164,18 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'ArticleManager',
         component: () => import('@/views/Master/ArticleManager.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      },
+      {
+        path: 'manual-adjustment',
+        name: 'ManualAdjustment',
+        component: () => import('@/views/Master/ManualAdjustment.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '人工存提' }
+      },
+      {
+        path: 'commodity-config',
+        name: 'CommodityConfig',
+        component: () => import('@/views/Master/CommodityConfig.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '商品配置' }
       }
     ]
   }
