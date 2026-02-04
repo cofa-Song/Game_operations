@@ -63,7 +63,11 @@
                            <n-form-item label="主圖 URL" path="imageUrl">
                                <n-input v-model:value="formModel.imageUrl" placeholder="輸入圖片 URL" />
                                <div class="preview-box" v-if="formModel.imageUrl">
-                                   <img :src="formModel.imageUrl" class="preview-img" />
+                                   <img 
+                                        :src="formModel.imageUrl" 
+                                        class="preview-img" 
+                                        @error="(e) => (e.target as HTMLImageElement).src = placeholderImg" 
+                                   />
                                    <img v-if="selectedBadgeUrl" :src="selectedBadgeUrl" class="badge-overlay" />
                                </div>
                            </n-form-item>
@@ -163,17 +167,13 @@
                                />
                            </n-form-item>
 
-                           <n-form-item label="可見 VIP 等級">
-                               <n-checkbox-group v-model:value="formModel.vipLevels">
-                                   <n-space>
-                                       <n-checkbox :value="0" label="VIP 0" />
-                                       <n-checkbox :value="1" label="VIP 1" />
-                                       <n-checkbox :value="2" label="VIP 2" />
-                                       <n-checkbox :value="3" label="VIP 3" />
-                                       <n-checkbox :value="4" label="VIP 4" />
-                                       <n-checkbox :value="5" label="VIP 5" />
-                                   </n-space>
-                               </n-checkbox-group>
+                           <n-form-item label="最低 VIP 等級限制">
+                               <n-select 
+                                    v-model:value="vipThreshold" 
+                                    :options="vipOptions" 
+                                    placeholder="選擇最低可見 VIP 等級" 
+                               />
+                               <n-text depth="3" class="tip">選擇等級後，該等級及其以上之玩家皆可看到並購買此商品。</n-text>
                            </n-form-item>
                         </n-tab-pane>
                     </n-tabs>
@@ -192,10 +192,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, h } from 'vue'
-import { useMessage, useDialog, NTag, NButton, NSpace, NSwitch, FormInst, FormRules, NCard, NDataTable, NModal, NForm, NFormItem, NInput, NDrawer, NDrawerContent, NTabs, NTabPane, NRadioGroup, NRadioButton, NRadio, NInputNumber, NDatePicker, NCheckboxGroup, NCheckbox, NDynamicTags, NText, NAlert, NSelect, NIcon } from 'naive-ui'
-import { Add as AddIcon } from '@vicons/ionicons5'
+import { useMessage, useDialog, NTag, NButton, NSpace, NSwitch, FormInst, FormRules, NCard, NDataTable, NModal, NForm, NFormItem, NInput, NDrawer, NDrawerContent, NTabs, NTabPane, NRadioGroup, NRadioButton, NRadio, NInputNumber, NDatePicker, NDynamicTags, NText, NAlert, NSelect, NIcon } from 'naive-ui'
 import { commodityApi, Commodity } from '@/api/commodity'
 import { badgeApi, MarketingBadge } from '@/api/badge'
+import placeholderImg from '@/assets/commodity_placeholder.png'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -219,6 +219,8 @@ const formRef = ref<FormInst | null>(null)
 const dateRange = ref<[number, number] | null>(null)
 const tempItems = ref<string[]>([]) // Mock for item IDs
 const iosTierWarning = ref(false)
+const vipThreshold = ref(0)
+const vipOptions = Array.from({ length: 11 }, (_, i) => ({ label: `VIP ${i} 及以上`, value: i }))
 
 const formModel = reactive<Commodity>({
     id: '',
@@ -245,7 +247,14 @@ const columns = [
         key: 'imageUrl',
         width: 80,
         render(row: Commodity) {
-            return h('img', { src: row.imageUrl, style: 'width: 40px; height: 40px; object-fit: cover; border-radius: 4px;' })
+            return h('img', { 
+                src: row.imageUrl, 
+                style: 'width: 40px; height: 40px; object-fit: cover; border-radius: 4px;',
+                onError: (e: Event) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = placeholderImg
+                }
+            })
         }
     },
     { title: '商品 ID', key: 'id', width: 120 },
@@ -407,10 +416,19 @@ const openEditDrawer = (row: Commodity | null) => {
         formModel.ios = { isEnabled: false, price: 0, productId: '' }
         formModel.android = { isEnabled: false, price: 0, productId: '' }
         formModel.limitRule = 'NONE' // Default
-        formModel.vipLevels = [0, 1, 2, 3]
+        formModel.vipLevels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        vipThreshold.value = 0
         tempItems.value = []
         dateRange.value = null
     }
+    
+    // Sync single select threshold from array
+    if (formModel.vipLevels && formModel.vipLevels.length > 0) {
+        vipThreshold.value = Math.min(...formModel.vipLevels)
+    } else {
+        vipThreshold.value = 0
+    }
+    
     showDrawer.value = true
 }
 
@@ -438,6 +456,13 @@ const handleSubmit = async () => {
             }
             // Processing Items (Mock)
             formModel.items = tempItems.value.map(tid => ({ id: tid, name: 'Item'+tid, count: 1 }))
+
+            // Processing VIP Levels (Threshold to Array)
+            const levels = []
+            for (let i = vipThreshold.value; i <= 10; i++) {
+                levels.push(i)
+            }
+            formModel.vipLevels = levels
 
             submitting.value = true
             try {

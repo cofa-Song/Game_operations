@@ -258,16 +258,20 @@ const updateCharts = () => {
     if (depositChart) {
         depositChart.setOption({
             tooltip: { trigger: 'item' },
-            legend: { show: false },
+            legend: { bottom: '0%' },
             series: [{
                 name: '入金渠道',
                 type: 'pie',
-                radius: ['40%', '70%'],
+                radius: '55%',
                 avoidLabelOverlap: false,
-                itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-                label: { show: false },
-                emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
-                data: stats.value.channelStats
+                data: stats.value.channelStats,
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
             }]
         })
     }
@@ -275,16 +279,20 @@ const updateCharts = () => {
     if (withdrawChart) {
         withdrawChart.setOption({
             tooltip: { trigger: 'item' },
-            legend: { show: false },
+            legend: { bottom: '0%' },
             series: [{
                 name: '出金渠道',
                 type: 'pie',
-                radius: ['40%', '70%'],
+                radius: '55%',
                 avoidLabelOverlap: false,
-                itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-                label: { show: false },
-                emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
-                data: stats.value.withdrawChannelStats
+                data: stats.value.withdrawChannelStats,
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
             }]
         })
     }
@@ -292,20 +300,24 @@ const updateCharts = () => {
     if (distributionChart) {
         distributionChart.setOption({
             tooltip: { trigger: 'item' },
-            legend: { show: false },
+            legend: { bottom: '0%' },
             series: [{
                 name: '派發結構',
                 type: 'pie',
-                radius: ['40%', '70%'],
+                radius: '55%',
                 avoidLabelOverlap: false,
-                itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
-                label: { show: false },
-                emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
                 data: [
                     { value: stats.value.totalRecovery, name: '總回收' },
                     { value: stats.value.totalConversion, name: '總轉換' },
                     { value: stats.value.totalInProgress, name: '進行中' }
-                ]
+                ],
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
             }]
         })
     }

@@ -81,6 +81,22 @@
         轉讓後原會長將降為普通成員，新會長將獲得所有公會管理權限。
       </n-text>
     </n-modal>
+
+    <!-- Members List Modal -->
+    <n-modal
+      v-model:show="showMembersModal"
+      preset="card"
+      :title="`公會成員名單 - ${selectedGuildName}`"
+      style="width: 850px"
+    >
+      <n-data-table
+        :columns="membersColumns"
+        :data="membersData"
+        :loading="membersLoading"
+        :pagination="{ pageSize: 10 }"
+        max-height="500px"
+      />
+    </n-modal>
   </div>
 </template>
 
@@ -90,10 +106,10 @@ import {
   NSpace, NCard, NForm, NFormItem, NInput, NInputNumber, NButton, 
   NDataTable, NTag, NIcon, NText, NModal, useMessage, useDialog 
 } from 'naive-ui'
-import { SearchOutline } from '@vicons/ionicons5'
 import { guildApi } from '@/api/guild'
-import { Guild, GuildGlobalConfig } from '@/types/guild'
+import { Guild, GuildGlobalConfig, GuildMember } from '@/types/guild'
 import type { DataTableColumns } from 'naive-ui'
+import { SearchOutline, PeopleOutline } from '@vicons/ionicons5'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -172,6 +188,10 @@ const columns: DataTableColumns<Guild> = [
     render: (row) => {
       return h(NSpace, {}, {
         default: () => [
+          h(NButton, { size: 'small', quaternary: true, type: 'primary', onClick: () => handleShowMembers(row) }, { 
+            icon: () => h(NIcon, null, { default: () => h(PeopleOutline) }),
+            default: () => '成員名單' 
+          }),
           h(NButton, { size: 'small', onClick: () => handleMute(row) }, { default: () => '禁言' }),
           h(NButton, { size: 'small', type: 'error', onClick: () => handleDissolve(row) }, { default: () => '解散' }),
           h(NButton, { size: 'small', type: 'warning', onClick: () => handleTransfer(row) }, { default: () => '轉讓' })
@@ -248,14 +268,55 @@ const handleTransfer = (guild: Guild) => {
 }
 
 const confirmTransfer = async () => {
-  if (!newLeaderId.value) {
-    message.warning('請輸入新會長 ID')
-    return false
-  }
-  await guildApi.transferLeader(selectedGuildId.value, newLeaderId.value)
-  message.success('職位轉讓完成')
-  fetchData()
-  return true
+    if (!newLeaderId.value) {
+        message.warning('請輸入新會長 ID')
+        return false
+    }
+    await guildApi.transferLeader(selectedGuildId.value, newLeaderId.value)
+    message.success('職位轉讓完成')
+    fetchData()
+    return true
+}
+
+// Members Modal
+const showMembersModal = ref(false)
+const membersLoading = ref(false)
+const membersData = ref<GuildMember[]>([])
+const selectedGuildName = ref('')
+
+const membersColumns: DataTableColumns<GuildMember> = [
+    { 
+        title: '玩家 ID', 
+        key: 'player_id',
+        render: (row) => h(NButton, { text: true, type: 'primary', onClick: () => window.open(`/admin/players/${row.player_id}`) }, { default: () => row.player_id })
+    },
+    { title: '使用者名稱', key: 'username' },
+    { 
+        title: '職位', 
+        key: 'rank',
+        render: (row) => {
+            const typeMap = { LEADER: 'error', ELDER: 'warning', MEMBER: 'default' }
+            const labelMap = { LEADER: '會長', ELDER: '長老', MEMBER: '成員' }
+            return h(NTag, { size: 'small', type: typeMap[row.rank] as any }, { default: () => labelMap[row.rank] })
+        }
+    },
+    { title: '累積貢獻', key: 'total_contribution', render: (row) => row.total_contribution.toLocaleString() },
+    { title: '加入時間', key: 'join_time' },
+    { title: '最後在線', key: 'last_active' }
+]
+
+const handleShowMembers = async (guild: Guild) => {
+    selectedGuildName.value = guild.name
+    showMembersModal.value = true
+    membersLoading.value = true
+    try {
+        const res = await guildApi.getMembers(guild.id)
+        if (res.code === 0 && res.data) {
+            membersData.value = res.data
+        }
+    } finally {
+        membersLoading.value = false
+    }
 }
 
 onMounted(() => {

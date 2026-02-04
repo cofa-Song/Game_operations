@@ -12,7 +12,7 @@ import * as echarts from 'echarts'
 import { depositOrderApi } from '@/api/depositOrder'
 import { DepositOrder, DepositStats, TrendPoint, OrderLogEntry, OrderStatus, PaymentChannel } from '@/types/depositOrder'
 
-useI18n()
+const { t } = useI18n()
 const message = useMessage()
 
 // 狀態定義
@@ -40,13 +40,13 @@ const searchForm = reactive({
 })
 
 const statusOptions = [
-  { label: '待處理', value: 'PENDING' },
-  { label: '成功', value: 'SUCCESS' },
-  { label: '失敗', value: 'FAILED' },
-  { label: '已過期', value: 'EXPIRED' },
-  { label: '人工補單', value: 'MANUAL' },
-  { label: '已退款', value: 'REFUNDED' },
-  { label: '驗證異常', value: 'VERIFY_ERROR' }
+  { label: t('finance.depositOrder.status.PENDING'), value: 'PENDING' },
+  { label: t('finance.depositOrder.status.SUCCESS'), value: 'SUCCESS' },
+  { label: t('finance.depositOrder.status.FAILED'), value: 'FAILED' },
+  { label: t('finance.depositOrder.status.EXPIRED'), value: 'EXPIRED' },
+  { label: t('finance.depositOrder.status.MANUAL'), value: 'MANUAL' },
+  { label: t('finance.depositOrder.status.REFUNDED'), value: 'REFUNDED' },
+  { label: t('finance.depositOrder.status.VERIFY_ERROR'), value: 'VERIFY_ERROR' }
 ]
 
 const channelOptions = [
@@ -71,7 +71,7 @@ const logLoading = ref(false)
 
 const columns: DataTableColumns<DepositOrder> = [
   {
-    title: '訂單資訊',
+    title: () => t('finance.depositOrder.table.orderInfo'),
     key: 'id',
     render: (row) => h('div', { class: 'order-cell' }, [
       h('div', { class: 'order-id font-mono font-bold text-cyan-400' }, row.id),
@@ -79,7 +79,7 @@ const columns: DataTableColumns<DepositOrder> = [
     ])
   },
   {
-    title: '玩家 ID',
+    title: () => t('finance.depositOrder.table.playerId'),
     key: 'playerId',
     render: (row) => h('div', [
       h('div', { class: 'font-bold' }, row.playerId),
@@ -87,7 +87,7 @@ const columns: DataTableColumns<DepositOrder> = [
     ])
   },
   {
-    title: '商品 / 渠道',
+    title: () => t('finance.depositOrder.table.productChannel'),
     key: 'channel',
     render: (row) => h('div', [
       h(NTag, { size: 'small', type: 'info', bordered: false, class: 'glow-tag-blue' }, { default: () => row.channel }),
@@ -95,21 +95,21 @@ const columns: DataTableColumns<DepositOrder> = [
     ])
   },
   {
-    title: '金額明細',
+    title: () => t('finance.depositOrder.table.amount'),
     key: 'amount',
     render: (row) => h('div', { class: 'amount-stack' }, [
       h('div', { class: 'flex justify-between items-center w-32 mb-1' }, [
-        h('span', { class: 'text-[10px] text-gray-400' }, '申請:'),
+        h('span', { class: 'text-[10px] text-gray-400' }, `${t('finance.depositOrder.table.applied')}:`),
         h('span', { class: 'font-mono text-gray-300' }, row.amount.toLocaleString())
       ]),
       h('div', { class: 'flex justify-between items-center w-32 border-t border-gray-100/10 pt-1' }, [
-        h('span', { class: 'text-[10px] text-green-400 font-bold' }, '實收:'),
+        h('span', { class: 'text-[10px] text-green-400 font-bold' }, `${t('finance.depositOrder.table.actual')}:`),
         h('span', { class: 'font-mono text-green-400 font-bold text-sm' }, row.netAmount.toLocaleString())
       ])
     ])
   },
   {
-    title: '狀態',
+    title: () => t('finance.depositOrder.table.status'),
     key: 'status',
     render: (row) => h(NTag, { 
       type: getStatusType(row.status),
@@ -119,19 +119,19 @@ const columns: DataTableColumns<DepositOrder> = [
     }, { default: () => getStatusLabel(row.status) })
   },
   {
-    title: '建立時間',
+    title: () => t('finance.depositOrder.table.time'),
     key: 'createdAt',
     render: (row) => h('div', { class: 'text-xs text-gray-400 font-mono' }, new Date(row.createdAt).toLocaleString())
   },
   {
-    title: '維護操作',
+    title: () => t('finance.depositOrder.table.actions'),
     key: 'actions',
     align: 'center',
     render: (row) => h(NSpace, { justify: 'center', size: 'small' }, {
       default: () => [
-        row.status === 'PENDING' ? h(NButton, { size: 'tiny', ghost: true, type: 'info', onClick: () => handleSync(row.id) }, { default: () => '同步' }) : null,
-        row.status === 'PENDING' || row.status === 'FAILED' ? h(NButton, { size: 'tiny', type: 'info', dashed: true, onClick: () => openManual(row.id) }, { default: () => '補單' }) : null,
-        h(NButton, { size: 'tiny', tertiary: true, onClick: () => openLogs(row.id) }, { default: () => '日誌' })
+        row.status === 'PENDING' ? h(NButton, { size: 'tiny', ghost: true, type: 'info', onClick: () => handleSync(row.id) }, { default: () => t('finance.depositOrder.actions.sync') }) : null,
+        row.status === 'PENDING' || row.status === 'FAILED' ? h(NButton, { size: 'tiny', type: 'info', dashed: true, onClick: () => openManual(row.id) }, { default: () => t('finance.depositOrder.actions.manual') }) : null,
+        h(NButton, { size: 'tiny', tertiary: true, onClick: () => openLogs(row.id) }, { default: () => t('finance.depositOrder.actions.logs') })
       ]
     })
   }
@@ -185,12 +185,18 @@ let trendChart: echarts.ECharts | null = null
 const renderDonuts = () => {
   const commonPie = {
     type: 'pie',
-    radius: ['55%', '85%'],
+    radius: '55%',
     avoidLabelOverlap: true,
-    itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+    itemStyle: { borderRadius: 0 },
     label: { show: true, position: 'outside', color: '#64748b', formatter: '{b}:\n{d}%', fontSize: 10 },
     labelLine: { lineStyle: { color: 'rgba(0,0,0,0.1)' } },
-    emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } }
+    emphasis: {
+      itemStyle: {
+        shadowBlur: 10,
+        shadowOffsetX: 0,
+        shadowColor: 'rgba(0, 0, 0, 0.5)'
+      }
+    }
   }
 
   if (channelDonutRef.value && stats.value) {
@@ -199,7 +205,7 @@ const renderDonuts = () => {
       backgroundColor: 'transparent',
       tooltip: { trigger: 'item', backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: '#e2e8f0', textStyle: { color: '#0f172a' } },
       color: ['#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#10b981'],
-      series: [{ ...commonPie, name: '渠道', data: stats.value.channelDonut }]
+      series: [{ ...commonPie, name: t('finance.depositOrder.charts.segment'), data: stats.value.channelDonut }]
     })
   }
   if (statusDonutRef.value && stats.value) {
@@ -208,7 +214,7 @@ const renderDonuts = () => {
       backgroundColor: 'transparent',
       tooltip: { trigger: 'item', backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: '#e2e8f0', textStyle: { color: '#0f172a' } },
       color: ['#f59e0b', '#10b981', '#ef4444', '#64748b', '#3b82f6', '#8b5cf6'],
-      series: [{ ...commonPie, name: '狀態', data: stats.value.statusDonut }]
+      series: [{ ...commonPie, name: t('finance.depositOrder.charts.status'), data: stats.value.statusDonut }]
     })
   }
 }
@@ -225,7 +231,7 @@ const renderTrend = () => {
         textStyle: { color: '#0f172a' },
         axisPointer: { type: 'line', lineStyle: { color: '#e2e8f0', type: 'dashed' } }
       },
-      legend: { data: ['成功金額', '訂單總數', '失敗數'], textStyle: { color: '#64748b' }, top: 0 },
+      legend: { data: [t('finance.depositOrder.charts.successAmount'), t('finance.depositOrder.charts.totalOrders'), t('finance.depositOrder.charts.failedCount')], textStyle: { color: '#64748b' }, top: 0 },
       grid: { left: '3%', right: '4%', bottom: '5%', containLabel: true },
       xAxis: { 
         type: 'category', 
@@ -235,17 +241,17 @@ const renderTrend = () => {
       },
       yAxis: [
         { type: 'value', name: 'TWD', axisLine: { show: false }, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
-        { type: 'value', name: '筆數', axisLine: { show: false }, axisLabel: { color: '#64748b' }, splitLine: { show: false } }
+        { type: 'value', name: t('finance.depositOrder.stats.orderCount').slice(-2), axisLine: { show: false }, axisLabel: { color: '#64748b' }, splitLine: { show: false } }
       ],
       series: [
         {
-          name: '成功金額', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
+          name: t('finance.depositOrder.charts.successAmount'), type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
           itemStyle: { color: '#10b981' },
           areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(16, 185, 129, 0.1)' }, { offset: 1, color: 'rgba(16, 185, 129, 0)' }]) },
           data: trendData.value.map(p => p.successAmount)
         },
         {
-          name: '訂單總數', type: 'bar', yAxisIndex: 1, barWidth: '30%',
+          name: t('finance.depositOrder.charts.totalOrders'), type: 'bar', yAxisIndex: 1, barWidth: '30%',
           itemStyle: { 
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: 'rgba(59, 130, 246, 0.1)' }]),
             borderRadius: [4, 4, 0, 0]
@@ -253,7 +259,7 @@ const renderTrend = () => {
           data: trendData.value.map(p => p.totalCount)
         },
         {
-          name: '失敗數', type: 'line', color: '#ef4444', yAxisIndex: 1, smooth: true,
+          name: t('finance.depositOrder.charts.failedCount'), type: 'line', color: '#ef4444', yAxisIndex: 1, smooth: true,
           lineStyle: { width: 2, type: 'dotted' },
           data: trendData.value.map(p => p.failedCount)
         }
@@ -277,9 +283,9 @@ const openManual = (id: string) => {
 }
 
 const submitManual = async () => {
-  if (!manualForm.externalId || manualForm.actualAmount <= 0) { message.warning('請填寫完整資訊'); return; }
+  if (!manualForm.externalId || manualForm.actualAmount <= 0) { message.warning(t('common.fillRequired')); return; }
   const res = await depositOrderApi.manualComplete(currentOrderForManual.value!, manualForm)
-  if (res.code === 0) { message.success('補單成功'); showManualModal.value = false; loadData(); }
+  if (res.code === 0) { message.success(t('common.success')); showManualModal.value = false; loadData(); }
 }
 
 const openLogs = async (id: string) => {
@@ -307,7 +313,7 @@ onMounted(() => {
           <div class="tech-card p-5 group hover:shadow-xl transition-all duration-300">
             <div class="flex items-start justify-between">
               <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">Successful Deposit</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">{{ $t('finance.depositOrder.stats.successDeposit') }}</div>
                 <div class="text-3xl font-mono font-bold text-slate-800 tracking-tighter flex items-end gap-1">
                   <span class="text-lg text-blue-500">¥</span>
                   {{ (stats?.totalAmount || 0).toLocaleString() }}
@@ -324,7 +330,7 @@ onMounted(() => {
           <div class="tech-card p-5 group hover:shadow-xl transition-all duration-300">
             <div class="flex items-start justify-between">
               <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">Total Fees Pais</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">{{ $t('finance.depositOrder.stats.totalFees') }}</div>
                 <div class="text-3xl font-mono font-bold text-slate-800 tracking-tighter flex items-end gap-1">
                   <span class="text-lg text-indigo-500">¥</span>
                   {{ (stats?.totalFee || 0).toLocaleString() }}
@@ -333,7 +339,7 @@ onMounted(() => {
               <div class="p-2 bg-indigo-50 rounded-lg text-indigo-500 shadow-sm"><NIcon size="24"><FlashOutline /></NIcon></div>
             </div>
             <div class="mt-2 text-xs text-slate-500 font-mono">
-              COST RATIO: <span class="font-bold text-indigo-600">{{ stats ? (stats.totalFee / stats.totalAmount * 100).toFixed(2) : 0 }}%</span>
+              {{ $t('finance.depositOrder.stats.costRatio') }}: <span class="font-bold text-indigo-600">{{ stats ? (stats.totalFee / stats.totalAmount * 100).toFixed(2) : 0 }}%</span>
             </div>
           </div>
         </NGridItem>
@@ -341,7 +347,7 @@ onMounted(() => {
           <div class="tech-card p-5 group hover:shadow-xl transition-all duration-300">
             <div class="flex items-start justify-between">
               <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">Order Count</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">{{ $t('finance.depositOrder.stats.orderCount') }}</div>
                 <div class="text-3xl font-mono font-bold text-slate-800 tracking-tighter flex items-end gap-1">
                   {{ (stats?.totalCount || 0).toLocaleString() }}
                   <span class="text-xs text-slate-400 pb-1 font-normal italic">PCS</span>
@@ -350,7 +356,7 @@ onMounted(() => {
               <div class="p-2 bg-emerald-50 rounded-lg text-emerald-500 shadow-sm"><NIcon size="24"><PieChartOutline /></NIcon></div>
             </div>
             <div class="mt-2 text-[10px] text-slate-400 flex justify-between uppercase font-bold">
-              <span>SYNC STATUS</span>
+              <span>{{ $t('finance.depositOrder.stats.syncStatus') }}</span>
               <span class="text-emerald-500">● LIVE</span>
             </div>
           </div>
@@ -359,16 +365,16 @@ onMounted(() => {
           <div class="tech-card p-5 group hover:shadow-xl transition-all duration-300">
             <div class="flex items-start justify-between">
               <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">Performance Rate</div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-bold">{{ $t('finance.depositOrder.stats.performanceRate') }}</div>
                 <div class="text-3xl font-mono font-bold text-slate-800 tracking-tighter">
-                  {{ stats ? ((stats.statusDonut.find(s => s.name === '成功')?.value || 0) / (stats.totalCount || 1) * 100).toFixed(1) : 0 }}%
+                  {{ stats ? ((stats.statusDonut.find(s => s.name === t('finance.depositOrder.status.SUCCESS'))?.value || 0) / (stats.totalCount || 1) * 100).toFixed(1) : 0 }}%
                 </div>
               </div>
               <div class="p-2 bg-orange-50 rounded-lg text-orange-500 shadow-sm"><NIcon size="24"><TimeOutline /></NIcon></div>
             </div>
             <div class="flex items-center gap-1 mt-2">
-              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Health Check: </span>
-              <span class="text-[10px] text-orange-500 font-bold uppercase">Optimal Range</span>
+              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{{ $t('finance.depositOrder.stats.healthCheck') }}: </span>
+              <span class="text-[10px] text-orange-500 font-bold uppercase">{{ $t('finance.depositOrder.stats.optimalRange') }}</span>
             </div>
           </div>
         </NGridItem>
@@ -379,7 +385,7 @@ onMounted(() => {
         <NGridItem :span="8">
           <div class="tech-card h-full">
             <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-              <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Transaction Analytics Engine</span>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">{{ $t('finance.depositOrder.charts.analytics') }}</span>
             </div>
             <div class="p-6">
               <div ref="trendChartRef" class="w-full h-[400px]"></div>
@@ -389,13 +395,13 @@ onMounted(() => {
         <NGridItem :span="4">
           <div class="flex flex-col gap-6">
             <div class="tech-card">
-              <div class="p-4 border-b border-slate-100 text-[10px] text-slate-400 uppercase tracking-widest font-black">Segment Analysis</div>
+              <div class="p-4 border-b border-slate-100 text-[10px] text-slate-400 uppercase tracking-widest font-black">{{ $t('finance.depositOrder.charts.segment') }}</div>
               <div class="p-4 flex flex-col items-center">
                 <div ref="channelDonutRef" class="w-full h-48"></div>
               </div>
             </div>
             <div class="tech-card">
-              <div class="p-4 border-b border-slate-100 text-[10px] text-slate-400 uppercase tracking-widest font-black">Status Breakdowns</div>
+              <div class="p-4 border-b border-slate-100 text-[10px] text-slate-400 uppercase tracking-widest font-black">{{ $t('finance.depositOrder.charts.status') }}</div>
               <div class="p-4 flex flex-col items-center">
                 <div ref="statusDonutRef" class="w-full h-48"></div>
               </div>
@@ -408,20 +414,20 @@ onMounted(() => {
       <div class="tech-card overflow-hidden">
         <div class="p-6 flex flex-wrap gap-6 items-end bg-slate-50/50 border-b border-slate-100">
           <div class="form-item">
-            <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">Range Select</div>
+            <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">{{ $t('finance.depositOrder.filters.range') }}</div>
             <NDatePicker v-model:value="searchForm.timeRange" type="daterange" size="small" class="tech-picker-light" />
           </div>
           <div class="form-item">
-             <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">Subject Identifier</div>
-             <NInput v-model:value="searchForm.playerId" placeholder="Search Player" size="small" class="tech-input-light" />
+             <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">{{ $t('finance.depositOrder.filters.subject') }}</div>
+             <NInput v-model:value="searchForm.playerId" :placeholder="$t('common.search') + ' PID'" size="small" class="tech-input-light" />
           </div>
           <div class="form-item">
-             <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">Method</div>
+             <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">{{ $t('finance.depositOrder.filters.method') }}</div>
              <NSelect v-model:value="searchForm.channel" multiple :options="channelOptions" size="small" style="width:160px" class="tech-select-light" />
           </div>
           <NButton type="info" size="small" color="#0369a1" @click="handleSearch" class="tech-btn-light px-8">
             <template #icon><NIcon><Search /></NIcon></template>
-            RUN SEARCH
+            {{ $t('finance.depositOrder.filters.search') }}
           </NButton>
         </div>
 
@@ -438,24 +444,24 @@ onMounted(() => {
     </div>
 
     <!-- 彈窗維持亮色高端風 -->
-    <NModal v-model:show="showManualModal" title="Manual Intervention" preset="card" class="tech-modal-light" style="width: 500px">
+    <NModal v-model:show="showManualModal" :title="$t('finance.depositOrder.modals.manualTitle')" preset="card" class="tech-modal-light" style="width: 500px">
       <NForm :model="manualForm" label-placement="top">
-        <NFormItem label="TRACE IDENTIFIER (EXTERNAL)" required>
+        <NFormItem :label="$t('finance.depositOrder.modals.traceId')" required>
           <NInput v-model:value="manualForm.externalId" placeholder="ID from third-party" class="tech-input-light" />
         </NFormItem>
-        <NFormItem label="AMOUNT (TWD)" required>
+        <NFormItem :label="$t('finance.depositOrder.modals.amount')" required>
           <NInputNumber v-model:value="manualForm.actualAmount" :precision="2" class="w-full tech-number-light" />
         </NFormItem>
       </NForm>
       <template #footer>
         <NSpace justify="end">
-          <NButton @click="showManualModal = false" quaternary>DISCARD</NButton>
-          <NButton type="info" color="#0369a1" @click="submitManual">PROCESS</NButton>
+          <NButton @click="showManualModal = false" quaternary>{{ $t('finance.depositOrder.modals.discard') }}</NButton>
+          <NButton type="info" color="#0369a1" @click="submitManual">{{ $t('finance.depositOrder.modals.process') }}</NButton>
         </NSpace>
       </template>
     </NModal>
 
-    <NModal v-model:show="showLogModal" title="System Lifecycle Trace" preset="card" class="tech-modal-light" style="width: 800px">
+    <NModal v-model:show="showLogModal" :title="$t('finance.depositOrder.modals.logsTitle')" preset="card" class="tech-modal-light" style="width: 800px">
       <NScrollbar style="max-height: 60vh">
         <div class="p-6 space-y-6">
           <div v-for="(log, i) in currentOrderLogs" :key="i" class="log-entry-light border-l-4 border-blue-500 bg-blue-50/50 p-5 rounded-r-xl">

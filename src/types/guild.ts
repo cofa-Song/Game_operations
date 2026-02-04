@@ -21,3 +21,12 @@ export interface GuildQuery {
     page: number
     pageSize: number
 }
+
+export interface GuildMember {
+    player_id: string
+    username: string
+    rank: 'LEADER' | 'ELDER' | 'MEMBER'
+    join_time: string
+    total_contribution: number
+    last_active: string
+}

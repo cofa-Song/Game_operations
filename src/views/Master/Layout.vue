@@ -2,8 +2,9 @@
 import { NLayout, NLayoutHeader, NLayoutContent, NLayoutSider, NMenu } from 'naive-ui'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useConfigStore } from '@/stores/useConfigStore'
 import { useI18n } from 'vue-i18n'
-import { computed, ref, watch, nextTick, h, Component } from 'vue'
+import { computed, ref, watch, nextTick, h, onMounted, Component } from 'vue'
 import { NIcon } from 'naive-ui'
 import {
   HomeOutline,
@@ -25,9 +26,13 @@ import {
   KeyOutline,
   PhonePortraitOutline,
   ShieldOutline,
-  BuildOutline
+  BuildOutline,
+  PulseOutline as PulseIcon,
+  BarChartOutline as DataCenterIcon,
+  SunnyOutline,
+  MoonOutline
 } from '@vicons/ionicons5'
-import { NBreadcrumb, NBreadcrumbItem } from 'naive-ui'
+import { NBreadcrumb, NBreadcrumbItem, NButton, NAvatar, NDropdown, NTooltip } from 'naive-ui'
 
 function renderIcon(icon: Component) {
   return () => h(NIcon, null, { default: () => h(icon) })
@@ -36,9 +41,26 @@ function renderIcon(icon: Component) {
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const configStore = useConfigStore()
 const { t } = useI18n()
 
 const selectedKey = ref<string>('admin-dashboard')
+
+const toggleTheme = () => {
+  const newTheme = configStore.theme === 'light' ? 'dark' : 'light'
+  configStore.setTheme(newTheme)
+  if (newTheme === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
+onMounted(() => {
+  if (configStore.theme === 'dark') {
+    document.documentElement.classList.add('dark')
+  }
+})
 
 // 菜單結構類型定義
 interface MenuOption {
@@ -92,6 +114,23 @@ const menuOptions = computed(() => [
     key: 'admin-dashboard',
     icon: renderIcon(HomeOutline)
   },
+  {
+    label: t('navigation.dataCenter'),
+    key: 'data-center-group',
+    icon: renderIcon(DataCenterIcon),
+    children: [
+      {
+        label: t('navigation.riskManagement'),
+        key: 'risk-alerts',
+        icon: renderIcon(ShieldCheckmarkOutline)
+      },
+      {
+        label: t('navigation.realtimeOps'),
+        key: 'realtime-ops',
+        icon: renderIcon(PulseIcon)
+      }
+    ]
+  },
 
   {
     label: t('navigation.playerManagement'),
@@ -121,34 +160,28 @@ const menuOptions = computed(() => [
       {
         label: t('navigation.guildManagement'),
         key: 'guild-management',
-        icon: renderIcon(PeopleOutline)
+        icon: renderIcon(PeopleCircleOutline)
       },
     ]
   },
+
   {
     label: t('navigation.finance'),
     key: 'finance-management-group',
     icon: renderIcon(WalletOutline),
     children: [
       {
-        label: '財務概覽看板', // Should use t('navigation.financialOverview') if available, but I'll use hardcoded string for now or check if I should add to locale. User asked for "Financial Management" submenu.
-        // Actually, looking at other items, they use t(). I should probably check if I can add to locale, but I don't see locale files open.
-        // Given I don't want to break things or hunt for locale files, I'll use the hardcoded Chinese string as requested since the user is communicating in Chinese.
-        // Wait, the user asked "请在Layout Menu加上...".
-        // Existing items use t('navigation...').
-        // I will use hardcoded strings for now to match the user request quickly, or I can try `t('navigation.financialOverview')` if I assume I edited the locale file?
-        // I haven't edited the locale file. I should just use the string.
-        label: '財務概覽看板',
+        label: t('navigation.financialOverview'),
         key: 'financial-overview',
         icon: renderIcon(WalletOutline)
       },
       {
-        label: '人工存提管理',
+        label: t('navigation.manualAdjustment'),
         key: 'manual-adjustment',
         icon: renderIcon(WalletOutline)
       },
       {
-        label: '商品配置管理',
+        label: t('navigation.commodityConfig'),
         key: 'commodity-config',
         icon: renderIcon(PricetagsOutline)
       },
@@ -234,7 +267,7 @@ const menuOptions = computed(() => [
         icon: renderIcon(ListOutline)
       },
       {
-        label: '圖片管理',
+        label: t('navigation.imageConfig'),
         key: 'image-config',
         icon: renderIcon(LayersOutline)
       },
@@ -251,10 +284,16 @@ const menuOptions = computed(() => [
     icon: renderIcon(SettingsOutline),
     children: [
       {
+        label: t('navigation.systemStatus'),
+        key: 'system-status',
+        icon: renderIcon(PulseIcon)
+      },
+      {
         label: t('navigation.thirdPartyKeys'),
         key: 'thirdparty-keys',
         icon: renderIcon(KeyOutline)
       },
+
       {
         label: t('navigation.appVersionManager'),
         key: 'app-versions',
@@ -291,6 +330,9 @@ const menuKeyToRoute: Record<string, string> = {
   'announcement-manager': '/admin/announcements',
   'image-config': '/admin/image-config',
   'payment-channels': '/admin/payment-channels',
+  'risk-alerts': '/admin/risk/alerts',
+  'system-status': '/admin/system-status',
+  'realtime-ops': '/admin/realtime-ops',
   'financial-overview': '/admin/financial-overview',
   'manual-adjustment': '/admin/manual-adjustment',
   'commodity-config': '/admin/commodity-config',
@@ -344,36 +386,137 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <NLayout has-sider class="h-screen">
-    <NLayoutSider collapse-mode="width" :width="240" :collapsed-width="0" show-trigger="bar" class="border-r border-gray-200">
+  <NLayout has-sider class="h-screen premium-container bg-transparent">
+    <!-- 側邊欄：玻璃擬態 -->
+    <NLayoutSider 
+      collapse-mode="width" 
+      :width="260" 
+      :collapsed-width="0" 
+      show-trigger="bar" 
+      class="premium-glass m-4 rounded-2xl h-[calc(100vh-32px)] overflow-hidden"
+    >
+      <div class="p-6 flex flex-col items-center justify-center border-b border-gray-100/10 mb-2">
+        <div class="w-12 h-12 bg-sky-500 rounded-xl flex items-center justify-center shadow-lg shadow-sky-500/20 mb-3">
+          <NIcon size="28" color="white"><LayersOutline /></NIcon>
+        </div>
+        <div class="text-xs font-black uppercase tracking-[0.2em] text-sky-500 text-center">Antigravity Ops</div>
+      </div>
+      
       <NMenu 
         :options="menuOptions"
         :value="selectedKey"
         @update:value="handleMenuSelect"
+        class="px-2"
+        :indent="24"
       />
     </NLayoutSider>
 
-    <NLayout class="h-screen">
-      <NLayoutHeader class="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold">{{ t('navigation.dashboard') }}</h1>
-        <button @click="handleLogout" class="text-sm text-red-600 hover:text-red-700">
-          {{ t('auth.logout') }}
-        </button>
+    <NLayout class="bg-transparent">
+      <!-- 標題列：玻璃擬態 -->
+      <NLayoutHeader class="premium-glass my-4 rounded-2xl px-6 py-4 flex justify-between items-center h-20">
+        <div class="flex flex-col">
+          <h1 class="text-xl font-black text-slate-800 dark:text-white tracking-tight leading-none mb-1">
+            {{ breadcrumbItems[breadcrumbItems.length - 1]?.label || t('navigation.dashboard') }}
+          </h1>
+          <!-- 麵包屑導覽移入 Header 增加空間感 -->
+          <NBreadcrumb separator=">">
+            <NBreadcrumbItem v-for="(item, index) in breadcrumbItems" :key="index">
+              <RouterLink v-if="item.to && index !== breadcrumbItems.length - 1" :to="item.to" class="text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400 hover:text-sky-500 transition-colors">
+                {{ item.label }}
+              </RouterLink>
+              <span v-else class="text-[10px] uppercase font-bold text-slate-700 dark:text-slate-200">{{ item.label }}</span>
+            </NBreadcrumbItem>
+          </NBreadcrumb>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- 主題切換按鈕 -->
+          <NTooltip placement="bottom" trigger="hover">
+            <template #trigger>
+              <NButton 
+                circle 
+                quaternary 
+                size="large"
+                @click="toggleTheme" 
+                class="hover:bg-sky-50 dark:hover:bg-sky-900/20"
+              >
+                <template #icon>
+                  <NIcon size="22">
+                    <SunnyOutline v-if="configStore.theme === 'light'" />
+                    <MoonOutline v-else />
+                  </NIcon>
+                </template>
+              </NButton>
+            </template>
+            {{ configStore.theme === 'light' ? t('common.lightMode') : t('common.darkMode') }}
+          </NTooltip>
+
+          <div class="w-[1px] h-8 bg-gray-100/10 mx-2"></div>
+
+          <NDropdown trigger="click" :options="[
+            { label: t('navigation.personalAccount'), key: 'profile' },
+            { label: t('auth.logout'), key: 'logout' }
+          ]" @select="(key) => {
+            if (key === 'logout') handleLogout()
+            if (key === 'profile') handleMenuSelect('personal-account')
+          }">
+            <div class="flex items-center gap-3 cursor-pointer group">
+              <div class="text-right flex flex-col items-end">
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-500 transition-colors">{{ authStore.user?.name || 'Admin' }}</span>
+                <span class="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase">Super Ops</span>
+              </div>
+              <NAvatar 
+                circle 
+                size="medium" 
+                color="#0ea5e9"
+                class="ring-2 ring-sky-500/20 group-hover:ring-sky-500/50 transition-all font-bold text-white"
+              >
+                {{ (authStore.user?.name?.[0] || 'A').toUpperCase() }}
+              </NAvatar>
+            </div>
+          </NDropdown>
+        </div>
       </NLayoutHeader>
 
-      <NLayoutContent class="p-6">
-        <!-- 麵包屑導覽 -->
-        <NBreadcrumb class="mb-4">
-          <NBreadcrumbItem v-for="(item, index) in breadcrumbItems" :key="index">
-            <RouterLink v-if="item.to && index !== breadcrumbItems.length - 1" :to="item.to">
-              {{ item.label }}
-            </RouterLink>
-            <span v-else>{{ item.label }}</span>
-          </NBreadcrumbItem>
-        </NBreadcrumb>
-
-        <RouterView />
+      <NLayoutContent class="p-4 h-[calc(100vh-112px)] overflow-hidden">
+        <!-- 內容容器 -->
+        <div class="h-full overflow-y-auto pr-2 animate-fade-in-up">
+          <RouterView />
+        </div>
       </NLayoutContent>
     </NLayout>
   </NLayout>
 </template>
+
+<style scoped>
+:deep(.n-menu .n-menu-item-content) {
+  border-radius: 12px !important;
+  margin: 4px 0 !important;
+}
+
+:deep(.n-menu .n-menu-item-content--selected) {
+  background: linear-gradient(to right, rgba(14, 165, 233, 0.1), transparent) !important;
+}
+
+:deep(.n-menu .n-menu-item-content--selected .n-menu-item-content__icon) {
+  color: #0ea5e9 !important;
+}
+
+:deep(.n-menu .n-menu-item-content--selected .n-menu-item-content-header) {
+  color: #0ea5e9 !important;
+  font-weight: 800 !important;
+}
+
+:deep(.n-layout-sider-scroll-container) {
+  overflow-x: hidden;
+}
+
+:deep(.n-breadcrumb .n-breadcrumb-item__separator) {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.dark :deep(.n-breadcrumb .n-breadcrumb-item__separator) {
+  color: #64748b;
+}
+</style>

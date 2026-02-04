@@ -10,12 +10,7 @@ const masterRoutes: RouteRecordRaw[] = [
     redirect: '/admin/dashboard',
     meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] },
     children: [
-      {
-        path: 'dashboard',
-        name: 'AdminHome',
-        component: () => import('@/views/Master/PersonalAccount.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'], breadcrumb: '首頁' }
-      },
+
       {
         path: 'financial-overview',
         name: 'FinancialOverview',
@@ -58,6 +53,34 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'OperationLog',
         component: () => import('@/views/Master/OperationLog.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'] }
+      },
+      {
+        path: '',
+        redirect: '/admin/dashboard'
+      },
+      {
+        path: 'dashboard',
+        name: 'TodoCenter',
+        component: () => import('@/views/Dashboard/TodoCenter.vue'),
+        meta: { title: '待辦審核中心' }
+      },
+      {
+        path: 'realtime-ops',
+        name: 'RealtimeOps',
+        component: () => import('@/views/DataCenter/RealtimeDashboard.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '即時運作數據' }
+      },
+      {
+        path: 'risk/alerts',
+        name: 'RiskAlerts',
+        component: () => import('@/views/Risk/AlertList.vue'), // Risk Alert List
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'RISK'], breadcrumb: '異常預警列表' }
+      },
+      {
+        path: 'system-status',
+        name: 'SystemStatus',
+        component: () => import('@/views/Master/SystemStatus.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '系統健康監測' }
       },
       {
         path: 'asset-logs',

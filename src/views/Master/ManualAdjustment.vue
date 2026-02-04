@@ -1,6 +1,6 @@
 <template>
     <div class="manual-adjustment-container">
-        <n-card title="人工存提管理 (Manual Adjustment)" size="large">
+        <n-card title="人工存提 (Manual Adjustment)" size="large">
             <n-grid x-gap="24" :cols="1">
                 <!-- 1. Player Search -->
                 <n-gi>

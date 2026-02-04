@@ -67,7 +67,7 @@ export const mockPermissions: Permission[] = [
   },
   {
     id: 'ops-603',
-    name: '人工存提管理',
+    name: '人工存提',
     code: 'OPS-603',
     module: '4. 玩家與財務',
     level: 'NONE',

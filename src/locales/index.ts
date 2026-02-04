@@ -43,7 +43,10 @@ export const zhTW = {
     gold: '金幣',
     silver: '銀幣',
     bronze: '銅幣',
-    currency: '幣別'
+    currency: '幣別',
+    themeMode: '主題模式',
+    lightMode: '日常模式',
+    darkMode: '護眼模式'
   },
   player: {
     list: {
@@ -156,7 +159,16 @@ export const zhTW = {
     announcement: '公告系統',
     operationConfig: '營運參數配置',
     guildManagement: '公會設定',
-    articleManagement: '文章管理'
+    articleManagement: '文章管理',
+    dataCenter: '數據中心',
+    todoCenter: '待辦審核中心',
+    riskManagement: '風控管理',
+    realtimeOps: '即時運作數據',
+    financialOverview: '財務概覽看板',
+    manualAdjustment: '人工存提',
+    commodityConfig: '商品配置管理',
+    imageConfig: '圖片管理',
+    systemStatus: '系統健康監測'
   },
   article: {
     category: '文章類別',
@@ -455,6 +467,66 @@ export const zhTW = {
         web_redirect: 'Web-Redirect (網頁跳轉)',
         manual: 'Manual (手動轉帳)'
       }
+    },
+    depositOrder: {
+      title: '儲值訂單管理',
+      stats: {
+        successDeposit: '成功儲值金額',
+        totalFees: '總手續費',
+        orderCount: '訂單總數',
+        performanceRate: '成功率',
+        costRatio: '成本佔比',
+        syncStatus: '同步狀態',
+        healthCheck: '健康檢查',
+        optimalRange: '最佳範圍'
+      },
+      charts: {
+        analytics: '交易分析引擎',
+        segment: '渠道分佈',
+        status: '狀態分佈',
+        successAmount: '成功金額',
+        totalOrders: '訂單總數',
+        failedCount: '失敗數'
+      },
+      filters: {
+        range: '時間範圍',
+        subject: '玩家 ID',
+        method: '支付渠道',
+        search: '執行搜尋'
+      },
+      table: {
+        orderInfo: '訂單資訊',
+        playerId: '玩家 ID',
+        productChannel: '商品 / 渠道',
+        amount: '金額明細',
+        applied: '申請',
+        actual: '實收',
+        status: '狀態',
+        time: '建立時間',
+        actions: '維護操作'
+      },
+      actions: {
+        sync: '同步',
+        manual: '補單',
+        logs: '日誌'
+      },
+      modals: {
+        manualTitle: '人工補單',
+        traceId: '外部交易單號 (EXTERNAL)',
+        amount: '實收金額 (TWD)',
+        discard: '取消',
+        process: '送出',
+        logsTitle: '系統生命週期追蹤'
+      },
+      status: {
+        PENDING: '待處理',
+        SUCCESS: '成功',
+        FAILED: '失敗',
+        EXPIRED: '已過期',
+        MANUAL: '人工補單',
+        REFUNDED: '已退款',
+        VERIFY_ERROR: '驗證異常'
+      }
     }
   }
 }
@@ -504,7 +576,10 @@ export const zhCN = {
     gold: '金币',
     silver: '银币',
     bronze: '铜币',
-    currency: '币别'
+    currency: '币别',
+    themeMode: '主题模式',
+    lightMode: '日常浏览',
+    darkMode: '护眼模式'
   },
   player: {
     list: {
@@ -601,7 +676,16 @@ export const zhCN = {
     announcement: '公告系统',
     operationConfig: '营运参数配置',
     guildManagement: '公会设定',
-    articleManagement: '文章管理'
+    articleManagement: '文章管理',
+    dataCenter: '数据中心',
+    todoCenter: '待办审核中心',
+    riskManagement: '风控管理',
+    realtimeOps: '实时运作数据',
+    financialOverview: '财务概览看板',
+    manualAdjustment: '人工存提',
+    commodityConfig: '商品配置管理',
+    imageConfig: '图片管理',
+    systemStatus: '系统健康监测'
   },
   article: {
     category: '文章类别',
@@ -881,6 +965,66 @@ export const zhCN = {
         web_redirect: 'Web-Redirect (网页跳转)',
         manual: 'Manual (手动转账)'
       }
+    },
+    depositOrder: {
+      title: '儲值订单管理',
+      stats: {
+        successDeposit: '成功储值金额',
+        totalFees: '总手续费',
+        orderCount: '订单总数',
+        performanceRate: '成功率',
+        costRatio: '成本占比',
+        syncStatus: '同步状态',
+        healthCheck: '健康检查',
+        optimalRange: '最佳范围'
+      },
+      charts: {
+        analytics: '交易分析引擎',
+        segment: '渠道分布',
+        status: '状态分布',
+        successAmount: '成功金额',
+        totalOrders: '订单总数',
+        failedCount: '失败数'
+      },
+      filters: {
+        range: '时间范围',
+        subject: '玩家 ID',
+        method: '支付渠道',
+        search: '执行搜索'
+      },
+      table: {
+        orderInfo: '订单信息',
+        playerId: '玩家 ID',
+        productChannel: '商品 / 渠道',
+        amount: '金额明细',
+        applied: '申请',
+        actual: '实收',
+        status: '状态',
+        time: '建立时间',
+        actions: '维护操作'
+      },
+      actions: {
+        sync: '同步',
+        manual: '补单',
+        logs: '日志'
+      },
+      modals: {
+        manualTitle: '人工补单',
+        traceId: '外部交易单号 (EXTERNAL)',
+        amount: '实收金额 (TWD)',
+        discard: '取消',
+        process: '送出',
+        logsTitle: '系统生命周期追踪'
+      },
+      status: {
+        PENDING: '待处理',
+        SUCCESS: '成功',
+        FAILED: '失败',
+        EXPIRED: '已过期',
+        MANUAL: '人工补单',
+        REFUNDED: '已退款',
+        VERIFY_ERROR: '验证异常'
+      }
     }
   }
 }
@@ -930,7 +1074,10 @@ export const en = {
     gold: 'Gold',
     silver: 'Silver',
     bronze: 'Bronze',
-    currency: 'Currency'
+    currency: 'Currency',
+    themeMode: 'Theme Mode',
+    lightMode: 'Normal Mode',
+    darkMode: 'Eye Protection'
   },
   player: {
     list: {
@@ -1023,7 +1170,20 @@ export const en = {
     announcement: 'Announcement',
     operationConfig: 'Operation Config',
     guildManagement: 'Guild Settings',
-    articleManagement: 'Article Management'
+    articleManagement: 'Article Management',
+    dataCenter: 'Data Center',
+    todoCenter: 'Todo Audit Center',
+    riskManagement: 'Risk Management',
+    realtimeOps: 'Real-time Operations',
+    financialOverview: 'Financial Overview',
+    manualAdjustment: 'Manual Adjustment',
+    commodityConfig: 'Commodity Config',
+    imageConfig: 'Image Management',
+    systemStatus: 'System Health Status',
+    systemConfig: 'System Settings',
+    thirdPartyKeys: 'Third-party Key Management',
+    appVersionManager: 'App Version Management',
+    adminWhitelist: 'Admin Whitelist'
   },
   article: {
     category: 'Category',
@@ -1303,6 +1463,66 @@ export const en = {
         iap: 'IAP (In-App)',
         web_redirect: 'Web-Redirect',
         manual: 'Manual Transfer'
+      }
+    },
+    depositOrder: {
+      title: 'Deposit Order Management',
+      stats: {
+        successDeposit: 'Successful Deposit',
+        totalFees: 'Total Fees Paid',
+        orderCount: 'Order Count',
+        performanceRate: 'Performance Rate',
+        costRatio: 'Cost Ratio',
+        syncStatus: 'Sync Status',
+        healthCheck: 'Health Check',
+        optimalRange: 'Optimal Range'
+      },
+      charts: {
+        analytics: 'Transaction Analytics Engine',
+        segment: 'Segment Analysis',
+        status: 'Status Breakdown',
+        successAmount: 'Success Amount',
+        totalOrders: 'Total Orders',
+        failedCount: 'Failed Count'
+      },
+      filters: {
+        range: 'Range Select',
+        subject: 'Subject Identifier',
+        method: 'Method',
+        search: 'Run Search'
+      },
+      table: {
+        orderInfo: 'Order Info',
+        playerId: 'Player ID',
+        productChannel: 'Product / Channel',
+        amount: 'Amount Details',
+        applied: 'Applied',
+        actual: 'Actual',
+        status: 'Status',
+        time: 'Creation Time',
+        actions: 'Actions'
+      },
+      actions: {
+        sync: 'Sync',
+        manual: 'Manual',
+        logs: 'Logs'
+      },
+      modals: {
+        manualTitle: 'Manual Intervention',
+        traceId: 'Trace Identifier (External)',
+        amount: 'Amount (TWD)',
+        discard: 'Discard',
+        process: 'Process',
+        logsTitle: 'System Lifecycle Trace'
+      },
+      status: {
+        PENDING: 'Pending',
+        SUCCESS: 'Success',
+        FAILED: 'Failed',
+        EXPIRED: 'Expired',
+        MANUAL: 'Manual',
+        REFUNDED: 'Refunded',
+        VERIFY_ERROR: 'Verify Error'
       }
     }
   }
