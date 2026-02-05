@@ -1,7 +1,5 @@
 export type ThirdPartyCategory = 'GAME' | 'PAYMENT' | 'SMS' | 'AUTH'
 
-export type Environment = 'STAGING' | 'PRODUCTION'
-
 export interface ThirdPartyKey {
   id: string
   category: ThirdPartyCategory
@@ -12,7 +10,8 @@ export interface ThirdPartyKey {
   secret_key_encrypted?: string // stored encrypted in real system
   secret_masked?: string // for UI display (****123)
   ip_whitelist?: string
-  environment: Environment
+  proxy?: string
+  error?: string
   enabled: boolean
   created_at: string
   updated_at?: string
@@ -26,8 +25,8 @@ export interface CreateThirdPartyKeyRequest {
   api_key: string
   secret_key?: string
   ip_whitelist?: string
-  environment: Environment
+  proxy?: string
   enabled?: boolean
 }
 
-export interface UpdateThirdPartyKeyRequest extends Partial<CreateThirdPartyKeyRequest> {}
+export interface UpdateThirdPartyKeyRequest extends Partial<CreateThirdPartyKeyRequest> { }

@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { versionApi } from '@/api/version'
 import { VersionRecord, CreateVersionRequest } from '@/types/version'
 import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage, NInputNumber, DataTableColumns, NSpace, NTag } from 'naive-ui'
 
-const { t } = useI18n()
 const message = useMessage()
 
 const items = ref<VersionRecord[]>([])
@@ -19,7 +17,6 @@ const formModel = reactive<CreateVersionRequest>({
   version: '1.0.0',
   build: 100,
   update_type: 'OPTION',
-  target_player_types: ['NORMAL'],
   download_link: '',
   title: '',
   changelog: { zh: '' },
@@ -38,11 +35,6 @@ const updateTypeOptions = [
   { label: '強制更新', value: 'FORCE' }
 ]
 
-const playerTypeOptions = [
-  { label: '測試帳號', value: 'TEST' },
-  { label: '代理帳號', value: 'AGENT' },
-  { label: '一般玩家', value: 'NORMAL' }
-]
 
 const columns = computed<DataTableColumns<VersionRecord>>(() => [
   {
@@ -101,13 +93,13 @@ const load = async () => {
 
 const openCreate = () => {
   editing.value = null
-  Object.assign(formModel, { platforms: ['IOS'], version: '1.0.0', build: 100, update_type: 'OPTION', target_player_types: ['NORMAL'], download_link: '', title: '', changelog: { zh: '' }, enabled: true })
+  Object.assign(formModel, { platforms: ['IOS'], version: '1.0.0', build: 100, update_type: 'OPTION', download_link: '', title: '', changelog: { zh: '' }, enabled: true })
   showModal.value = true
 }
 
 const openEdit = (row: VersionRecord) => {
   editing.value = row
-  Object.assign(formModel, { platforms: [...row.platforms], version: row.version, build: row.build, update_type: row.update_type, target_player_types: [...row.target_player_types], download_link: row.download_link, title: row.title, changelog: row.changelog, enabled: row.enabled })
+  Object.assign(formModel, { platforms: [...row.platforms], version: row.version, build: row.build, update_type: row.update_type, download_link: row.download_link, title: row.title, changelog: row.changelog, enabled: row.enabled })
   showModal.value = true
 }
 
@@ -167,9 +159,6 @@ onMounted(load)
           <NSelect v-model:value="formModel.update_type" :options="updateTypeOptions" />
         </NFormItem>
 
-        <NFormItem label="開放玩家類型">
-          <NSelect v-model:value="formModel.target_player_types" multiple :options="playerTypeOptions" />
-        </NFormItem>
 
         <NFormItem label="下載連結">
           <NInput v-model:value="formModel.download_link" />

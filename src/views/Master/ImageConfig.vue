@@ -298,7 +298,7 @@ const handleUploadMobile = async ({ file, onFinish, onError }: UploadCustomReque
 // --- Columns ---
 const columns = [
   {
-    title: t('announcement.type'), // Reuse
+    title: t('imageConfig.type'),
     key: 'type',
     width: 100,
     render(row: ImageConfig) {
@@ -323,7 +323,7 @@ const columns = [
     }
   },
   {
-    title: t('announcement.announcementTitle'),
+    title: t('imageConfig.title'),
     key: 'title',
     width: 200,
     ellipsis: { tooltip: true }
@@ -427,7 +427,7 @@ onMounted(fetchData)
         <NCard embedded :bordered="false" size="small">
           <NSpace align="end" wrap>
             <div class="flex flex-col gap-1">
-              <span class="text-xs text-gray-500">{{ t('announcement.type') }}</span>
+              <span class="text-xs text-gray-500">{{ t('imageConfig.type') }}</span>
               <NSelect
                 v-model:value="queryParams.types"
                 multiple
@@ -484,26 +484,22 @@ onMounted(fetchData)
       <NForm :model="formModel" label-placement="left" label-width="120" require-mark-placement="right-hanging">
         <NGrid :cols="2" :x-gap="24">
           <NGridItem :span="2">
-            <NFormItem :label="t('announcement.type')" path="type">
-              <NRadioGroup v-model:value="formModel.type" name="typeGroup">
-                <NRadio v-for="opt in typeOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </NRadio>
-              </NRadioGroup>
+            <NFormItem :label="t('imageConfig.type')" path="type">
+              <NSelect v-model:value="formModel.type" :options="typeOptions" />
             </NFormItem>
           </NGridItem>
           
           <NGridItem :span="2">
-            <NFormItem :label="t('announcement.announcementTitle')" path="title">
+            <NFormItem :label="t('imageConfig.title')" path="title">
               <NInput v-model:value="formModel.title" :maxlength="50" show-count />
             </NFormItem>
           </NGridItem>
 
           <NGridItem :span="2">
-            <NFormItem label="圖片預覽" path="images">
+            <NFormItem :label="t('imageConfig.preview')" path="images">
                <div class="flex gap-4">
                  <div class="flex flex-col gap-2 items-center">
-                   <span class="text-xs text-gray-500">PC (1920x450)</span>
+                   <span class="text-xs text-gray-500">{{ t('imageConfig.pcDimensions') }}</span>
                    <NUpload
                      action="#"
                      :custom-request="handleUploadPC"
@@ -518,7 +514,7 @@ onMounted(fetchData)
                  </div>
 
                  <div class="flex flex-col gap-2 items-center">
-                   <span class="text-xs text-gray-500">Mobile (750x300)</span>
+                   <span class="text-xs text-gray-500">{{ t('imageConfig.mobileDimensions') }}</span>
                    <NUpload
                      action="#"
                      :custom-request="handleUploadMobile"
@@ -542,7 +538,7 @@ onMounted(fetchData)
           </NGridItem>
 
           <NGridItem v-if="isPopup" :span="2">
-             <NFormItem label="彈窗頻率" path="frequency">
+             <NFormItem :label="t('imageConfig.frequency')" path="frequency">
                <NRadioGroup v-model:value="formModel.frequency">
                  <NRadio v-for="opt in frequencyOptions" :key="opt.value" :value="opt.value">
                    {{ opt.label }}

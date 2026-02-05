@@ -1,43 +1,52 @@
 <template>
   <div class="article-manager">
-    <n-card :title="t('navigation.articleManagement')">
+    <n-card :title="t('navigation.articleManagement')" class="shadow-sm rounded-lg border-none">
+      <template #header-extra>
+        <n-button type="info" @click="openDrawer()">{{ t('common.add') }}</n-button>
+      </template>
+
       <n-space vertical size="large">
+        <!-- Access Operation Button -->
+        <div class="flex gap-2">
+          <n-button 
+            type="warning" 
+            :disabled="pendingChanges.length === 0" 
+            @click="handleBatchSave"
+            :loading="loading"
+          >
+            {{ t('game.list.accessOperation') }}
+            <span v-if="pendingChanges.length" class="ml-1">({{ pendingChanges.length }})</span>
+          </n-button>
+        </div>
+
         <!-- Search Filters -->
-        <n-form inline :model="searchParams" label-placement="left">
-          <n-form-item :label="t('article.category')">
-            <n-select
-              v-model:value="searchParams.categories"
-              multiple
-              clearable
-              :options="categoryOptions"
-              placeholder="篩選類別"
-              style="width: 260px"
-            />
-          </n-form-item>
-          <n-form-item :label="t('article.timeRange')">
-            <n-date-picker
-              v-model:value="timeRange"
-              type="datetimerange"
-              clearable
-              @update:value="handleTimeChange"
-            />
-          </n-form-item>
-          <n-form-item>
-            <n-button type="primary" @click="handleSearch">
-              <template #icon><n-icon><search-outline /></n-icon></template>
-              {{ t('common.search') }}
-            </n-button>
-            <n-button class="ml-2" @click="openDrawer()">
-              <template #icon><n-icon><add-outline /></n-icon></template>
-              {{ t('common.add') }}文章
-            </n-button>
-          </n-form-item>
-          <n-form-item :show-label="false" class="ml-auto">
-             <n-button type="warning" @click="handleBatchSave" :disabled="pendingChanges.length === 0">
-                存取操作 ({{ pendingChanges.length }})
-             </n-button>
-          </n-form-item>
-        </n-form>
+        <n-card embedded :bordered="false" size="small">
+          <n-form inline :model="searchParams" label-placement="left">
+            <n-form-item :label="t('article.category')">
+              <n-select
+                v-model:value="searchParams.categories"
+                multiple
+                clearable
+                :options="categoryOptions"
+                placeholder="篩選類別"
+                style="width: 260px"
+              />
+            </n-form-item>
+            <n-form-item :label="t('article.timeRange')">
+              <n-date-picker
+                v-model:value="timeRange"
+                type="datetimerange"
+                clearable
+                @update:value="handleTimeChange"
+              />
+            </n-form-item>
+            <n-form-item>
+              <n-button type="primary" @click="handleSearch">
+                {{ t('common.search') }}
+              </n-button>
+            </n-form-item>
+          </n-form>
+        </n-card>
 
         <!-- Article List -->
         <n-data-table
@@ -164,7 +173,7 @@ import {
   NSwitch, NAvatar, NButtonGroup, NUpload, useMessage, useDialog 
 } from 'naive-ui'
 import type { UploadFileInfo } from 'naive-ui'
-import { SearchOutline, AddOutline, CreateOutline, TrashOutline } from '@vicons/ionicons5'
+import { CreateOutline, TrashOutline } from '@vicons/ionicons5'
 import { articleApi } from '@/api/article'
 import { Article, ArticleCategory } from '@/types/article'
 import type { DataTableColumns } from 'naive-ui'

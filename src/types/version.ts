@@ -1,6 +1,5 @@
 export type Platform = 'IOS' | 'ANDROID' | 'H5'
 export type UpdateType = 'NONE' | 'OPTION' | 'FORCE'
-export type PlayerType = 'TEST' | 'AGENT' | 'NORMAL'
 
 export interface VersionRecord {
   id: string
@@ -8,7 +7,6 @@ export interface VersionRecord {
   version: string // semantic version e.g. 1.2.0
   build: number // internal incremental build code
   update_type: UpdateType
-  target_player_types: PlayerType[]
   download_link: string
   title: string
   changelog: Record<string, string> // locale -> text
@@ -22,11 +20,10 @@ export interface CreateVersionRequest {
   version: string
   build: number
   update_type: UpdateType
-  target_player_types: PlayerType[]
   download_link: string
   title: string
   changelog: Record<string, string>
   enabled?: boolean
 }
 
-export interface UpdateVersionRequest extends Partial<CreateVersionRequest> {}
+export interface UpdateVersionRequest extends Partial<CreateVersionRequest> { }

@@ -48,6 +48,14 @@ export const zhTW = {
     lightMode: '日常模式',
     darkMode: '護眼模式'
   },
+  imageConfig: {
+    type: '圖片類型',
+    title: '圖片標題',
+    pcDimensions: 'PC (1920x450)',
+    mobileDimensions: 'Mobile (750x300)',
+    preview: '圖片預覽',
+    frequency: '彈窗頻率'
+  },
   player: {
     list: {
       basicInfo: '基本資料',
@@ -580,6 +588,14 @@ export const zhCN = {
     themeMode: '主题模式',
     lightMode: '日常浏览',
     darkMode: '护眼模式'
+  },
+  imageConfig: {
+    type: '图片类型',
+    title: '图片标题',
+    pcDimensions: 'PC (1920x450)',
+    mobileDimensions: 'Mobile (750x300)',
+    preview: '图片预览',
+    frequency: '弹窗频率'
   },
   player: {
     list: {

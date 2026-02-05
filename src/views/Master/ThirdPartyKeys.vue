@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { thirdpartyApi } from '@/api/thirdparty'
 import { ThirdPartyKey, CreateThirdPartyKeyRequest } from '@/types/thirdparty'
-import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSwitch, NRadioGroup, NRadio, useMessage, DataTableColumns, NSpace, NTag } from 'naive-ui'
+import { NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage, DataTableColumns, NSpace, NTag, NIcon } from 'naive-ui'
+import { CreateOutline } from '@vicons/ionicons5'
 
-const { t } = useI18n()
 const message = useMessage()
 
 const items = ref<ThirdPartyKey[]>([])
@@ -13,6 +12,11 @@ const loading = ref(false)
 
 const showModal = ref(false)
 const editing = ref<ThirdPartyKey | null>(null)
+
+// Pending Changes Logic
+const pendingChanges = ref<Record<string, boolean>>({})
+const hasPendingChanges = computed(() => Object.keys(pendingChanges.value).length > 0)
+const showSaveConfirmModal = ref(false)
 
 const formModel = reactive<CreateThirdPartyKeyRequest>({
   category: 'GAME',
@@ -22,7 +26,7 @@ const formModel = reactive<CreateThirdPartyKeyRequest>({
   api_key: '',
   secret_key: undefined,
   ip_whitelist: undefined,
-  environment: 'STAGING',
+  proxy: undefined,
   enabled: true
 })
 
@@ -35,6 +39,7 @@ const categories = [
 
 const load = async () => {
   loading.value = true
+  pendingChanges.value = {}
   const res = await thirdpartyApi.list()
   if (res.code === 0) items.value = res.data || []
   loading.value = false
@@ -54,16 +59,16 @@ const columns = computed<DataTableColumns<ThirdPartyKey>>(() => [
     render: (row) => h(NTag, { type: 'info' }, { default: () => row.category })
   },
   {
-    title: '環境',
-    key: 'environment',
-    width: 120,
-    render: (row) => h(NTag, { type: row.environment === 'PRODUCTION' ? 'error' : 'warning' }, { default: () => row.environment })
-  },
-  {
     title: '端點',
     key: 'endpoint',
     width: 250,
     render: (row) => h('span', { class: 'text-xs text-gray-600' }, row.endpoint)
+  },
+  {
+    title: 'Proxy',
+    key: 'proxy',
+    width: 150,
+    render: (row) => row.proxy || '-'
   },
   {
     title: 'Merchant ID',
@@ -72,10 +77,22 @@ const columns = computed<DataTableColumns<ThirdPartyKey>>(() => [
     render: (row) => row.merchant_id
   },
   {
+    title: '異常',
+    key: 'error',
+    width: 200,
+    render: (row) => row.error ? h('span', { class: 'text-red-500 text-xs font-bold' }, row.error) : h('span', { class: 'text-gray-400 text-xs' }, '-')
+  },
+  {
     title: '狀態',
     key: 'enabled',
     width: 100,
-    render: (row) => h(NTag, { type: row.enabled ? 'success' : 'error' }, { default: () => row.enabled ? '啟用' : '停用' })
+    render: (row) => {
+      const currentStatus = pendingChanges.value[row.id] !== undefined ? pendingChanges.value[row.id] : row.enabled
+      return h(NSwitch, {
+        value: currentStatus,
+        onUpdateValue: (val: boolean) => handleStatusChange(row, val)
+      })
+    }
   },
   {
     title: '操作',
@@ -94,7 +111,7 @@ const columns = computed<DataTableColumns<ThirdPartyKey>>(() => [
 const openCreate = () => {
   editing.value = null
   Object.assign(formModel, {
-    category: 'GAME', provider: '', endpoint: '', merchant_id: '', api_key: '', secret_key: undefined, ip_whitelist: undefined, environment: 'STAGING', enabled: true
+    category: 'GAME', provider: '', endpoint: '', merchant_id: '', api_key: '', secret_key: undefined, ip_whitelist: undefined, proxy: undefined, enabled: true
   })
   showModal.value = true
 }
@@ -103,7 +120,7 @@ const openEdit = (row: ThirdPartyKey) => {
   editing.value = row
   Object.assign(formModel, {
     category: row.category, provider: row.provider, endpoint: row.endpoint, merchant_id: row.merchant_id,
-    api_key: row.api_key, secret_key: undefined, ip_whitelist: row.ip_whitelist, environment: row.environment, enabled: row.enabled
+    api_key: row.api_key, secret_key: undefined, ip_whitelist: row.ip_whitelist, proxy: row.proxy, enabled: row.enabled
   })
   showModal.value = true
 }
@@ -124,6 +141,31 @@ const save = async () => {
   load()
 }
 
+const handleStatusChange = (row: ThirdPartyKey, val: boolean) => {
+  if (row.enabled === val) {
+    delete pendingChanges.value[row.id]
+  } else {
+    pendingChanges.value[row.id] = val
+  }
+}
+
+const handleBatchSave = async () => {
+  loading.value = true
+  try {
+    const promises = Object.entries(pendingChanges.value).map(([id, enabled]) => 
+      thirdpartyApi.update(id, { enabled })
+    )
+    await Promise.all(promises)
+    message.success('存取成功')
+    showSaveConfirmModal.value = false
+    load()
+  } catch (err) {
+    message.error('存取失敗')
+  } finally {
+    loading.value = false
+  }
+}
+
 const testConnection = async (row?: ThirdPartyKey) => {
   message.info('測試中...')
   const res = row ? await thirdpartyApi.testConnection(row.id) : await thirdpartyApi.testConnection(formModel as any)
@@ -141,6 +183,16 @@ onMounted(load)
     <NCard title="第三方 Key 管理" class="mb-4">
       <template #header-extra>
         <div class="flex gap-2">
+          <NButton 
+            type="warning" 
+            :disabled="!hasPendingChanges" 
+            @click="showSaveConfirmModal = true"
+            :loading="loading"
+          >
+            <template #icon><NIcon><CreateOutline /></NIcon></template>
+            存取操作
+            <span v-if="hasPendingChanges" class="ml-1">({{ Object.keys(pendingChanges).length }})</span>
+          </NButton>
           <NButton type="primary" @click="openCreate">新增金鑰</NButton>
         </div>
       </template>
@@ -154,19 +206,19 @@ onMounted(load)
           <NSelect v-model:value="formModel.category" :options="categories" />
         </NFormItem>
 
-        <NFormItem label="供應商名稱">
+        <NFormItem label="供應商名稱" required>
           <NInput v-model:value="formModel.provider" />
         </NFormItem>
 
-        <NFormItem label="API 端點 (Endpoint)">
+        <NFormItem label="API 端點 (Endpoint)" required>
           <NInput v-model:value="formModel.endpoint" />
         </NFormItem>
 
-        <NFormItem label="Merchant ID">
+        <NFormItem label="Merchant ID" required>
           <NInput v-model:value="formModel.merchant_id" />
         </NFormItem>
 
-        <NFormItem label="API Key / App ID">
+        <NFormItem label="API Key / App ID" required>
           <NInput v-model:value="formModel.api_key" />
         </NFormItem>
 
@@ -178,11 +230,8 @@ onMounted(load)
           <NInput v-model:value="formModel.ip_whitelist" type="textarea" placeholder="以逗號分隔" />
         </NFormItem>
 
-        <NFormItem label="連線環境">
-          <NRadioGroup v-model:value="formModel.environment">
-            <NRadio value="STAGING">測試 (Staging)</NRadio>
-            <NRadio value="PRODUCTION">正式 (Production)</NRadio>
-          </NRadioGroup>
+        <NFormItem label="Proxy">
+          <NInput v-model:value="formModel.proxy" placeholder="http://proxy-server:port (可選)" />
         </NFormItem>
 
         <NFormItem label="當前狀態">
@@ -198,5 +247,17 @@ onMounted(load)
         </div>
       </template>
     </NModal>
+
+    <!-- Save Confirm Modal -->
+    <NModal
+      v-model:show="showSaveConfirmModal"
+      preset="dialog"
+      type="warning"
+      title="警告"
+      content="確定要存取狀態變更？"
+      positive-text="確認"
+      negative-text="取消"
+      @positive-click="handleBatchSave"
+    />
   </div>
 </template>

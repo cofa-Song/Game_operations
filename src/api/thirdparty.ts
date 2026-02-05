@@ -36,7 +36,7 @@ export const thirdpartyApi = {
       secret_key_encrypted: req.secret_key ? `enc(${req.secret_key})` : undefined,
       secret_masked: maskSecret(req.secret_key),
       ip_whitelist: req.ip_whitelist,
-      environment: req.environment,
+      proxy: req.proxy,
       enabled: req.enabled === undefined ? true : req.enabled,
       created_at: now
     }

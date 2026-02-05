@@ -56,13 +56,13 @@ export const versionApi = {
   },
 
   // Given platform and currentVersion, return applicable update info (if any)
-  async checkForUpdate(platform: Platform, currentVersion: string, playerTypes: string[] = []): Promise<ApiResponse<{ shouldUpdate: boolean; force: boolean; latest?: VersionRecord }>> {
+  async checkForUpdate(platform: Platform, currentVersion: string): Promise<ApiResponse<{ shouldUpdate: boolean; force: boolean; latest?: VersionRecord }>> {
     await delay(50)
-    // find enabled records for platform, filter by target player types intersection
-    const candidates = mockVersions.filter(v => v.enabled && v.platforms.includes(platform) && (v.target_player_types.length === 0 || v.target_player_types.some(pt => playerTypes.includes(pt) || playerTypes.length === 0)))
+    // find enabled records for platform
+    const candidates = mockVersions.filter(v => v.enabled && v.platforms.includes(platform))
     if (!candidates.length) return { code: 0, msg: 'success', data: { shouldUpdate: false, force: false } }
     // sort by version desc
-    candidates.sort((a,b) => compareVersions(b.version, a.version))
+    candidates.sort((a, b) => compareVersions(b.version, a.version))
     const latest = candidates[0]
     const cmp = compareVersions(latest.version, currentVersion)
     if (cmp <= 0) return { code: 0, msg: 'up-to-date', data: { shouldUpdate: false, force: false } }
