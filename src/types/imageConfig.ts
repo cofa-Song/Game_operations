@@ -14,9 +14,8 @@ export interface ImageConfig {
     type: ImageType;
     title: string;
 
-    // Images
-    pcImageUrl: string;
-    mobileImageUrl: string;
+    // Image
+    imageUrl: string;
 
     // Action
     jumpUrl: string; // Internal path or external URL
@@ -41,8 +40,7 @@ export interface ImageConfig {
 export interface CreateImageConfigData {
     type: ImageType;
     title: string;
-    pcImageUrl: string;
-    mobileImageUrl: string;
+    imageUrl: string;
     jumpUrl: string;
     startTime: string;
     endTime: string;

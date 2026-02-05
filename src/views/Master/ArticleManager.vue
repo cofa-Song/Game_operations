@@ -101,31 +101,12 @@
           <n-tabs type="line" animated>
             <n-tab-pane name="content" tab="內容編輯">
               <n-form-item label="富文本內容" path="content" :show-label="false">
-                <div class="rich-editor-container">
-                    <div class="editor-toolbar">
-                        <n-button-group size="tiny">
-                            <n-button strong secondary>B</n-button>
-                            <n-button strong secondary>I</n-button>
-                            <n-button strong secondary>U</n-button>
-                            <n-button strong secondary>連結</n-button>
-                            <n-button strong secondary>圖片</n-button>
-                        </n-button-group>
-                    </div>
-                    <n-input
-                        v-model:value="formModel.content"
-                        type="textarea"
-                        placeholder="請輸入文章內容 (支援 HTML)"
-                        :rows="12"
-                    />
-                </div>
+                <TinymceEditor v-model="formModel.content" placeholder="請輸入文章內容" :height="500" />
               </n-form-item>
             </n-tab-pane>
             <n-tab-pane name="seo" tab="SEO 優化">
                <n-form-item label="Meta Title" path="seo.meta_title">
                 <n-input v-model:value="formModel.seo.meta_title" :placeholder="formModel.title || '留空則取用標題'" />
-              </n-form-item>
-              <n-form-item label="Meta Keywords" path="seo.meta_keywords">
-                <n-input v-model:value="formModel.seo.meta_keywords" placeholder="關鍵字以逗號分隔" />
               </n-form-item>
               <n-form-item label="Meta Description" path="seo.meta_description">
                 <n-input
@@ -170,12 +151,13 @@ import { useI18n } from 'vue-i18n'
 import { 
   NCard, NSpace, NForm, NFormItem, NSelect, NButton, NIcon, NDataTable, NTag,
   NDrawer, NDrawerContent, NInput, NGrid, NGi, NTabs, NTabPane, NDatePicker,
-  NSwitch, NAvatar, NButtonGroup, NUpload, useMessage, useDialog 
+  NSwitch, NAvatar, NUpload, useMessage, useDialog 
 } from 'naive-ui'
 import type { UploadFileInfo } from 'naive-ui'
 import { CreateOutline, TrashOutline } from '@vicons/ionicons5'
 import { articleApi } from '@/api/article'
 import { Article, ArticleCategory } from '@/types/article'
+import TinymceEditor from '@/components/TinymceEditor.vue'
 import type { DataTableColumns } from 'naive-ui'
 
 const { t } = useI18n()
@@ -312,7 +294,6 @@ const formModel = reactive({
   publish_end: '',
   seo: {
     meta_title: '',
-    meta_keywords: '',
     meta_description: ''
   }
 })
@@ -368,7 +349,7 @@ const openDrawer = async (id?: string) => {
       content: '',
       publish_start: new Date().toISOString(),
       publish_end: '',
-      seo: { meta_title: '', meta_keywords: '', meta_description: '' }
+      seo: { meta_title: '', meta_description: '' }
     })
     publishStartTimestamp.value = Date.now()
     publishEndTimestamp.value = null
@@ -453,15 +434,4 @@ onMounted(() => {
 }
 .ml-2 { margin-left: 8px; }
 .ml-auto { margin-left: auto; }
-.rich-editor-container {
-    border: 1px solid #d9d9d9;
-    border-radius: 4px;
-    padding: 8px;
-    background: #fafafa;
-}
-.editor-toolbar {
-    margin-bottom: 8px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 4px;
-}
 </style>

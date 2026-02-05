@@ -3,7 +3,7 @@ import { ref, onMounted, reactive, h, computed } from 'vue'
 import {
   NCard, NSpace, NInput, NSelect, NButton, NDataTable, NTag, NSwitch,
   NModal, NForm, NFormItem, NGrid, NGridItem, NDatePicker, NInputNumber,
-  NRadio, NRadioGroup, NImage, NUpload, UploadCustomRequestOptions,
+  NImage, NUpload, UploadCustomRequestOptions,
   useMessage, useDialog
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
@@ -84,8 +84,7 @@ const editingId = ref<string | null>(null)
 const formModel = reactive<CreateImageConfigData>({
   type: ImageType.BANNER,
   title: '',
-  pcImageUrl: '',
-  mobileImageUrl: '',
+  imageUrl: '',
   jumpUrl: '',
   startTime: formatDate(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
   endTime: formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
@@ -97,8 +96,6 @@ const formTimeRange = ref<[number, number]>([
   new Date().getTime(),
   new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).getTime()
 ])
-
-const isPopup = computed(() => formModel.type === ImageType.POPUP)
 
 // --- Methods ---
 const fetchData = async () => {
@@ -138,8 +135,7 @@ const handleAdd = () => {
   Object.assign(formModel, {
     type: ImageType.BANNER,
     title: '',
-    pcImageUrl: '',
-    mobileImageUrl: '',
+    imageUrl: '',
     jumpUrl: '',
     startTime: formatDate(new Date(), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
     endTime: formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm:ss'Z'"),
@@ -156,8 +152,7 @@ const handleEdit = (row: ImageConfig) => {
   Object.assign(formModel, {
     type: row.type,
     title: row.title,
-    pcImageUrl: row.pcImageUrl,
-    mobileImageUrl: row.mobileImageUrl,
+    imageUrl: row.imageUrl,
     jumpUrl: row.jumpUrl || '',
     startTime: row.startTime,
     endTime: row.endTime,
@@ -194,9 +189,10 @@ const handleSubmit = async () => {
 
   try {
     // If not popup, clean frequency
-    if (formModel.type !== ImageType.POPUP) {
-      delete formModel.frequency
-    }
+    // frequency is now a general field as per request
+    // if (formModel.type !== ImageType.POPUP) {
+    //   delete formModel.frequency
+    // }
 
     if (modalType.value === 'add') {
       const res = await imageConfigApi.createImageConfig(formModel)
@@ -267,25 +263,11 @@ const handleBatchSave = async () => {
   }
 }
 
-const handleUploadPC = async ({ file, onFinish, onError }: UploadCustomRequestOptions) => {
+const handleUpload = async ({ file, onFinish, onError }: UploadCustomRequestOptions) => {
   try {
     const res = await imageConfigApi.uploadImage(file.file as File)
     if (res.code === 0 && res.data) {
-      formModel.pcImageUrl = res.data.url
-      onFinish()
-    } else {
-      onError()
-    }
-  } catch (e) {
-    onError()
-  }
-}
-
-const handleUploadMobile = async ({ file, onFinish, onError }: UploadCustomRequestOptions) => {
-  try {
-    const res = await imageConfigApi.uploadImage(file.file as File)
-    if (res.code === 0 && res.data) {
-      formModel.mobileImageUrl = res.data.url
+      formModel.imageUrl = res.data.url
       onFinish()
     } else {
       onError()
@@ -311,13 +293,13 @@ const columns = [
     }
   },
   {
-    title: '預覽 (PC)',
-    key: 'pcImageUrl',
+    title: '預覽',
+    key: 'imageUrl',
     width: 120,
     render(row: ImageConfig) {
       return h(NImage, {
         width: 80,
-        src: row.pcImageUrl,
+        src: row.imageUrl,
         objectFit: 'contain'
       })
     }
@@ -499,32 +481,16 @@ onMounted(fetchData)
             <NFormItem :label="t('imageConfig.preview')" path="images">
                <div class="flex gap-4">
                  <div class="flex flex-col gap-2 items-center">
-                   <span class="text-xs text-gray-500">{{ t('imageConfig.pcDimensions') }}</span>
                    <NUpload
                      action="#"
-                     :custom-request="handleUploadPC"
+                     :custom-request="handleUpload"
                      :show-file-list="false"
                    >
-                     <div v-if="formModel.pcImageUrl" class="relative group cursor-pointer">
-                        <img :src="formModel.pcImageUrl" class="h-24 object-contain border rounded" />
+                     <div v-if="formModel.imageUrl" class="relative group cursor-pointer">
+                        <img :src="formModel.imageUrl" class="h-32 object-contain border rounded shadow-sm" />
                         <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs">更換</div>
                      </div>
-                     <NButton v-else size="small">上傳圖片</NButton>
-                   </NUpload>
-                 </div>
-
-                 <div class="flex flex-col gap-2 items-center">
-                   <span class="text-xs text-gray-500">{{ t('imageConfig.mobileDimensions') }}</span>
-                   <NUpload
-                     action="#"
-                     :custom-request="handleUploadMobile"
-                     :show-file-list="false"
-                   >
-                     <div v-if="formModel.mobileImageUrl" class="relative group cursor-pointer">
-                        <img :src="formModel.mobileImageUrl" class="h-24 object-contain border rounded" />
-                        <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs">更換</div>
-                     </div>
-                     <NButton v-else size="small">上傳圖片</NButton>
+                     <NButton v-else size="small" dashed>上傳圖片</NButton>
                    </NUpload>
                  </div>
                </div>
@@ -537,13 +503,9 @@ onMounted(fetchData)
             </NFormItem>
           </NGridItem>
 
-          <NGridItem v-if="isPopup" :span="2">
-             <NFormItem :label="t('imageConfig.frequency')" path="frequency">
-               <NRadioGroup v-model:value="formModel.frequency">
-                 <NRadio v-for="opt in frequencyOptions" :key="opt.value" :value="opt.value">
-                   {{ opt.label }}
-                 </NRadio>
-               </NRadioGroup>
+          <NGridItem :span="2">
+             <NFormItem label="顯示頻率" path="frequency">
+               <NSelect v-model:value="formModel.frequency" :options="frequencyOptions" />
              </NFormItem>
           </NGridItem>
 

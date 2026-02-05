@@ -15,7 +15,6 @@ export interface Article {
     status_live: boolean
     seo: {
         meta_title?: string
-        meta_keywords?: string
         meta_description?: string
     }
 }
