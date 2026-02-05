@@ -9,7 +9,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '127.0.0.1',
     remark: 'Localhost (dev)',
     enabled: true,
-    last_access: now(),
     creator: 'system',
     created_at: now()
   },
@@ -18,7 +17,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '192.168.1.0/24',
     remark: '台北總部辦公室',
     enabled: true,
-    last_access: pastDate(2),
     creator: 'admin',
     created_at: pastDate(30)
   },
@@ -27,7 +25,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '10.0.0.0/8',
     remark: '公司內部網路',
     enabled: true,
-    last_access: pastDate(1),
     creator: 'admin',
     created_at: pastDate(60)
   },
@@ -36,7 +33,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '203.70.50.100',
     remark: '維運工程師 A (李先生)',
     enabled: true,
-    last_access: pastDate(6),
     creator: 'admin',
     created_at: pastDate(14)
   },
@@ -45,7 +41,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '211.20.1.50',
     remark: '維運工程師 B (王小姐)',
     enabled: true,
-    last_access: pastDate(12),
     creator: 'admin',
     created_at: pastDate(14)
   },
@@ -54,7 +49,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '172.16.0.0/12',
     remark: '新竹分公司 VPN',
     enabled: true,
-    last_access: pastDate(24),
     creator: 'manager',
     created_at: pastDate(21)
   },
@@ -63,7 +57,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '1.2.3.4',
     remark: '臨時訪客 IP（已過期，停用中）',
     enabled: false,
-    last_access: pastDate(72),
     creator: 'admin',
     created_at: pastDate(45)
   },
@@ -72,7 +65,6 @@ export const mockWhitelist: WhitelistEntry[] = [
     cidr: '8.8.8.8',
     remark: '測試 IP（暫未啟用）',
     enabled: false,
-    last_access: undefined,
     creator: 'admin',
     created_at: pastDate(3)
   }
