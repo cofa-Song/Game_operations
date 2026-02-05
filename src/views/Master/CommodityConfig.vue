@@ -5,7 +5,7 @@
                 <n-space>
                     <n-button @click="openBadgeModal">管理行銷角標</n-button>
                     <n-button type="primary" @click="openEditDrawer(null)">
-                        <template #icon><n-icon><add-icon /></n-icon></template>
+                        <template #icon><n-icon><Add /></n-icon></template>
                         新增商品
                     </n-button>
                 </n-space>
@@ -195,6 +195,7 @@ import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useMessage, useDialog, NTag, NButton, NSpace, NSwitch, FormInst, FormRules, NCard, NDataTable, NModal, NForm, NFormItem, NInput, NDrawer, NDrawerContent, NTabs, NTabPane, NRadioGroup, NRadioButton, NRadio, NInputNumber, NDatePicker, NDynamicTags, NText, NAlert, NSelect, NIcon } from 'naive-ui'
 import { commodityApi, Commodity } from '@/api/commodity'
 import { badgeApi, MarketingBadge } from '@/api/badge'
+import { Add } from '@vicons/ionicons5'
 import placeholderImg from '@/assets/commodity_placeholder.png'
 
 const message = useMessage()

@@ -104,7 +104,7 @@
 import { ref, reactive, onMounted, h } from 'vue'
 import { 
   NSpace, NCard, NForm, NFormItem, NInput, NInputNumber, NButton, 
-  NDataTable, NTag, NIcon, NText, NModal, useMessage, useDialog 
+  NDataTable, NTag, NIcon, NText, NModal, NSpin, useMessage, useDialog 
 } from 'naive-ui'
 import { guildApi } from '@/api/guild'
 import { Guild, GuildGlobalConfig, GuildMember } from '@/types/guild'
@@ -164,7 +164,7 @@ const pagination = reactive({
 })
 
 const columns: DataTableColumns<Guild> = [
-  { title: '公會名稱/ID', key: 'name', render: (row) => h('div', [h('div', { style: 'font-weight: bold' }, row.name), h(NText, { depth: 3, size: 'small' }, row.id)]) },
+  { title: '公會名稱/ID', key: 'name', render: (row) => h('div', [h('div', { style: 'font-weight: bold' }, row.name), h(NText, { depth: 3, size: 'small' }, { default: () => row.id })]) },
   { 
     title: '會長 ID', 
     key: 'leader_id',
