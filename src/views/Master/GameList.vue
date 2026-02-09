@@ -107,9 +107,9 @@ const columns: DataTableColumns<Game> = [
         width: 100,
         render: (row) => {
             if (row.total_bet === 0) return '0.00%'
-            const winRate = ((row.total_bet - row.total_payout) / row.total_bet) * 100
-            const color = winRate >= 0 ? 'text-green-600' : 'text-red-600'
-            return h('span', { class: `font-mono font-bold ${color}` }, `${winRate.toFixed(2)}%`)
+            const rtp = (row.total_payout / row.total_bet) * 100
+            const color = rtp <= 100 ? 'text-green-600' : 'text-red-600'
+            return h('span', { class: `font-mono font-bold ${color}` }, `${rtp.toFixed(2)}%`)
         }
     },
     { 
@@ -144,7 +144,7 @@ const columns: DataTableColumns<Game> = [
         title: t('game.list.setProfitRate'),
         key: 'profit_rate',
         width: 100,
-        render: (row) => h('span', { class: 'text-purple-600 font-mono font-bold' }, `${row.profit_rate.toFixed(2)}%`)
+        render: (row) => h('span', { class: 'text-purple-600 font-mono font-bold' }, `${(100 - row.profit_rate).toFixed(2)}%`)
     },
     {
         title: t('game.list.enable'),
@@ -430,7 +430,12 @@ const handleSubmit = async () => {
                     </NInputNumber>
                 </NFormItem>
                 <NFormItem :label="t('game.list.profitRate')">
-                    <NInputNumber v-model:value="editForm.profit_rate" :min="0" :max="100" style="width: 100%">
+                    <NInputNumber 
+                        :value="100 - (editForm.profit_rate ?? 0)" 
+                        :min="0" :max="100" 
+                        style="width: 100%"
+                        @update:value="(v) => editForm.profit_rate = 100 - (v || 0)"
+                    >
                         <template #suffix>%</template>
                     </NInputNumber>
                 </NFormItem>

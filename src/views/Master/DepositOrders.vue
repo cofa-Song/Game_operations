@@ -307,6 +307,30 @@ onMounted(() => {
     <div class="tech-glow glow-1"></div>
 
     <div class="content-wrapper space-y-8 relative z-10">
+      <!-- 搜尋區塊 (移至最上方) -->
+      <NCard :title="t('finance.paymentChannel.title')" class="mb-6">
+        <NForm inline :model="searchForm" label-placement="left" class="flex-wrap gap-4 mt-4" label-width="auto">
+          <NFormItem label="建立時間">
+            <NDatePicker v-model:value="searchForm.timeRange" type="daterange" clearable style="width: 280px" />
+          </NFormItem>
+          <NFormItem :label="t('player.list.id')">
+            <NInput v-model:value="searchForm.playerId" :placeholder="t('common.keywordPlaceholder')" clearable style="width: 180px" />
+          </NFormItem>
+          <NFormItem :label="t('finance.paymentChannel.type')">
+            <NSelect v-model:value="searchForm.channel" multiple :options="channelOptions" :placeholder="t('common.all')" clearable style="width: 220px" />
+          </NFormItem>
+          <NFormItem :label="t('common.status')">
+            <NSelect v-model:value="searchForm.status" multiple :options="statusOptions" :placeholder="t('common.all')" clearable style="width: 220px" />
+          </NFormItem>
+          <NFormItem>
+            <NButton type="primary" @click="handleSearch">
+              <template #icon><NIcon><Search /></NIcon></template>
+              {{ t('common.search') }}
+            </NButton>
+          </NFormItem>
+        </NForm>
+      </NCard>
+
       <!-- 1. 科技亮色統計層 -->
       <NGrid :x-gap="20" :y-gap="20" :cols="4">
         <NGridItem>
@@ -410,37 +434,18 @@ onMounted(() => {
         </NGridItem>
       </NGrid>
 
-      <!-- 3. 詳細列表 -->
-      <div class="tech-card overflow-hidden">
-        <div class="p-6 flex flex-wrap gap-6 items-end bg-slate-50/50 border-b border-slate-100">
-          <div class="form-item">
-            <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">{{ $t('finance.depositOrder.filters.range') }}</div>
-            <NDatePicker v-model:value="searchForm.timeRange" type="daterange" size="small" class="tech-picker-light" />
-          </div>
-          <div class="form-item">
-             <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">{{ $t('finance.depositOrder.filters.subject') }}</div>
-             <NInput v-model:value="searchForm.playerId" :placeholder="$t('common.search') + ' PID'" size="small" class="tech-input-light" />
-          </div>
-          <div class="form-item">
-             <div class="text-[10px] text-slate-400 uppercase mb-1 font-black">{{ $t('finance.depositOrder.filters.method') }}</div>
-             <NSelect v-model:value="searchForm.channel" multiple :options="channelOptions" size="small" style="width:160px" class="tech-select-light" />
-          </div>
-          <NButton type="info" size="small" color="#0369a1" @click="handleSearch" class="tech-btn-light px-8">
-            <template #icon><NIcon><Search /></NIcon></template>
-            {{ $t('finance.depositOrder.filters.search') }}
-          </NButton>
-        </div>
 
-        <NDataTable 
-          remote 
-          :loading="loading" 
-          :columns="columns" 
-          :data="orders" 
-          :pagination="{ page: 1, pageSize: 15, itemCount: totalOrders }"
-          :bordered="false"
-          class="tech-table-light"
-        />
-      </div>
+        <NCard class="tech-card overflow-hidden p-0">
+          <NDataTable 
+            remote 
+            :loading="loading" 
+            :columns="columns" 
+            :data="orders" 
+            :pagination="{ page: 1, pageSize: 15, itemCount: totalOrders }"
+            :bordered="false"
+            class="tech-table-light"
+          />
+        </NCard>
     </div>
 
     <!-- 彈窗維持亮色高端風 -->
@@ -543,12 +548,6 @@ onMounted(() => {
   --n-th-font-size: 11px !important;
 }
 
-:deep(.tech-input-light .n-input__border),
-:deep(.tech-select-light .n-base-selection__border),
-:deep(.tech-picker-light .n-base-selection__border) {
-  border: 1px solid #e2e8f0 !important;
-  background-color: #fff !important;
-}
 
 .tech-btn-light {
   letter-spacing: 1px;
