@@ -275,6 +275,11 @@ const menuOptions = computed(() => [
         label: t('navigation.articleManagement'),
         key: 'article-manager',
         icon: renderIcon(ReaderOutline)
+      },
+      {
+        label: t('navigation.messageSettings'),
+        key: 'message-settings',
+        icon: renderIcon(SettingsOutline)
       }
     ]
   },
@@ -332,6 +337,7 @@ const menuKeyToRoute: Record<string, string> = {
   'payment-channels': '/admin/payment-channels',
   'risk-alerts': '/admin/risk/alerts',
   'system-status': '/admin/system-status',
+  'message-settings': '/admin/message-settings',
   'realtime-ops': '/admin/realtime-ops',
   'financial-overview': '/admin/financial-overview',
   'manual-adjustment': '/admin/manual-adjustment',

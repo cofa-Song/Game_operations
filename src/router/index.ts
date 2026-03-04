@@ -83,6 +83,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '系統健康監測' }
       },
       {
+        path: 'message-settings',
+        name: 'MessageSettings',
+        component: () => import('@/views/Master/MessageSettings.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '訊息設置' }
+      },
+      {
         path: 'asset-logs',
         name: 'AssetLogs',
         component: () => import('@/views/Master/AssetLogs.vue'),
