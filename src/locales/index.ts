@@ -169,6 +169,8 @@ export const zhTW = {
     guildManagement: '公會設定',
     articleManagement: '文章管理',
     dataCenter: '數據中心',
+    operationReport: '營運報表',
+    reportManagement: '報表管理',
     todoCenter: '待辦審核中心',
     riskManagement: '風控管理',
     realtimeOps: '即時運作數據',
@@ -178,6 +180,44 @@ export const zhTW = {
     imageConfig: '圖片管理',
     systemStatus: '系統健康監測',
     messageSettings: '訊息設置'
+  },
+  appVersion: {
+    title: '版本管理',
+    addVersion: '新增版本',
+    editVersion: '版本設定',
+    saveSuccess: '已儲存',
+    addSuccess: '已新增',
+    updateSuccess: '已更新',
+    deleteSuccess: '已刪除',
+    deleteConfirm: '確定刪除？',
+    fillRequired: '請填寫必要欄位',
+    table: {
+      version: '版本',
+      platform: '平台',
+      type: '更新類型',
+      status: '狀態',
+      title: '標題',
+      action: '操作'
+    },
+    form: {
+      platform: '裝置平台',
+      version: '版本號 (Version)',
+      build: '版本代碼 (Build)',
+      type: '更新類型',
+      link: '下載連結',
+      title: '更新標題',
+      changelog: '更新日誌 (ZH)',
+      enabled: '發佈狀態'
+    },
+    updateTypes: {
+      none: '不提示',
+      option: '建議更新',
+      force: '強制更新'
+    },
+    statusText: {
+      enabled: '啟用',
+      disabled: '停用'
+    }
   },
   article: {
     category: '文章類別',
@@ -249,6 +289,92 @@ export const zhTW = {
       depositArrived: '存款到帳',
       passwordChanged: '修改密碼',
       maintenanceComplete: '維護完成'
+    }
+  },
+  operationReport: {
+    title: '營運報表',
+    reportType: '類型',
+    reportTypes: {
+      ggr: '損益表 (GGR)',
+      deposit: '儲值分析',
+      activity: '玩家活躍度',
+      activity_bonus: '活動金'
+    },
+    granularity: '數據粒度',
+    granularities: {
+      hour: '時',
+      day: '日',
+      month: '月'
+    },
+    timeRange: '時間區間',
+    excludeTesting: '排除測試帳號',
+    targetType: '統計對象',
+    targetTypes: {
+      all: '全站',
+      agent: '代理 ID',
+      player: '玩家 ID'
+    },
+    targetIdPlaceholder: '請輸入指定 ID',
+    search: '查詢',
+    columns: {
+      date: '日期',
+      playerId: '玩家 ID',
+      currency: '幣別',
+      betAmount: '總投注額 (Bet)',
+      rollingAmount: '有效投注額 (Rolling)',
+      payoutAmount: '總派彩額 (Win)',
+      ggr: '損益 (GGR)',
+      betCount: '總投注次數',
+      maxBet: '最大投注額',
+      maxWinRate: '最大派彩倍率',
+      totalDeposit: '總儲值額',
+      depositCount: '總儲值次數',
+      maxDeposit: '最大儲值額',
+      averageDeposit: '平均儲值額',
+      activeDays: '活躍天數',
+      distributedAmount: '總派發活動金',
+      recalledAmount: '總回收活動金',
+      convertedAmount: '總轉換活動金'
+    },
+    actions: {
+      search: '查詢',
+      export: '生成報表'
+    },
+    chart: {
+      curve: '曲線圖',
+      line: '折線圖',
+      bar: '柱狀圖'
+    },
+    messages: {
+      exportSuccess: '報表已加入排隊，請至報表中心下載',
+      noData: '查無資料',
+      granularityHourError: '「時」粒度跨度不得超過 24 小時',
+      granularityDayError: '「日」粒度跨度不得超過 30 天',
+      granularityMonthError: '「月」粒度跨度不得超過 6 個月'
+    }
+  },
+  reportManagement: {
+    title: '報表管理',
+    columns: {
+      id: '報表 ID',
+      name: '報表名稱',
+      type: '報表類型',
+      createTime: '建立時間',
+      completeTime: '完成時間',
+      status: '狀態',
+      fileSize: '檔案大小',
+      operator: '操作人',
+      actions: '操作'
+    },
+    status: {
+      pending: '等待中',
+      processing: '處理中',
+      completed: '已完成',
+      failed: '失敗'
+    },
+    actions: {
+      download: '下載',
+      delete: '刪除'
     }
   },
   merchant: {
@@ -457,6 +583,45 @@ export const zhTW = {
       rate: '流水計入比例',
       typeRateDesc: '遊戲類型由後端維護，僅可調整「流水計入比例」。此比例為該類型遊戲的基礎比例，可被行銷標籤覆蓋。'
     }
+  },
+  gameLogs: {
+    title: '遊戲對局紀錄',
+    playerId: '玩家 ID',
+    playerIdPlaceholder: 'ID / 帳號',
+    provider: '供應商',
+    providerAll: '全部',
+    gameName: '遊戲名稱',
+    gameNamePlaceholder: '模糊搜尋',
+    roundId: '局號',
+    roundIdPlaceholder: '供應商局號',
+    search: '查詢',
+    detailTitle: '對局詳情 (原始數據)',
+    columns: {
+      uid: 'UID',
+      time: '時間',
+      player: '玩家',
+      game: '遊戲',
+      bet: '投注',
+      win: '中獎',
+      net: '輸贏',
+      validTurnover: '有效流水',
+      status: '狀態',
+      action: '操作'
+    },
+    statusText: {
+      void: '註銷',
+      settle: '結算'
+    },
+    actionText: {
+      detail: '詳情'
+    },
+    detail: {
+      uid: 'UID:',
+      provider: 'Provider:',
+      roundId: 'Round ID:',
+      settleTime: 'Settle Time:'
+    },
+    loadFailed: '載入失敗'
   },
   errors: {
     code_1001: '餘額不足',
@@ -734,6 +899,8 @@ export const zhCN = {
     guildManagement: '公会设定',
     articleManagement: '文章管理',
     dataCenter: '数据中心',
+    operationReport: '运营报表',
+    reportManagement: '报表管理',
     todoCenter: '待办审核中心',
     riskManagement: '风控管理',
     realtimeOps: '实时运作数据',
@@ -814,6 +981,68 @@ export const zhCN = {
       depositArrived: '存款到账',
       passwordChanged: '修改密码',
       maintenanceComplete: '维护完成'
+    }
+  },
+  operationReport: {
+    title: '运营报表',
+    reportType: '类型',
+    reportTypes: {
+      ggr: '损益表 (GGR)',
+      deposit: '储值分析',
+      activity: '玩家活跃度',
+      activity_bonus: '活动金'
+    },
+    granularity: '数据粒度',
+    granularities: {
+      hour: '时',
+      day: '日',
+      month: '月'
+    },
+    timeRange: '时间区间',
+    excludeTesting: '排除测试账号',
+    targetType: '统计对象',
+    targetTypes: {
+      all: '全站',
+      agent: '代理 ID',
+      player: '玩家 ID'
+    },
+    targetIdPlaceholder: '请输入指定 ID',
+    search: '查询',
+    columns: {
+      date: '日期',
+      playerId: '玩家 ID',
+      currency: '币别',
+      betAmount: '总投注额 (Bet)',
+      rollingAmount: '有效投注额 (Rolling)',
+      payoutAmount: '总派彩额 (Win)',
+      ggr: '损益 (GGR)',
+      betCount: '总投注次数',
+      maxBet: '最大投注额',
+      maxWinRate: '最大派彩倍率',
+      totalDeposit: '总储值额',
+      depositCount: '总储值次数',
+      maxDeposit: '最大储值额',
+      averageDeposit: '平均储值额',
+      activeDays: '活跃天数',
+      distributedAmount: '总派发活动金',
+      recalledAmount: '总回收活动金',
+      convertedAmount: '总转换活动金'
+    },
+    actions: {
+      search: '查询',
+      export: '生成报表'
+    },
+    chart: {
+      curve: '曲线图',
+      line: '折线图',
+      bar: '柱状图'
+    },
+    messages: {
+      exportSuccess: '报表已加入排队，请至报表中心下载',
+      noData: '查无资料',
+      granularityHourError: '「时」粒度跨度不得超过 24 小时',
+      granularityDayError: '「日」粒度跨度不得超过 30 天',
+      granularityMonthError: '「月」粒度跨度不得超过 6 个月'
     }
   },
   merchant: {
@@ -1004,6 +1233,45 @@ export const zhCN = {
       typeRateDesc: '游戏类型由后端维护，仅可调整「流水计入比例」。此比例为该类型游戏的基础比例，可被营销标签覆盖。'
     }
   },
+  gameLogs: {
+    title: '游戏对局纪录',
+    playerId: '玩家 ID',
+    playerIdPlaceholder: 'ID / 账号',
+    provider: '供应商',
+    providerAll: '全部',
+    gameName: '游戏名称',
+    gameNamePlaceholder: '模糊搜索',
+    roundId: '局号',
+    roundIdPlaceholder: '供应商局号',
+    search: '查询',
+    detailTitle: '对局详情 (原始数据)',
+    columns: {
+      uid: 'UID',
+      time: '时间',
+      player: '玩家',
+      game: '游戏',
+      bet: '投注',
+      win: '中奖',
+      net: '输赢',
+      validTurnover: '有效流水',
+      status: '状态',
+      action: '操作'
+    },
+    statusText: {
+      void: '注销',
+      settle: '结算'
+    },
+    actionText: {
+      detail: '详情'
+    },
+    detail: {
+      uid: 'UID:',
+      provider: 'Provider:',
+      roundId: 'Round ID:',
+      settleTime: 'Settle Time:'
+    },
+    loadFailed: '加载失败'
+  },
   errors: {
     code_1001: '余额不足',
     code_1002: '查无此交易',
@@ -1015,6 +1283,44 @@ export const zhCN = {
     code_3002: '超出单注限额',
     code_4001: '日期范围无效或过长',
     code_5000: '系统繁忙'
+  },
+  appVersion: {
+    title: '版本管理',
+    addVersion: '新增版本',
+    editVersion: '版本设定',
+    saveSuccess: '已儲存',
+    addSuccess: '已新增',
+    updateSuccess: '已更新',
+    deleteSuccess: '已删除',
+    deleteConfirm: '确定删除？',
+    fillRequired: '请填写必要字段',
+    table: {
+      version: '版本',
+      platform: '平台',
+      type: '更新类型',
+      status: '状态',
+      title: '标题',
+      action: '操作'
+    },
+    form: {
+      platform: '设备平台',
+      version: '版本号 (Version)',
+      build: '版本代码 (Build)',
+      type: '更新类型',
+      link: '下载链接',
+      title: '更新标题',
+      changelog: '更新日志 (ZH)',
+      enabled: '发布状态'
+    },
+    updateTypes: {
+      none: '不提示',
+      option: '建议更新',
+      force: '强制更新'
+    },
+    statusText: {
+      enabled: '启用',
+      disabled: '停用'
+    }
   },
   finance: {
     paymentChannel: {
@@ -1268,6 +1574,8 @@ export const en = {
     guildManagement: 'Guild Settings',
     articleManagement: 'Article Management',
     dataCenter: 'Data Center',
+    operationReport: 'Operation Report',
+    reportManagement: 'Report Management',
     todoCenter: 'Todo Audit Center',
     riskManagement: 'Risk Management',
     realtimeOps: 'Real-time Operations',
@@ -1276,11 +1584,45 @@ export const en = {
     commodityConfig: 'Commodity Config',
     imageConfig: 'Image Management',
     systemStatus: 'System Health Status',
-    messageSettings: 'Message Settings',
-    systemConfig: 'System Settings',
-    thirdPartyKeys: 'Third-party Key Management',
-    appVersionManager: 'App Version Management',
-    adminWhitelist: 'Admin Whitelist'
+    messageSettings: 'Message Settings'
+  },
+  appVersion: {
+    title: 'Version Management',
+    addVersion: 'Add Version',
+    editVersion: 'Version Settings',
+    saveSuccess: 'Saved',
+    addSuccess: 'Added',
+    updateSuccess: 'Updated',
+    deleteSuccess: 'Deleted',
+    deleteConfirm: 'Are you sure you want to delete?',
+    fillRequired: 'Please fill in required fields',
+    table: {
+      version: 'Version',
+      platform: 'Platform',
+      type: 'Update Type',
+      status: 'Status',
+      title: 'Title',
+      action: 'Action'
+    },
+    form: {
+      platform: 'Device Platform',
+      version: 'Version Number',
+      build: 'Build Number',
+      type: 'Update Type',
+      link: 'Download Link',
+      title: 'Update Title',
+      changelog: 'Changelog (ZH)',
+      enabled: 'Publish Status'
+    },
+    updateTypes: {
+      none: 'No Prompt',
+      option: 'Optional Update',
+      force: 'Force Update'
+    },
+    statusText: {
+      enabled: 'Enabled',
+      disabled: 'Disabled'
+    }
   },
   article: {
     category: 'Category',
@@ -1352,6 +1694,68 @@ export const en = {
       depositArrived: 'Deposit Arrived',
       passwordChanged: 'Password Changed',
       maintenanceComplete: 'Maintenance Complete'
+    }
+  },
+  operationReport: {
+    title: 'Operation Report',
+    reportType: 'Report Type',
+    reportTypes: {
+      ggr: 'P&L (GGR)',
+      deposit: 'Deposit Analysis',
+      activity: 'Player Activity',
+      activity_bonus: 'Activity Bonus'
+    },
+    granularity: 'Granularity',
+    granularities: {
+      hour: 'Hour',
+      day: 'Day',
+      month: 'Month'
+    },
+    timeRange: 'Time Range',
+    excludeTesting: 'Exclude Testing Accounts',
+    targetType: 'Target',
+    targetTypes: {
+      all: 'All',
+      agent: 'Agent ID',
+      player: 'Player ID'
+    },
+    targetIdPlaceholder: 'Enter ID',
+    search: 'Search',
+    columns: {
+      date: 'Date',
+      playerId: 'Player ID',
+      currency: 'Currency',
+      betAmount: 'Total Bet',
+      rollingAmount: 'Rolling (Valid Bet)',
+      payoutAmount: 'Total Win (Payout)',
+      ggr: 'GGR (P&L)',
+      betCount: 'Total Bet Count',
+      maxBet: 'Max Bet',
+      maxWinRate: 'Max Payout Rate',
+      totalDeposit: 'Total Deposit',
+      depositCount: 'Deposit Count',
+      maxDeposit: 'Max Deposit',
+      averageDeposit: 'Avg Deposit',
+      activeDays: 'Active Days',
+      distributedAmount: 'Total Distributed',
+      recalledAmount: 'Total Recalled',
+      convertedAmount: 'Total Converted'
+    },
+    actions: {
+      search: 'Search',
+      export: 'Generate Report'
+    },
+    chart: {
+      curve: 'Curve',
+      line: 'Line',
+      bar: 'Bar'
+    },
+    messages: {
+      exportSuccess: 'Report added to queue, please download in Report Center',
+      noData: 'No Data Found',
+      granularityHourError: 'Hour granularity cannot exceed 24 hours',
+      granularityDayError: 'Day granularity cannot exceed 30 days',
+      granularityMonthError: 'Month granularity cannot exceed 6 months'
     }
   },
   merchant: {
@@ -1543,6 +1947,45 @@ export const en = {
       typeRateDesc: 'Game types are maintained by the backend. Only "Turnover Rate" can be adjusted. This rate is the base rate for games of this type and can be overridden by marketing tags.'
     }
   },
+  gameLogs: {
+    title: 'Game Logs',
+    playerId: 'Player ID',
+    playerIdPlaceholder: 'ID / Account',
+    provider: 'Provider',
+    providerAll: 'All',
+    gameName: 'Game Name',
+    gameNamePlaceholder: 'Fuzzy Search',
+    roundId: 'Round ID',
+    roundIdPlaceholder: 'Provider Round ID',
+    search: 'Search',
+    detailTitle: 'Log Details (Raw Data)',
+    columns: {
+      uid: 'UID',
+      time: 'Time',
+      player: 'Player',
+      game: 'Game',
+      bet: 'Bet',
+      win: 'Win',
+      net: 'Net',
+      validTurnover: 'Valid Turnover',
+      status: 'Status',
+      action: 'Action'
+    },
+    statusText: {
+      void: 'Void',
+      settle: 'Settle'
+    },
+    actionText: {
+      detail: 'Detail'
+    },
+    detail: {
+      uid: 'UID:',
+      provider: 'Provider:',
+      roundId: 'Round ID:',
+      settleTime: 'Settle Time:'
+    },
+    loadFailed: 'Load Failed'
+  },
   errors: {
     code_1001: 'Insufficient balance',
     code_1002: 'Transaction not found',
@@ -1660,6 +2103,30 @@ export const en = {
         REFUNDED: 'Refunded',
         VERIFY_ERROR: 'Verify Error'
       }
+    }
+  },
+  reportManagement: {
+    title: 'Report Management',
+    columns: {
+      id: 'Report ID',
+      name: 'Report Name',
+      type: 'Report Type',
+      createTime: 'Create Time',
+      completeTime: 'Complete Time',
+      status: 'Status',
+      fileSize: 'File Size',
+      operator: 'Operator',
+      actions: 'Actions'
+    },
+    status: {
+      pending: 'Pending',
+      processing: 'Processing',
+      completed: 'Completed',
+      failed: 'Failed'
+    },
+    actions: {
+      download: 'Download',
+      delete: 'Delete'
     }
   }
 }

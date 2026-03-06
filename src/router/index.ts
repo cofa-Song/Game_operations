@@ -71,6 +71,18 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '即時運作數據' }
       },
       {
+        path: 'operation-report',
+        name: 'OperationReport',
+        component: () => import('@/views/DataCenter/OperationReport.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '營運報表' }
+      },
+      {
+        path: 'report-management',
+        name: 'ReportManagement',
+        component: () => import('@/views/DataCenter/ReportManagement.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '報表管理' }
+      },
+      {
         path: 'risk/alerts',
         name: 'RiskAlerts',
         component: () => import('@/views/Risk/AlertList.vue'), // Risk Alert List

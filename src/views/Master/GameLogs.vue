@@ -1,28 +1,28 @@
 <template>
   <div class="p-6">
-    <NCard title="遊戲對局紀錄">
+    <NCard :title="t('gameLogs.title')">
       <!-- Advanced Filters -->
       <NForm inline label-placement="left" class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NFormItem label="玩家 ID">
-              <NInput v-model:value="searchForm.player_id" placeholder="ID / 帳號" clearable />
+          <NFormItem :label="t('gameLogs.playerId')">
+              <NInput v-model:value="searchForm.player_id" :placeholder="t('gameLogs.playerIdPlaceholder')" clearable />
           </NFormItem>
-          <NFormItem label="供應商">
+          <NFormItem :label="t('gameLogs.provider')">
               <NSelect 
                 v-model:value="searchForm.provider" 
                 :options="providerOptions" 
-                placeholder="全部" 
+                :placeholder="t('gameLogs.providerAll')" 
                 clearable 
                 style="width: 140px"
               />
           </NFormItem>
-          <NFormItem label="遊戲名稱">
-               <NInput v-model:value="searchForm.game_name" placeholder="模糊搜尋" clearable />
+          <NFormItem :label="t('gameLogs.gameName')">
+               <NInput v-model:value="searchForm.game_name" :placeholder="t('gameLogs.gameNamePlaceholder')" clearable />
           </NFormItem>
-          <NFormItem label="局號">
-               <NInput v-model:value="searchForm.round_id" placeholder="供應商局號" clearable />
+          <NFormItem :label="t('gameLogs.roundId')">
+               <NInput v-model:value="searchForm.round_id" :placeholder="t('gameLogs.roundIdPlaceholder')" clearable />
           </NFormItem>
           <NFormItem class="col-span-2">
-             <NButton type="primary" @click="handleSearch" :loading="loading">查詢</NButton>
+             <NButton type="primary" @click="handleSearch" :loading="loading">{{ t('gameLogs.search') }}</NButton>
           </NFormItem>
       </NForm>
 
@@ -39,15 +39,15 @@
     <NModal
       v-model:show="showDetail"
       preset="card"
-      title="對局詳情 (原始數據)"
+      :title="t('gameLogs.detailTitle')"
       style="width: 600px"
     >
       <div v-if="selectedLog">
           <div class="mb-4 grid grid-cols-2 gap-2 text-sm">
-              <div><span class="text-gray-500">UID:</span> {{ selectedLog.id }}</div>
-              <div><span class="text-gray-500">Provider:</span> {{ selectedLog.provider_id }}</div>
-              <div><span class="text-gray-500">Round ID:</span> {{ selectedLog.provider_round_id }}</div>
-              <div><span class="text-gray-500">Settle Time:</span> {{ selectedLog.settle_time.replace('T', ' ').split('.')[0] }}</div>
+              <div><span class="text-gray-500">{{ t('gameLogs.detail.uid') }}</span> {{ selectedLog.id }}</div>
+              <div><span class="text-gray-500">{{ t('gameLogs.detail.provider') }}</span> {{ selectedLog.provider_id }}</div>
+              <div><span class="text-gray-500">{{ t('gameLogs.detail.roundId') }}</span> {{ selectedLog.provider_round_id }}</div>
+              <div><span class="text-gray-500">{{ t('gameLogs.detail.settleTime') }}</span> {{ selectedLog.settle_time.replace('T', ' ').split('.')[0] }}</div>
           </div>
           <NDivider />
           <pre class="bg-gray-100 p-4 rounded text-xs font-mono overflow-auto max-h-[400px]">{{ formatJson(selectedLog.raw_json) }}</pre>
@@ -57,11 +57,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue'
+import { ref, reactive, onMounted, h, computed } from 'vue'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NDivider, useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { gameApi } from '@/api/game'
 import { GameLog, GameSearchParams } from '@/types/game'
 
+const { t } = useI18n()
 const message = useMessage()
 const loading = ref(false)
 const logs = ref<GameLog[]>([])
@@ -99,22 +101,26 @@ const formatJson = (jsonStr: string) => {
     }
 }
 
+const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num)
+}
+
 const handleDetail = (row: GameLog) => {
     selectedLog.value = row
     showDetail.value = true
 }
 
-const columns = [
-    { title: 'UID', key: 'id', width: 100, ellipsis: true },
+const columns = computed(() => [
+    { title: t('gameLogs.columns.uid'), key: 'id', width: 100, ellipsis: true },
     { 
-        title: '時間', 
+        title: t('gameLogs.columns.time'), 
         key: 'settle_time', 
         width: 160,
         render: (row: GameLog) => row.settle_time.replace('T', ' ').slice(5, 16) // mm-dd HH:MM
     },
-    { title: '玩家', key: 'player_id', width: 100 },
+    { title: t('gameLogs.columns.player'), key: 'player_id', width: 100 },
     { 
-        title: '遊戲', 
+        title: t('gameLogs.columns.game'), 
         key: 'game_name',
         width: 200,
         render: (row: GameLog) => h('div', [
@@ -123,55 +129,55 @@ const columns = [
         ])
     },
     { 
-        title: '投注', 
+        title: t('gameLogs.columns.bet'), 
         key: 'bet_amount', 
-        align: 'right',
-        render: (row: GameLog) => row.bet_amount 
+        align: 'right' as const,
+        render: (row: GameLog) => formatNumber(row.bet_amount)
     },
     { 
-        title: '中獎', 
+        title: t('gameLogs.columns.win'), 
         key: 'win_amount', 
-        align: 'right',
-        render: (row: GameLog) => row.win_amount 
+        align: 'right' as const,
+        render: (row: GameLog) => formatNumber(row.win_amount) 
     },
     { 
-        title: '輸贏', 
+        title: t('gameLogs.columns.net'), 
         key: 'net_amount', 
-        align: 'right',
+        align: 'right' as const,
         render: (row: GameLog) => {
             const color = row.net_amount >= 0 ? 'text-green-600' : 'text-red-600'
             const prefix = row.net_amount > 0 ? '+' : ''
-            return h('span', { class: ['font-bold', color] }, prefix + row.net_amount)
+            return h('span', { class: ['font-bold', color] }, prefix + formatNumber(row.net_amount))
         }
     },
     { 
-        title: '有效流水', 
+        title: t('gameLogs.columns.validTurnover'), 
         key: 'valid_turnover', 
-        align: 'right',
+        align: 'right' as const,
         render: (row: GameLog) => {
-           if (row.status === 'void') return h('span', { class: 'text-gray-400 line-through' }, row.valid_turnover)
-           return row.valid_turnover
+           if (row.status === 'void') return h('span', { class: 'text-gray-400 line-through' }, formatNumber(row.valid_turnover))
+           return formatNumber(row.valid_turnover)
         }
     },
     { 
-        title: '狀態', 
+        title: t('gameLogs.columns.status'), 
         key: 'status', 
         width: 80,
         render: (row: GameLog) => {
-            if (row.status === 'void') return h(NTag, { type: 'error', size: 'small', bordered: false }, { default: () => '註銷' })
-            return h(NTag, { type: 'success', size: 'small', bordered: false }, { default: () => '結算' })
+            if (row.status === 'void') return h(NTag, { type: 'error', size: 'small', bordered: false }, { default: () => t('gameLogs.statusText.void') })
+            return h(NTag, { type: 'success', size: 'small', bordered: false }, { default: () => t('gameLogs.statusText.settle') })
         }
     },
     {
-        title: '操作',
+        title: t('gameLogs.columns.action'),
         key: 'action',
         width: 80,
         render: (row: GameLog) => h(NButton, { 
             size: 'tiny', 
             onClick: () => handleDetail(row)
-        }, { default: () => '詳情' })
+        }, { default: () => t('gameLogs.actionText.detail') })
     }
-]
+])
 
 const fetchData = async () => {
     loading.value = true
@@ -192,7 +198,7 @@ const fetchData = async () => {
             message.error(res.msg)
         }
     } catch (e) {
-        message.error('載入失敗')
+        message.error(t('gameLogs.loadFailed'))
     } finally {
         loading.value = false
     }

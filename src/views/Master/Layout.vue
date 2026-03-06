@@ -128,6 +128,16 @@ const menuOptions = computed(() => [
         label: t('navigation.realtimeOps'),
         key: 'realtime-ops',
         icon: renderIcon(PulseIcon)
+      },
+      {
+        label: t('navigation.operationReport'),
+        key: 'operation-report',
+        icon: renderIcon(DataCenterIcon)
+      },
+      {
+        label: t('navigation.reportManagement'),
+        key: 'report-management',
+        icon: renderIcon(ReaderOutline)
       }
     ]
   },
@@ -338,6 +348,8 @@ const menuKeyToRoute: Record<string, string> = {
   'risk-alerts': '/admin/risk/alerts',
   'system-status': '/admin/system-status',
   'message-settings': '/admin/message-settings',
+  'operation-report': '/admin/operation-report',
+  'report-management': '/admin/report-management',
   'realtime-ops': '/admin/realtime-ops',
   'financial-overview': '/admin/financial-overview',
   'manual-adjustment': '/admin/manual-adjustment',
