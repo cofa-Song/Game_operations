@@ -1088,16 +1088,12 @@ export const zhCN = {
     commodityConfig: '商品配置管理',
     imageConfig: '图片管理',
     systemStatus: '系统健康监测',
-<<<<<<< HEAD
     messageSettings: '消息设置',
     messageManagement: '消息管理',
     systemMessage: '站内信',
     chatManagement: '聊天室管理',
     chatKeywordSettings: '敏感字库设定',
     chatTriggerAudit: '触发纪录审核'
-=======
-    messageSettings: '消息设置'
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
   },
   article: {
     category: '文章类别',
