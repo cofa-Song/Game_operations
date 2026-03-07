@@ -10,6 +10,7 @@
                     </n-text>
 
                     <n-space align="center">
+<<<<<<< HEAD
                         <n-space align="center">
                             <n-text>排除測試帳號</n-text>
                             <n-switch v-model:value="excludeTest" @update:value="fetchData" />
@@ -17,6 +18,9 @@
                         <n-divider vertical />
                         <n-text depth="3">自動刷新: {{ timeLeft }}s</n-text>
                         <n-text depth="3" style="margin-right: 8px">最後更新: {{ lastUpdated }}</n-text>
+=======
+                        <n-text depth="3">最後更新: {{ lastUpdated }}</n-text>
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
                         <n-button 
                             type="primary" 
                             secondary 
@@ -33,13 +37,21 @@
 
             <!-- Todo Cards Grid -->
             <n-grid x-gap="16" y-gap="16" :cols="4" item-responsive>
+<<<<<<< HEAD
+=======
+                
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
                 <!-- Finance Section -->
                 <n-gi v-if="hasFinancePermission">
                     <n-card 
                         class="todo-card" 
                         :class="{ 'status-warn': stats.pendingDeposits > 0 }"
                         hoverable 
+<<<<<<< HEAD
                         @click="navigateTo('/admin/deposit-orders', { status: 'pending' })"
+=======
+                        @click="navigateTo('/finance/deposit-orders', { status: 'pending' })"
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
                     >
                         <n-statistic label="儲值待補單">
                             <template #prefix>
@@ -58,7 +70,11 @@
                         class="todo-card" 
                         :class="{ 'status-warn': stats.pendingWithdrawals > 0 }"
                         hoverable
+<<<<<<< HEAD
                         @click="navigateTo('/admin/manual-adjustment', { status: 'pending' })"
+=======
+                        @click="navigateTo('/finance/withdraw-audit', { status: 'pending' })"
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
                     >
                         <n-statistic label="提款待審核">
                             <template #prefix>
@@ -78,7 +94,11 @@
                         class="todo-card" 
                         :class="{ 'status-danger': stats.riskAlerts > 0 }"
                         hoverable
+<<<<<<< HEAD
                         @click="navigateTo('/admin/risk/alerts', { status: 'unresolved' })"
+=======
+                        @click="navigateTo('/risk/alerts', { status: 'unresolved' })"
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
                     >
                         <n-statistic label="異常行為預警" label-class="risk-alert-label">
                             <template #prefix>
@@ -98,8 +118,11 @@
                     <n-card 
                         class="todo-card"
                         :class="{ 'status-danger': stats.apiHealth.status !== 'healthy' }"
+<<<<<<< HEAD
                         hoverable
                         @click="navigateTo('/admin/system-status')"
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
                     >
                         <n-statistic label="系統健康度">
                             <template #prefix>
@@ -119,6 +142,7 @@
                     </n-card>
                 </n-gi>
 
+<<<<<<< HEAD
             </n-grid>
 
             <n-divider />
@@ -171,15 +195,38 @@
                         <div ref="deviceChartRef" style="height: 350px"></div>
                     </n-card>
                 </n-gi>
+=======
+                 <!-- CCU -->
+                <n-gi>
+                     <n-card class="todo-card status-neutral">
+                        <n-statistic label="即時在線 (CCU)">
+                            <template #prefix>
+                                <n-icon><people-icon /></n-icon>
+                            </template>
+                            {{ stats.ccu.toLocaleString() }}
+                        </n-statistic>
+                         <div class="card-action">
+                            <n-text depth="3" class="text-xs">實時更新</n-text>
+                        </div>
+                    </n-card>
+                </n-gi>
+
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
             </n-grid>
         </n-space>
     </div>
 </template>
 
 <script setup lang="ts">
+<<<<<<< HEAD
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage, NSpace, NCard, NGrid, NGi, NStatistic, NIcon, NButton, NText, NTag, NPopover, NSwitch, NDivider, NNumberAnimation } from 'naive-ui'
+=======
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMessage, NSpace, NCard, NGrid, NGi, NStatistic, NIcon, NButton, NText, NTag, NPopover } from 'naive-ui'
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 import { 
     SpeedometerOutline as SpeedometerIcon,
     Refresh as RefreshIcon,
@@ -187,6 +234,7 @@ import {
     CashOutline as CashIcon,
     AlertCircleOutline as AlertCircleIcon,
     PulseOutline as PulseIcon,
+<<<<<<< HEAD
     PeopleOutline as PeopleIcon,
     PersonOutline as PersonIcon
 } from '@vicons/ionicons5'
@@ -196,6 +244,14 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import * as echarts from 'echarts'
 
 const REFRESH_INTERVAL = 30 // seconds config
+=======
+    PeopleOutline as PeopleIcon
+} from '@vicons/ionicons5'
+import { dashboardApi, TodoStats } from '@/api/dashboard'
+import { useAuthStore } from '@/stores/useAuthStore'
+
+const updateInterval = 30000 // 30s
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 const cooldownTime = 5000 // 5s
 
 const router = useRouter()
@@ -206,9 +262,12 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const isInCooldown = ref(false)
 const lastUpdated = ref('')
+<<<<<<< HEAD
 const excludeTest = ref(true)
 const timeLeft = ref(REFRESH_INTERVAL)
 
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 const stats = ref<TodoStats>({
     pendingDeposits: 0,
     pendingWithdrawals: 0,
@@ -217,6 +276,7 @@ const stats = ref<TodoStats>({
     ccu: 0
 })
 
+<<<<<<< HEAD
 const realtimeStats = ref<RealtimeStats>({
     ccu: 0,
     dau: 0,
@@ -234,6 +294,9 @@ let deviceChart: echarts.ECharts | null = null
 
 let timer: number | null = null
 let countdownTimer: number | null = null
+=======
+let timer: number | null = null
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 
 // Permissions
 const hasFinancePermission = computed(() => {
@@ -259,6 +322,7 @@ const healthClass = computed(() => {
     return 'text-danger'
 })
 
+<<<<<<< HEAD
 // Chart Methods
 const initCharts = () => {
     if (providerChartRef.value) {
@@ -332,6 +396,17 @@ const fetchData = async (isAuto = false) => {
         lastUpdated.value = new Date().toLocaleTimeString()
         timeLeft.value = REFRESH_INTERVAL
 
+=======
+// Methods
+const fetchData = async (isAuto = false) => {
+    if (!isAuto) loading.value = true
+    try {
+        const res = await dashboardApi.getTodoStats()
+        if (res.code === 0 && res.data) {
+            stats.value = res.data
+            lastUpdated.value = new Date().toLocaleTimeString()
+        }
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
     } catch (e) {
         message.error('數據更新失敗')
     } finally {
@@ -349,6 +424,7 @@ const handleManualRefresh = () => {
     }, cooldownTime)
 }
 
+<<<<<<< HEAD
 const startAutoRefresh = () => {
     timer = window.setInterval(() => fetchData(true), REFRESH_INTERVAL * 1000)
     
@@ -359,10 +435,13 @@ const startAutoRefresh = () => {
     }, 1000)
 }
 
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 const navigateTo = (path: string, query?: Record<string, string>) => {
     router.push({ path, query })
 }
 
+<<<<<<< HEAD
 const handleResize = () => {
     providerChart?.resize()
     deviceChart?.resize()
@@ -376,10 +455,17 @@ onMounted(() => {
         window.addEventListener('resize', handleResize)
     })
     startAutoRefresh()
+=======
+// Lifecycle
+onMounted(() => {
+    fetchData()
+    timer = window.setInterval(() => fetchData(true), updateInterval)
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 })
 
 onUnmounted(() => {
     if (timer) clearInterval(timer)
+<<<<<<< HEAD
     if (countdownTimer) clearInterval(countdownTimer)
     window.removeEventListener('resize', handleResize)
     providerChart?.dispose()
@@ -388,6 +474,8 @@ onUnmounted(() => {
 
 watch(excludeTest, () => {
     fetchData()
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 })
 
 </script>
@@ -406,6 +494,7 @@ watch(excludeTest, () => {
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
+<<<<<<< HEAD
 .kpi-card {
     cursor: pointer;
     transition: transform 0.2s;
@@ -414,6 +503,8 @@ watch(excludeTest, () => {
     transform: translateY(-5px);
 }
 
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
 .status-warn {
     border-left-color: #f0a020;
 }

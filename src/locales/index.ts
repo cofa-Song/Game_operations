@@ -170,7 +170,10 @@ export const zhTW = {
     articleManagement: '文章管理',
     dataCenter: '數據中心',
     operationReport: '營運報表',
+<<<<<<< HEAD
     gameStats: '遊戲統計',
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
     reportManagement: '報表管理',
     todoCenter: '待辦審核中心',
     riskManagement: '風控管理',
@@ -180,12 +183,16 @@ export const zhTW = {
     commodityConfig: '商品配置管理',
     imageConfig: '圖片管理',
     systemStatus: '系統健康監測',
+<<<<<<< HEAD
     messageSettings: '訊息設置',
     messageManagement: '訊息管理',
     systemMessage: '站內信',
     chatManagement: '聊天室管理',
     chatKeywordSettings: '敏感字庫設定',
     chatTriggerAudit: '觸發紀錄審核'
+=======
+    messageSettings: '訊息設置'
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
   },
   appVersion: {
     title: '版本管理',
@@ -297,6 +304,7 @@ export const zhTW = {
       maintenanceComplete: '維護完成'
     }
   },
+<<<<<<< HEAD
   systemMessage: {
     title: '站內信管理',
     createMessage: '建立信件',
@@ -426,6 +434,8 @@ export const zhTW = {
       }
     }
   },
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
   operationReport: {
     title: '營運報表',
     reportType: '類型',
@@ -488,6 +498,7 @@ export const zhTW = {
       granularityMonthError: '「月」粒度跨度不得超過 6 個月'
     }
   },
+<<<<<<< HEAD
   gameStats: {
     title: '遊戲統計',
     search: '查詢',
@@ -532,6 +543,8 @@ export const zhTW = {
       arpu: 'ARPU (人均貢獻)'
     }
   },
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
   reportManagement: {
     title: '報表管理',
     columns: {
@@ -1088,12 +1101,16 @@ export const zhCN = {
     commodityConfig: '商品配置管理',
     imageConfig: '图片管理',
     systemStatus: '系统健康监测',
+<<<<<<< HEAD
     messageSettings: '消息设置',
     messageManagement: '消息管理',
     systemMessage: '站内信',
     chatManagement: '聊天室管理',
     chatKeywordSettings: '敏感字库设定',
     chatTriggerAudit: '触发纪录审核'
+=======
+    messageSettings: '消息设置'
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
   },
   article: {
     category: '文章类别',
@@ -1167,6 +1184,7 @@ export const zhCN = {
       maintenanceComplete: '维护完成'
     }
   },
+<<<<<<< HEAD
   systemMessage: {
     title: '站内信管理',
     createMessage: '建立信件',
@@ -1296,6 +1314,8 @@ export const zhCN = {
       }
     }
   },
+=======
+>>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
   operationReport: {
     title: '运营报表',
     reportType: '类型',
