@@ -56,10 +56,7 @@ const masterRoutes: RouteRecordRaw[] = [
       },
       {
         path: '',
-<<<<<<< HEAD
         name: 'AdminDashboardRedirect',
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
         redirect: '/admin/dashboard'
       },
       {
@@ -69,30 +66,18 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { title: '待辦審核中心' }
       },
       {
-<<<<<<< HEAD
-=======
-        path: 'realtime-ops',
-        name: 'RealtimeOps',
-        component: () => import('@/views/DataCenter/RealtimeDashboard.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '即時運作數據' }
-      },
-      {
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
         path: 'operation-report',
         name: 'OperationReport',
         component: () => import('@/views/DataCenter/OperationReport.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '營運報表' }
       },
       {
-<<<<<<< HEAD
         path: 'game-stats',
         name: 'GameStats',
         component: () => import('@/views/DataCenter/GameStats.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '遊戲統計' }
       },
       {
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
         path: 'report-management',
         name: 'ReportManagement',
         component: () => import('@/views/DataCenter/ReportManagement.vue'),
@@ -105,7 +90,6 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'RISK'], breadcrumb: '異常預警列表' }
       },
       {
-<<<<<<< HEAD
         path: 'chat/keywords',
         name: 'ChatKeywordSettings',
         component: () => import('@/views/Risk/ChatKeywordSettings.vue'),
@@ -118,8 +102,6 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'RISK'], breadcrumb: '觸發紀錄審核' }
       },
       {
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
         path: 'system-status',
         name: 'SystemStatus',
         component: () => import('@/views/Master/SystemStatus.vue'),
@@ -132,15 +114,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '訊息設置' }
       },
       {
-<<<<<<< HEAD
         path: 'message-management',
         name: 'MessageManagement',
         component: () => import('@/views/DataCenter/MessageManagement.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '站內信管理' }
       },
       {
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
         path: 'asset-logs',
         name: 'AssetLogs',
         component: () => import('@/views/Master/AssetLogs.vue'),
