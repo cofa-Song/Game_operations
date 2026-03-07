@@ -121,38 +121,24 @@ const menuOptions = computed(() => [
     key: 'data-center-group',
     icon: renderIcon(DataCenterIcon),
     children: [
-<<<<<<< HEAD
       /*
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
       {
         label: t('navigation.riskManagement'),
         key: 'risk-alerts',
         icon: renderIcon(ShieldCheckmarkOutline)
       },
-<<<<<<< HEAD
       */
-=======
-      {
-        label: t('navigation.realtimeOps'),
-        key: 'realtime-ops',
-        icon: renderIcon(PulseIcon)
-      },
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
       {
         label: t('navigation.operationReport'),
         key: 'operation-report',
         icon: renderIcon(DataCenterIcon)
       },
       {
-<<<<<<< HEAD
         label: t('navigation.gameStats'),
         key: 'game-stats',
         icon: renderIcon(DataCenterIcon)
       },
       {
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
         label: t('navigation.reportManagement'),
         key: 'report-management',
         icon: renderIcon(ReaderOutline)
@@ -303,7 +289,6 @@ const menuOptions = computed(() => [
         label: t('navigation.articleManagement'),
         key: 'article-manager',
         icon: renderIcon(ReaderOutline)
-<<<<<<< HEAD
       }
     ]
   },
@@ -316,8 +301,6 @@ const menuOptions = computed(() => [
         label: t('navigation.systemMessage'),
         key: 'message-management',
         icon: renderIcon(SettingsOutline)
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
       },
       {
         label: t('navigation.messageSettings'),
@@ -327,7 +310,6 @@ const menuOptions = computed(() => [
     ]
   },
   {
-<<<<<<< HEAD
     label: t('navigation.chatManagement'),
     key: 'chat-management-group',
     icon: renderIcon(ChatIcon),
@@ -343,8 +325,6 @@ const menuOptions = computed(() => [
     ]
   },
   {
-=======
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
     label: t('navigation.systemConfig'),
     key: 'system-config',
     icon: renderIcon(SettingsOutline),
@@ -399,18 +379,12 @@ const menuKeyToRoute: Record<string, string> = {
   'risk-alerts': '/admin/risk/alerts',
   'system-status': '/admin/system-status',
   'message-settings': '/admin/message-settings',
-<<<<<<< HEAD
   'message-management': '/admin/message-management',
   'operation-report': '/admin/operation-report',
   'game-stats': '/admin/game-stats',
   'report-management': '/admin/report-management',
   'chat-keywords': '/admin/chat/keywords',
   'chat-audit': '/admin/chat/audit',
-=======
-  'operation-report': '/admin/operation-report',
-  'report-management': '/admin/report-management',
-  'realtime-ops': '/admin/realtime-ops',
->>>>>>> 4a41687232e05acdc02017560e40c60b53967fe1
   'financial-overview': '/admin/financial-overview',
   'manual-adjustment': '/admin/manual-adjustment',
   'commodity-config': '/admin/commodity-config',
