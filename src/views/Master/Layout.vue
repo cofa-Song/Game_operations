@@ -145,6 +145,18 @@ const menuOptions = computed(() => [
       }
     ]
   },
+  {
+    label: t('navigation.agentManagement'),
+    key: 'agent-management-group',
+    icon: renderIcon(PeopleOutline),
+    children: [
+      {
+        label: t('navigation.agentList'),
+        key: 'agent-list',
+        icon: renderIcon(ListOutline)
+      }
+    ]
+  },
 
   {
     label: t('navigation.playerManagement'),
@@ -389,7 +401,8 @@ const menuKeyToRoute: Record<string, string> = {
   'manual-adjustment': '/admin/manual-adjustment',
   'commodity-config': '/admin/commodity-config',
   'guild-management': '/admin/guilds',
-  'article-manager': '/admin/articles'
+  'article-manager': '/admin/articles',
+  'agent-list': '/admin/agent-list'
 }
 
 // 計算麵包屑項目

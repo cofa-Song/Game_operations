@@ -236,6 +236,12 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'CommodityConfig',
         component: () => import('@/views/Master/CommodityConfig.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '商品配置' }
+      },
+      {
+        path: 'agent-list',
+        name: 'AgentList',
+        component: () => import('@/views/AgentManagement/AgentList.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '代理列表' }
       }
     ]
   }

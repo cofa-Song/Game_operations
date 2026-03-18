@@ -185,7 +185,9 @@ export const zhTW = {
     systemMessage: '站內信',
     chatManagement: '聊天室管理',
     chatKeywordSettings: '敏感字庫設定',
-    chatTriggerAudit: '觸發紀錄審核'
+    chatTriggerAudit: '觸發紀錄審核',
+    agentManagement: '代理管理',
+    agentList: '代理列表'
   },
   appVersion: {
     title: '版本管理',
@@ -919,6 +921,70 @@ export const zhTW = {
         REFUNDED: '已退款',
         VERIFY_ERROR: '驗證異常'
       }
+    }
+  },
+  agent: {
+    list: {
+      title: '代理列表',
+      searchTypeAccount: '帳號',
+      searchTypeUid: 'UID',
+      searchTypePromo: '推廣碼',
+      identity: '身份類型',
+      status: '狀態',
+      createTime: '創建時間',
+      uid: '帳號/UID',
+      promoCode: '推廣碼',
+      path: '代理路徑',
+      cpaMatrix: 'CPA 單價矩陣',
+      commissionRate: '儲值抽成(%)',
+      commissionWallet: '佣金錢包',
+      promoWallet: '推廣金錢包',
+      subAgentCount: '下線代理',
+      directPlayerCount: '直屬玩家',
+      createdAt: '建立時間',
+      actions: '操作',
+      edit: '編輯',
+      details: '詳情',
+      promoMoney: '推廣金',
+      addAgent: '新增代理'
+    },
+    edit: {
+      title: '編輯代理資料',
+      createTitle: '新增代理資料',
+      password: '登入密碼',
+      passwordPlaceholder: '如需重設請輸入新密碼',
+      createPasswordPlaceholder: '請輸入登入密碼',
+      twoFactor: '二階段驗證 (2FA)',
+      cpaMatrix: 'CPA 獲客單價矩陣',
+      cpaLevel: '級距 {level}',
+      cpaMemberCount: '級距人數',
+      cpaPrice: '單價',
+      commissionRate: '儲值分潤比例(%)',
+      bindingThreshold: '資料綁定門檻',
+      phoneBinding: '手機號碼',
+      depositThreshold: '儲值門檻',
+      flowThreshold: '流水門檻',
+      sensitivePermission: '敏感資料權限',
+      sensitivePermissionDesc: '開啟後可查閱所有所屬層級子代理的敏感資料',
+      name: '真實姓名',
+      phone: '手機號碼',
+      contact: '聯絡方式',
+      remark: '管理備註',
+      reason: '異動原因',
+      reasonPlaceholder: '如有任何異動必須填寫才可儲存',
+      saveSuccess: '代理資料更新成功'
+    },
+    identity: {
+      ADMIN: '後台管理員',
+      MASTER: '總代理',
+      SUB: '子代理',
+      ASSISTANT: '助手'
+    },
+    status: {
+      NORMAL: '正常',
+      LOCKED: '鎖定',
+      FROZEN: '凍結',
+      DISABLED: '停用'
     }
   }
 }
