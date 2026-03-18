@@ -242,6 +242,12 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'AgentList',
         component: () => import('@/views/AgentManagement/AgentList.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '代理列表' }
+      },
+      {
+        path: 'vip-settings',
+        name: 'VIPSettings',
+        component: () => import('@/views/VIPManagement/VIPSettings.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: 'VIP等級設定' }
       }
     ]
   }

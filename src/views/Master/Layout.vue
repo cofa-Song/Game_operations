@@ -18,12 +18,10 @@ import {
   ListOutline,
   OptionsOutline,
   PricetagsOutline,
-  LockClosedOutline,
   SettingsOutline,
   PeopleCircleOutline,
   ShieldCheckmarkOutline,
   ReaderOutline,
-  KeyOutline,
   PhonePortraitOutline,
   ShieldOutline,
   BuildOutline,
@@ -183,10 +181,17 @@ const menuOptions = computed(() => [
         key: 'game-logs',
         icon: renderIcon(GameControllerOutline)
       },
+      /*
       {
         label: t('navigation.guildManagement'),
         key: 'guild-management',
         icon: renderIcon(PeopleCircleOutline)
+      },
+      */
+      {
+        label: 'VIP等級設定',
+        key: 'vip-settings',
+        icon: renderIcon(SettingsOutline)
       },
     ]
   },
@@ -265,11 +270,13 @@ const menuOptions = computed(() => [
         key: 'group-management',
         icon: renderIcon(ShieldCheckmarkOutline)
       },
+      /*
       {
         label: t('navigation.personalAccount'),
         key: 'personal-account',
         icon: renderIcon(LockClosedOutline)
       },
+      */
       {
         label: t('navigation.operationLog'),
         key: 'admin-operation-log',
@@ -346,17 +353,18 @@ const menuOptions = computed(() => [
         key: 'system-status',
         icon: renderIcon(PulseIcon)
       },
+      /*
       {
         label: t('navigation.thirdPartyKeys'),
         key: 'thirdparty-keys',
         icon: renderIcon(KeyOutline)
       },
-
       {
         label: t('navigation.appVersionManager'),
         key: 'app-versions',
         icon: renderIcon(PhonePortraitOutline)
       },
+      */
       {
         label: t('navigation.adminWhitelist'),
         key: 'admin-whitelist',
@@ -402,7 +410,8 @@ const menuKeyToRoute: Record<string, string> = {
   'commodity-config': '/admin/commodity-config',
   'guild-management': '/admin/guilds',
   'article-manager': '/admin/articles',
-  'agent-list': '/admin/agent-list'
+  'agent-list': '/admin/agent-list',
+  'vip-settings': '/admin/vip-settings'
 }
 
 // 計算麵包屑項目
