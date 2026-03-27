@@ -5,6 +5,7 @@ export interface RealtimeStats {
     dau: number
     ggr: number
     totalBet: number
+    totalPlayers: number // 全站玩家總數
     providerStats: { name: string, value: number }[]
     deviceStats: { name: string, value: number }[]
 }
@@ -43,6 +44,7 @@ export const realtimeApi = {
                 dau,
                 ggr,
                 totalBet,
+                totalPlayers: 250000,
                 providerStats: [
                     { name: 'Evolution', value: Math.floor(ccu * 0.4) },
                     { name: 'PG Soft', value: Math.floor(ccu * 0.3) },

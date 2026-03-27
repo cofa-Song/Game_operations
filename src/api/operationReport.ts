@@ -74,6 +74,11 @@ export const operationReportApi = {
         const mockData: DepositReportRecord[] = dates.map(date => {
             const count = Math.floor(Math.random() * 500) + 50
             const total = count * (Math.floor(Math.random() * 500) + 100)
+            
+            // Mock channel breakdown
+            const bankAmount = Math.floor(total * 0.6)
+            const usdtAmount = Math.floor(total * 0.3)
+            const otherAmount = total - bankAmount - usdtAmount
 
             return {
                 date,
@@ -81,7 +86,12 @@ export const operationReportApi = {
                 totalDepositAmount: total,
                 depositCount: count,
                 maxDepositAmount: Math.floor(total / (Math.random() * 5 + 2)),
-                averageDeposit: Math.floor(total / count)
+                averageDeposit: Math.floor(total / count),
+                channelDeposits: [
+                    { name: 'Bank Card', amount: bankAmount },
+                    { name: 'USDT', amount: usdtAmount },
+                    { name: 'Manual', amount: otherAmount }
+                ]
             }
         })
 
@@ -93,12 +103,16 @@ export const operationReportApi = {
         const dates = getMockDates(params.startTime, params.endTime, params.granularity)
 
         const mockData: PlayerActivityRecord[] = dates.map(date => {
+            const rolling = Math.floor(Math.random() * 50000) + 5000
             return {
                 date,
                 playerId: (params.targetType === 'player' && params.targetId) ? params.targetId : 'P' + Math.floor(Math.random() * 1000000),
-                activeDays: Math.floor(Math.random() * 30) + 1,
-                rollingAmount: Math.floor(Math.random() * 50000) + 5000,
-                totalDepositAmount: Math.floor(Math.random() * 20000) + 2000
+                activeDays: params.granularity === 'hour' ? Math.floor(Math.random() * 1) + 1 : Math.floor(Math.random() * 30) + 1,
+                activeUsers: Math.floor(Math.random() * 5000) + 500,
+                rollingAmount: rolling,
+                totalDepositAmount: Math.floor(Math.random() * 20000) + 2000,
+                betCount: Math.floor(rolling / (Math.random() * 10 + 5)),
+                ggr: Math.floor(rolling * (Math.random() * 0.1 - 0.05)) // -5% to 5% GGR
             }
         })
 
@@ -110,13 +124,15 @@ export const operationReportApi = {
         const dates = getMockDates(params.startTime, params.endTime, params.granularity)
 
         const mockData: ActivityBonusRecord[] = dates.map(date => {
-            const distributed = Math.floor(Math.random() * 5000) + 500
+            const distributed = Math.floor(Math.random() * 50000) + 5000
+            const converted = Math.floor(distributed * (Math.random() * 0.3 + 0.1))
             return {
                 date,
                 playerId: (params.targetType === 'player' && params.targetId) ? params.targetId : 'P' + Math.floor(Math.random() * 1000000),
                 distributedAmount: distributed,
-                recalledAmount: Math.floor(distributed * Math.random() * 0.2),
-                convertedAmount: Math.floor(distributed * Math.random() * 0.5)
+                recalledAmount: Math.floor(distributed * Math.random() * 0.1),
+                convertedAmount: converted,
+                conversionRate: Number(((converted / distributed) * 100).toFixed(2))
             }
         })
 

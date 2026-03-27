@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NCard, NSpace, NGrid, NGridItem, NFormItem, NSelect, NRadioGroup, NRadioButton,
@@ -105,7 +105,17 @@ const columns = computed(() => {
       { title: t('operationReport.columns.betAmount'), key: 'betAmount', align: 'right' as const },
       { title: t('operationReport.columns.rollingAmount'), key: 'rollingAmount', align: 'right' as const },
       { title: t('operationReport.columns.payoutAmount'), key: 'payoutAmount', align: 'right' as const },
-      { title: t('operationReport.columns.ggr'), key: 'ggr', align: 'right' as const },
+      { 
+        title: t('operationReport.columns.ggr'), 
+        key: 'ggr', 
+        align: 'right' as const,
+        render: (row: any) => h('span', { 
+          style: { 
+            color: row.ggr >= 0 ? '#10b981' : '#ef4444',
+            fontWeight: 'bold'
+          } 
+        }, `$${row.ggr.toLocaleString()}`)
+      },
       { title: t('operationReport.columns.betCount'), key: 'betCount', align: 'right' as const },
       { title: t('operationReport.columns.maxBet'), key: 'maxBet', align: 'right' as const },
       { title: t('operationReport.columns.maxWinRate'), key: 'maxWinRate', align: 'right' as const }
@@ -116,24 +126,116 @@ const columns = computed(() => {
       { title: t('operationReport.columns.totalDeposit'), key: 'totalDepositAmount', align: 'right' as const },
       { title: t('operationReport.columns.depositCount'), key: 'depositCount', align: 'right' as const },
       { title: t('operationReport.columns.maxDeposit'), key: 'maxDepositAmount', align: 'right' as const },
-      { title: t('operationReport.columns.averageDeposit'), key: 'averageDeposit', align: 'right' as const }
+      { title: t('operationReport.columns.averageDeposit'), key: 'averageDeposit', align: 'right' as const },
+      // Split channels
+      { title: 'Bank Card', key: 'chan_bank', align: 'right' as const, render: (row: any) => `$${row.channelDeposits?.find((c: any) => c.name === 'Bank Card')?.amount?.toLocaleString() || 0}` },
+      { title: 'USDT', key: 'chan_usdt', align: 'right' as const, render: (row: any) => `$${row.channelDeposits?.find((c: any) => c.name === 'USDT')?.amount?.toLocaleString() || 0}` },
+      { title: 'Manual', key: 'chan_manual', align: 'right' as const, render: (row: any) => `$${row.channelDeposits?.find((c: any) => c.name === 'Manual')?.amount?.toLocaleString() || 0}` }
     ]
   } else if (type === 'activity') {
+    const activeLabel = searchModel.value.granularity === 'hour' 
+        ? t('operationReport.columns.activeHours') 
+        : t('operationReport.columns.activeDays')
     return [
       ...common,
-      { title: t('operationReport.columns.activeDays'), key: 'activeDays', align: 'right' as const },
+      { title: activeLabel, key: 'activeDays', align: 'right' as const },
       { title: t('operationReport.columns.rollingAmount'), key: 'rollingAmount', align: 'right' as const },
-      { title: t('operationReport.columns.totalDeposit'), key: 'totalDepositAmount', align: 'right' as const }
+      { title: t('operationReport.columns.totalDeposit'), key: 'totalDepositAmount', align: 'right' as const },
+      { title: t('operationReport.columns.betCount'), key: 'betCount', align: 'right' as const },
+      { 
+        title: t('operationReport.columns.ggr'), 
+        key: 'ggr', 
+        align: 'right' as const,
+        render: (row: any) => h('span', { 
+          style: { 
+            color: row.ggr >= 0 ? '#10b981' : '#ef4444',
+            fontWeight: 'bold'
+          } 
+        }, `$${row.ggr.toLocaleString()}`)
+      }
     ]
   } else {
     return [
       ...common,
       { title: t('operationReport.columns.distributedAmount'), key: 'distributedAmount', align: 'right' as const },
       { title: t('operationReport.columns.recalledAmount'), key: 'recalledAmount', align: 'right' as const },
-      { title: t('operationReport.columns.convertedAmount'), key: 'convertedAmount', align: 'right' as const }
+      { title: t('operationReport.columns.convertedAmount'), key: 'convertedAmount', align: 'right' as const },
+      { 
+        title: t('operationReport.columns.conversionRate'), 
+        key: 'conversionRate', 
+        align: 'right' as const,
+        render: (row: any) => `${row.conversionRate}%`
+      }
     ]
   }
 })
+
+// 計算統計列
+const summary = () => {
+  if (tableData.value.length === 0) return []
+  
+  const type = searchModel.value.reportType
+  const rangeText = 'Total'
+
+  const sum = (key: string) => tableData.value.reduce((acc, curr) => acc + (Number(curr[key]) || 0), 0)
+  const avg = (key: string) => tableData.value.length > 0 ? sum(key) / tableData.value.length : 0
+  const max = (key: string) => Math.max(...tableData.value.map(row => Number(row[key]) || 0), 0)
+
+  let summaryRow: any = {}
+
+  if (type === 'ggr') {
+    summaryRow = {
+      playerId: { value: h('span', { class: 'font-bold' }, rangeText), colSpan: 1 },
+      betAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('betAmount').toLocaleString()}`), align: 'right' },
+      rollingAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('rollingAmount').toLocaleString()}`), align: 'right' },
+      payoutAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('payoutAmount').toLocaleString()}`), align: 'right' },
+      ggr: { 
+        value: h('span', { 
+          class: 'font-bold',
+          style: { color: sum('ggr') >= 0 ? '#10b981' : '#ef4444' }
+        }, `$${sum('ggr').toLocaleString()}`), 
+        align: 'right' 
+      },
+      betCount: { value: h('span', { class: 'font-bold text-blue-600' }, sum('betCount').toLocaleString()), align: 'right' },
+      maxBet: { value: h('span', { class: 'font-bold text-orange-600' }, `$${max('maxBet').toLocaleString()}`), align: 'right' },
+      maxWinRate: { value: h('span', { class: 'font-bold text-orange-600' }, `${max('maxWinRate').toLocaleString()}x`), align: 'right' }
+    }
+  } else if (type === 'deposit') {
+    const bankSum = tableData.value.reduce((acc, curr) => acc + (curr.channelDeposits?.find((c: any) => c.name === 'Bank Card')?.amount || 0), 0)
+    const usdtSum = tableData.value.reduce((acc, curr) => acc + (curr.channelDeposits?.find((c: any) => c.name === 'USDT')?.amount || 0), 0)
+    const manualSum = tableData.value.reduce((acc, curr) => acc + (curr.channelDeposits?.find((c: any) => c.name === 'Manual')?.amount || 0), 0)
+
+    summaryRow = {
+      playerId: { value: h('span', { class: 'font-bold' }, rangeText) },
+      totalDepositAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('totalDepositAmount').toLocaleString()}`), align: 'right' },
+      depositCount: { value: h('span', { class: 'font-bold text-blue-600' }, sum('depositCount').toLocaleString()), align: 'right' },
+      maxDepositAmount: { value: h('span', { class: 'font-bold text-orange-600' }, `$${max('maxDepositAmount').toLocaleString()}`), align: 'right' },
+      averageDeposit: { value: h('span', { class: 'font-bold text-purple-600' }, `$${avg('averageDeposit').toLocaleString(undefined, { maximumFractionDigits: 0 })}`), align: 'right' },
+      chan_bank: { value: h('span', { class: 'font-bold text-blue-600' }, `$${bankSum.toLocaleString()}`), align: 'right' },
+      chan_usdt: { value: h('span', { class: 'font-bold text-blue-600' }, `$${usdtSum.toLocaleString()}`), align: 'right' },
+      chan_manual: { value: h('span', { class: 'font-bold text-blue-600' }, `$${manualSum.toLocaleString()}`), align: 'right' }
+    }
+  } else if (type === 'activity') {
+    summaryRow = {
+      playerId: { value: h('span', { class: 'font-bold' }, rangeText) },
+      activeDays: { value: h('span', { class: 'font-bold text-purple-600' }, avg('activeDays').toFixed(1)), align: 'right' },
+      rollingAmount: { value: h('span', { class: 'font-bold text-purple-600' }, `$${avg('rollingAmount').toLocaleString(undefined, { maximumFractionDigits: 0 })}`), align: 'right' },
+      totalDepositAmount: { value: h('span', { class: 'font-bold text-purple-600' }, `$${avg('totalDepositAmount').toLocaleString(undefined, { maximumFractionDigits: 0 })}`), align: 'right' },
+      betCount: { value: h('span', { class: 'font-bold text-purple-600' }, avg('betCount').toFixed(1)), align: 'right' },
+      ggr: { value: h('span', { class: 'font-bold text-purple-600' }, `$${avg('ggr').toLocaleString(undefined, { maximumFractionDigits: 0 })}`), align: 'right' }
+    }
+  } else {
+    summaryRow = {
+      playerId: { value: h('span', { class: 'font-bold' }, rangeText) },
+      distributedAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('distributedAmount').toLocaleString()}`), align: 'right' },
+      recalledAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('recalledAmount').toLocaleString()}`), align: 'right' },
+      convertedAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('convertedAmount').toLocaleString()}`), align: 'right' },
+      conversionRate: { value: h('span', { class: 'font-bold text-purple-600' }, `${avg('conversionRate').toFixed(2)}%`), align: 'right' }
+    }
+  }
+  
+  return summaryRow
+}
 
 // 搜尋驗證 (後置校驗跨度)
 const validateTimeRange = (): boolean => {
@@ -300,7 +402,7 @@ const renderChart = () => {
   } else if (type === 'activity') {
     yAxis = [
         { type: 'value', name: t('operationReport.columns.rollingAmount'), position: 'left' },
-        { type: 'value', name: t('operationReport.columns.activeDays'), position: 'right' }
+        { type: 'value', name: t('operationReport.columns.activeUsers'), position: 'right' }
     ]
     series = [
       {
@@ -320,10 +422,10 @@ const renderChart = () => {
         itemStyle: { color: '#f59e0b' }
       },
       {
-        name: t('operationReport.columns.activeDays'),
+        name: t('operationReport.columns.activeUsers'),
         type: 'bar',
         yAxisIndex: 1,
-        data: tableData.value.map((row: any) => row.activeDays),
+        data: tableData.value.map((row: any) => row.activeUsers),
         itemStyle: { color: '#93c5fd' }
       }
     ]
@@ -603,6 +705,8 @@ onBeforeUnmount(() => {
             :data="tableData" 
             :loading="loading"
             :pagination="pagination"
+            :summary="summary"
+            summary-placement="top"
             class="h-full custom-table"
             :bordered="false"
             :bottom-bordered="false"

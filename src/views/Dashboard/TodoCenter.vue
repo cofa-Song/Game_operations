@@ -128,16 +128,30 @@
                 <n-gi>
                     <n-card class="kpi-card" hoverable>
                         <n-statistic label="即時在線 (CCU)">
-                            <template #prefix><n-icon><people-icon /></n-icon></template>
-                            <n-number-animation :from="0" :to="realtimeStats.ccu" />
+                            <template #prefix>
+                                <div class="flex items-center gap-2">
+                                    <n-icon size="24"><people-icon /></n-icon>
+                                    <n-number-animation :from="0" :to="realtimeStats.ccu" />
+                                    <span class="ml-1 px-2 py-0.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-md border border-emerald-100 dark:border-emerald-800">
+                                        {{ ((realtimeStats.ccu / (realtimeStats.totalPlayers || 1)) * 100).toFixed(2) }}%
+                                    </span>
+                                </div>
+                            </template>
                         </n-statistic>
                     </n-card>
                 </n-gi>
                 <n-gi>
                     <n-card class="kpi-card" hoverable>
                         <n-statistic label="今日累積 DAU">
-                            <template #prefix><n-icon><person-icon /></n-icon></template>
-                            <n-number-animation :from="0" :to="realtimeStats.dau" />
+                            <template #prefix>
+                                <div class="flex items-center gap-2">
+                                    <n-icon size="24"><person-icon /></n-icon>
+                                    <n-number-animation :from="0" :to="realtimeStats.dau" />
+                                    <span class="ml-1 px-2 py-0.5 text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-md border border-blue-100 dark:border-blue-800">
+                                        {{ ((realtimeStats.dau / (realtimeStats.totalPlayers || 1)) * 100).toFixed(2) }}%
+                                    </span>
+                                </div>
+                            </template>
                         </n-statistic>
                     </n-card>
                 </n-gi>
@@ -222,6 +236,7 @@ const realtimeStats = ref<RealtimeStats>({
     dau: 0,
     ggr: 0,
     totalBet: 0,
+    totalPlayers: 0,
     providerStats: [],
     deviceStats: []
 })

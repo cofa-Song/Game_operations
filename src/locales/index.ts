@@ -501,9 +501,13 @@ export const zhTW = {
       maxDeposit: '最大儲值額',
       averageDeposit: '平均儲值額',
       activeDays: '活躍天數',
+      activeUsers: '活躍人數',
+      activeHours: '活躍時數',
       distributedAmount: '總派發活動金',
       recalledAmount: '總回收活動金',
-      convertedAmount: '總轉換活動金'
+      convertedAmount: '總轉換活動金',
+      conversionRate: '轉換率',
+      channelDeposits: '各通道儲值'
     },
     actions: {
       search: '查詢',
