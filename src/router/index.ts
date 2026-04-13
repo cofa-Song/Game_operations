@@ -90,6 +90,18 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'RISK'], breadcrumb: '異常預警列表' }
       },
       {
+        path: 'chat-management',
+        name: 'ChatManagement',
+        component: () => import('@/views/ChatManagement/index.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'RISK'], breadcrumb: '聊天室管理' }
+      },
+      {
+        path: 'chat/templates',
+        name: 'PlayerMessageTemplates',
+        component: () => import('@/views/ChatManagement/PlayerMessageTemplates.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'RISK'], breadcrumb: '玩家訊息模板' }
+      },
+      {
         path: 'chat/keywords',
         name: 'ChatKeywordSettings',
         component: () => import('@/views/Risk/ChatKeywordSettings.vue'),

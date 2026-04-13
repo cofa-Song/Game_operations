@@ -21,13 +21,15 @@ const searchModel = ref<{
   targetType: TargetType
   targetId: string
   excludeTesting: boolean
+  currency?: string
 }>({
   reportType: 'ggr',
   granularity: 'hour',
   timeRange: null,
   targetType: 'all',
   targetId: '',
-  excludeTesting: true
+  excludeTesting: true,
+  currency: 'all'
 })
 
 const loading = ref(false)
@@ -65,6 +67,13 @@ const targetTypeOptions = computed(() => [
   { label: t('operationReport.targetTypes.agent'), value: 'agent' },
   { label: t('operationReport.targetTypes.player'), value: 'player' }
 ])
+
+const currencyOptions = [
+  { label: '全部', value: 'all' },
+  { label: '金幣', value: 'gold' },
+  { label: '銀幣', value: 'silver' },
+  { label: '銅幣', value: 'bronze' }
+]
 
 // 初始化預設時間 (根據粒度)
 const setTimeRangeByGranularity = () => {
@@ -292,7 +301,8 @@ const handleSearch = async () => {
       granularity: searchModel.value.granularity,
       targetType: searchModel.value.targetType,
       targetId: searchModel.value.targetId,
-      excludeTesting: searchModel.value.excludeTesting
+      excludeTesting: searchModel.value.excludeTesting,
+      currency: searchModel.value.reportType === 'ggr' ? searchModel.value.currency : undefined
     }
 
     let response;
@@ -506,7 +516,8 @@ const handleExport = async () => {
       granularity: searchModel.value.granularity,
       targetType: searchModel.value.targetType,
       targetId: searchModel.value.targetId,
-      excludeTesting: searchModel.value.excludeTesting
+      excludeTesting: searchModel.value.excludeTesting,
+      currency: searchModel.value.reportType === 'ggr' ? searchModel.value.currency : undefined
     }
     const response = await operationReportApi.exportOperationReport(params)
     if (response.code === 0) {
@@ -625,6 +636,17 @@ onBeforeUnmount(() => {
               <NSelect 
                 v-model:value="searchModel.targetType"
                 :options="targetTypeOptions"
+                class="bg-white/50"
+              />
+            </NFormItem>
+          </NGridItem>
+          
+          <!-- 幣別 (僅損益表 GGR 顯示) -->
+          <NGridItem v-if="searchModel.reportType === 'ggr'">
+            <NFormItem label="幣別" :show-feedback="false">
+              <NSelect 
+                v-model:value="searchModel.currency"
+                :options="currencyOptions"
                 class="bg-white/50"
               />
             </NFormItem>

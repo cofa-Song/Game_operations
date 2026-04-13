@@ -141,6 +141,7 @@ export const zhTW = {
     assetLogs: '資產變動日誌',
     playerOperationLog: '玩家異動日誌',
     financeManagement: '帳務管理',
+    userManagement: '用戶管理',
     bonusHistory: '獎勵卡歷史紀錄',
     depositOrderManagement: '儲值訂單',
     paymentChannelManagement: '金流通道',
@@ -183,12 +184,15 @@ export const zhTW = {
     messageSettings: '訊息設置',
     messageManagement: '訊息管理',
     systemMessage: '站內信',
+    communication: '通訊與聊天',
     chatManagement: '聊天室管理',
+    chatRoomManagement: '聊天室內容管理',
     chatKeywordSettings: '敏感字庫設定',
     chatTriggerAudit: '觸發紀錄審核',
     agentManagement: '代理管理',
     agentList: '代理列表',
-    vipSettings: 'VIP等級設定'
+    vipSettings: 'VIP等級設定',
+    systemOperations: '系統與運維'
   },
   vip: {
     title: 'VIP 等級設定',
@@ -401,6 +405,17 @@ export const zhTW = {
     }
   },
   chatManagement: {
+    roomManagement: {
+      title: '聊天室內容管理',
+      world: '世界頻道',
+      private: '私人聊天',
+      customer: '客服',
+      searchPlaceholder: '搜尋玩家 ID / 關鍵字',
+      searchCsPlaceholder: '搜尋玩家 ID / 客服單號',
+      replyPlaceholder: '請輸入回覆內容...',
+      send: '傳送',
+      search: '搜尋'
+    },
     keywordSettings: {
       title: '敏感字庫設定',
       create: '新增敏感字',

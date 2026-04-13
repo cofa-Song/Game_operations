@@ -11,6 +11,7 @@ export interface OperationReportQuery {
     targetType: TargetType
     targetId?: string
     excludeTesting?: boolean
+    currency?: string
 }
 
 export interface GGRReportRecord {

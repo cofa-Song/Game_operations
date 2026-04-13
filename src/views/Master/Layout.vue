@@ -22,7 +22,6 @@ import {
   PeopleCircleOutline,
   ShieldCheckmarkOutline,
   ReaderOutline,
-  PhonePortraitOutline,
   ShieldOutline,
   BuildOutline,
   PulseOutline as PulseIcon,
@@ -86,6 +85,49 @@ const findMenuPath = (menus: MenuOption[], targetKey: string): { label: string; 
   return null
 }
 
+// 路由對照表
+const menuKeyToRoute: Record<string, string> = {
+  'admin-dashboard': '/admin/dashboard',
+  'personal-account': '/admin/account',
+  'group-management': '/admin/groups',
+  'account-management': '/admin/accounts',
+  'player-list': '/admin/players',
+  'game-logs': '/admin/game-logs',
+  'asset-logs': '/admin/asset-logs',
+  'admin-operation-log': '/admin/logs',
+  'bonus-history': '/admin/bonus-history',
+  'deposit-orders': '/admin/deposit-orders',
+  'game-providers': '/admin/game-providers',
+  'game-list': '/admin/game-list',
+  'game-type-config': '/admin/game-type-config',
+  'marketing-tag-config': '/admin/marketing-tag-config',
+  'thirdparty-keys': '/admin/thirdparty-keys',
+  'app-versions': '/admin/app-versions',
+  'admin-whitelist': '/admin/admin-whitelist',
+  'operation-config': '/admin/operation-config',
+  'announcement-manager': '/admin/announcements',
+  'image-config': '/admin/image-config',
+  'payment-channels': '/admin/payment-channels',
+  'risk-alerts': '/admin/risk/alerts',
+  'system-status': '/admin/system-status',
+  'message-settings': '/admin/message-settings',
+  'message-management': '/admin/message-management',
+  'operation-report': '/admin/operation-report',
+  'game-stats': '/admin/game-stats',
+  'report-management': '/admin/report-management',
+  'chat-keywords': '/admin/chat/keywords',
+  'chat-audit': '/admin/chat/audit',
+  'chat-management': '/admin/chat-management',
+  'player-message-templates': '/admin/chat/templates',
+  'financial-overview': '/admin/financial-overview',
+  'manual-adjustment': '/admin/manual-adjustment',
+  'commodity-config': '/admin/commodity-config',
+  'guild-management': '/admin/guilds',
+  'article-manager': '/admin/articles',
+  'agent-list': '/admin/agent-list',
+  'vip-settings': '/admin/vip-settings'
+}
+
 // 根據當前路由更新選中的菜單項
 watch(() => route.path, (newPath) => {
   // 優先檢查是否有完全匹配的路由
@@ -119,13 +161,6 @@ const menuOptions = computed(() => [
     key: 'data-center-group',
     icon: renderIcon(DataCenterIcon),
     children: [
-      /*
-      {
-        label: t('navigation.riskManagement'),
-        key: 'risk-alerts',
-        icon: renderIcon(ShieldCheckmarkOutline)
-      },
-      */
       {
         label: t('navigation.operationReport'),
         key: 'operation-report',
@@ -144,27 +179,24 @@ const menuOptions = computed(() => [
     ]
   },
   {
-    label: t('navigation.agentManagement'),
-    key: 'agent-management-group',
-    icon: renderIcon(PeopleOutline),
-    children: [
-      {
-        label: t('navigation.agentList'),
-        key: 'agent-list',
-        icon: renderIcon(ListOutline)
-      }
-    ]
-  },
-
-  {
-    label: t('navigation.playerManagement'),
-    key: 'player-management-group',
+    label: t('navigation.userManagement'),
+    key: 'user-management-group',
     icon: renderIcon(PeopleOutline),
     children: [
       {
         label: t('navigation.playerList'),
         key: 'player-list',
         icon: renderIcon(PersonOutline)
+      },
+      {
+        label: t('navigation.agentList'),
+        key: 'agent-list',
+        icon: renderIcon(ListOutline)
+      },
+      {
+        label: t('navigation.vipSettings'),
+        key: 'vip-settings',
+        icon: renderIcon(SettingsOutline)
       },
       {
         label: t('navigation.bonusHistory'),
@@ -180,22 +212,9 @@ const menuOptions = computed(() => [
         label: t('navigation.gameLogs'),
         key: 'game-logs',
         icon: renderIcon(GameControllerOutline)
-      },
-      /*
-      {
-        label: t('navigation.guildManagement'),
-        key: 'guild-management',
-        icon: renderIcon(PeopleCircleOutline)
-      },
-      */
-      {
-        label: 'VIP等級設定',
-        key: 'vip-settings',
-        icon: renderIcon(SettingsOutline)
-      },
+      }
     ]
   },
-
   {
     label: t('navigation.finance'),
     key: 'finance-management-group',
@@ -225,7 +244,7 @@ const menuOptions = computed(() => [
         label: t('navigation.paymentChannelManagement'),
         key: 'payment-channels',
         icon: renderIcon(LayersOutline)
-      },
+      }
     ]
   },
   {
@@ -256,38 +275,46 @@ const menuOptions = computed(() => [
     ]
   },
   {
-    label: t('navigation.permissionManagement'),
-    key: 'permission-management',
-    icon: renderIcon(SettingsOutline),
+    label: t('navigation.communication'),
+    key: 'communication-management-group',
+    icon: renderIcon(ChatIcon),
     children: [
       {
-        label: t('navigation.accountManagement'),
-        key: 'account-management',
-        icon: renderIcon(PeopleCircleOutline)
+        label: t('navigation.systemMessage'),
+        key: 'message-management',
+        icon: renderIcon(MailIcon)
       },
       {
-        label: t('navigation.groupManagement'),
-        key: 'group-management',
-        icon: renderIcon(ShieldCheckmarkOutline)
+        label: t('navigation.messageSettings'),
+        key: 'message-settings',
+        icon: renderIcon(SettingsOutline)
       },
-      /*
       {
-        label: t('navigation.personalAccount'),
-        key: 'personal-account',
-        icon: renderIcon(LockClosedOutline)
+        label: t('navigation.chatRoomManagement'),
+        key: 'chat-management',
+        icon: renderIcon(ChatIcon)
       },
-      */
       {
-        label: t('navigation.operationLog'),
-        key: 'admin-operation-log',
+        label: t('navigation.chatKeywordSettings'),
+        key: 'chat-keywords',
+        icon: renderIcon(OptionsOutline)
+      },
+      {
+        label: t('navigation.chatTriggerAudit'),
+        key: 'chat-audit',
         icon: renderIcon(ReaderOutline)
+      },
+      {
+        label: '玩家訊息模板',
+        key: 'player-message-templates',
+        icon: renderIcon(ListOutline)
       }
     ]
   },
   {
-    label: t('navigation.frontendSetting'),
-    key: 'frontend-setting',
-    icon: renderIcon(PhonePortraitOutline),
+    label: t('navigation.systemOperations'),
+    key: 'system-operations-group',
+    icon: renderIcon(SettingsOutline),
     children: [
       {
         label: t('navigation.operationConfig'),
@@ -308,63 +335,27 @@ const menuOptions = computed(() => [
         label: t('navigation.articleManagement'),
         key: 'article-manager',
         icon: renderIcon(ReaderOutline)
-      }
-    ]
-  },
-  {
-    label: t('navigation.messageManagement'),
-    key: 'message-management-group',
-    icon: renderIcon(MailIcon),
-    children: [
-      {
-        label: t('navigation.systemMessage'),
-        key: 'message-management',
-        icon: renderIcon(SettingsOutline)
       },
       {
-        label: t('navigation.messageSettings'),
-        key: 'message-settings',
-        icon: renderIcon(SettingsOutline)
-      }
-    ]
-  },
-  {
-    label: t('navigation.chatManagement'),
-    key: 'chat-management-group',
-    icon: renderIcon(ChatIcon),
-    children: [
-      {
-        label: t('navigation.chatKeywordSettings'),
-        key: 'chat-keywords'
+        label: t('navigation.accountManagement'),
+        key: 'account-management',
+        icon: renderIcon(PeopleCircleOutline)
       },
       {
-        label: t('navigation.chatTriggerAudit'),
-        key: 'chat-audit'
-      }
-    ]
-  },
-  {
-    label: t('navigation.systemConfig'),
-    key: 'system-config',
-    icon: renderIcon(SettingsOutline),
-    children: [
+        label: t('navigation.groupManagement'),
+        key: 'group-management',
+        icon: renderIcon(ShieldCheckmarkOutline)
+      },
+      {
+        label: t('navigation.operationLog'),
+        key: 'admin-operation-log',
+        icon: renderIcon(ReaderOutline)
+      },
       {
         label: t('navigation.systemStatus'),
         key: 'system-status',
         icon: renderIcon(PulseIcon)
       },
-      /*
-      {
-        label: t('navigation.thirdPartyKeys'),
-        key: 'thirdparty-keys',
-        icon: renderIcon(KeyOutline)
-      },
-      {
-        label: t('navigation.appVersionManager'),
-        key: 'app-versions',
-        icon: renderIcon(PhonePortraitOutline)
-      },
-      */
       {
         label: t('navigation.adminWhitelist'),
         key: 'admin-whitelist',
@@ -374,45 +365,7 @@ const menuOptions = computed(() => [
   }
 ])
 
-const menuKeyToRoute: Record<string, string> = {
-  'admin-dashboard': '/admin/dashboard',
-  'personal-account': '/admin/account',
-  'group-management': '/admin/groups',
-  'account-management': '/admin/accounts',
-  'player-list': '/admin/players',
-  'game-logs': '/admin/game-logs',
-  'asset-logs': '/admin/asset-logs',
-  'admin-operation-log': '/admin/logs',
-  'bonus-history': '/admin/bonus-history',
-  'deposit-orders': '/admin/deposit-orders',
-  'game-providers': '/admin/game-providers',
-  'game-list': '/admin/game-list',
-  'game-type-config': '/admin/game-type-config',
-  'marketing-tag-config': '/admin/marketing-tag-config',
-  'thirdparty-keys': '/admin/thirdparty-keys',
-  'app-versions': '/admin/app-versions',
-  'admin-whitelist': '/admin/admin-whitelist',
-  'operation-config': '/admin/operation-config',
-  'announcement-manager': '/admin/announcements',
-  'image-config': '/admin/image-config',
-  'payment-channels': '/admin/payment-channels',
-  'risk-alerts': '/admin/risk/alerts',
-  'system-status': '/admin/system-status',
-  'message-settings': '/admin/message-settings',
-  'message-management': '/admin/message-management',
-  'operation-report': '/admin/operation-report',
-  'game-stats': '/admin/game-stats',
-  'report-management': '/admin/report-management',
-  'chat-keywords': '/admin/chat/keywords',
-  'chat-audit': '/admin/chat/audit',
-  'financial-overview': '/admin/financial-overview',
-  'manual-adjustment': '/admin/manual-adjustment',
-  'commodity-config': '/admin/commodity-config',
-  'guild-management': '/admin/guilds',
-  'article-manager': '/admin/articles',
-  'agent-list': '/admin/agent-list',
-  'vip-settings': '/admin/vip-settings'
-}
+
 
 // 計算麵包屑項目
 const breadcrumbItems = computed(() => {

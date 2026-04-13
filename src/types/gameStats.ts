@@ -10,6 +10,7 @@ export interface GameStatsQuery {
     targetGameType?: string
     targetId?: string
     excludeTesting?: boolean
+    currency?: string
 }
 
 export interface GameStatsRecord {
