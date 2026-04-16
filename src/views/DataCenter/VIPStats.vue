@@ -271,7 +271,7 @@ const columns = [
         <h1 class="text-2xl font-bold text-gray-800 tracking-tight">{{ t('vipStats.title') }}</h1>
         <p class="text-sm text-gray-500 mt-1">
           {{ t('vipStats.settledUntil') }} <NTag size="small" :bordered="false" type="warning">{{ statsData.settledDate }}</NTag>
-          <span class="ml-2">※ 每周/每月自動結算成長變動快照</span>
+          <span class="ml-2">※ 每月自動結算成長變動快照</span>
         </p>
       </div>
       <NSpace>
