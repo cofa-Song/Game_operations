@@ -2,7 +2,7 @@
 import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  NCard, NFormItem, NSelect, NRadioGroup, NRadioButton,
+  NCard, NFormItem, NSelect, NRadioGroup, NRadioButton, NSpace,
   NDatePicker, NInput, NButton, NDataTable, NCheckbox, useMessage, NIcon, NSpin
 } from 'naive-ui'
 import { SearchOutline, DownloadOutline } from '@vicons/ionicons5'
@@ -87,6 +87,12 @@ const currencyOptions = [
   { label: '銅幣', value: 'bronze' }
 ]
 
+const granularityOptions = computed(() => [
+  { label: t('operationReport.granularities.hour'), value: 'hour' },
+  { label: t('operationReport.granularities.day'), value: 'day' },
+  { label: t('operationReport.granularities.month'), value: 'month' }
+])
+
 // 初始化預設時間 (根據粒度)
 const setTimeRangeByGranularity = () => {
   const now = new Date()
@@ -105,6 +111,44 @@ const setTimeRangeByGranularity = () => {
     case 'month':
       start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
       end = now
+      break
+  }
+  searchModel.value.timeRange = [start.getTime(), end.getTime()]
+}
+
+// 快速選擇時間
+const handleQuickSelect = (type: string) => {
+  const now = new Date()
+  let start = new Date()
+  let end = new Date()
+
+  switch (type) {
+    case 'today':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+      end = now
+      break
+    case 'yesterday':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999)
+      break
+    case 'thisWeek':
+      // 週一為一週開始
+      const day = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastWeek':
+      const day2 = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2 - 6, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2, 23, 59, 59, 999)
+      break
+    case 'thisMonth':
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastMonth':
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
       break
   }
   searchModel.value.timeRange = [start.getTime(), end.getTime()]
@@ -389,12 +433,24 @@ import { h } from 'vue'
     <NCard class="rounded-xl shadow-sm border-0 premium-card" size="small">
       <div class="flex flex-wrap items-end gap-x-6 gap-y-4 w-full">
         <!-- 數據粒度 -->
-        <NFormItem :label="t('operationReport.granularity')" :show-feedback="false">
-          <NRadioGroup v-model:value="searchModel.granularity" name="granularities">
-            <NRadioButton value="hour">{{ t('operationReport.granularities.hour') }}</NRadioButton>
-            <NRadioButton value="day">{{ t('operationReport.granularities.day') }}</NRadioButton>
-            <NRadioButton value="month">{{ t('operationReport.granularities.month') }}</NRadioButton>
-          </NRadioGroup>
+        <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" class="w-32">
+          <NSelect 
+            v-model:value="searchModel.granularity"
+            :options="granularityOptions"
+            class="bg-white/50"
+          />
+        </NFormItem>
+
+        <!-- 快速切換時間 -->
+        <NFormItem label="快速切換" :show-feedback="false">
+          <NSpace wrap>
+            <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
+            <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
+            <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
+            <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
+            <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
+            <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
+          </NSpace>
         </NFormItem>
 
         <!-- 自訂時間區間 -->

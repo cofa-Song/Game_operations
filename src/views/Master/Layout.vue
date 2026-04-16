@@ -29,7 +29,8 @@ import {
   MoonOutline,
   MailOutline as MailIcon,
   ChatbubbleEllipsesOutline as ChatIcon,
-  SunnyOutline
+  SunnyOutline,
+  PieChartOutline
 } from '@vicons/ionicons5'
 import { NBreadcrumb, NBreadcrumbItem, NButton, NAvatar, NDropdown, NTooltip } from 'naive-ui'
 
@@ -125,7 +126,8 @@ const menuKeyToRoute: Record<string, string> = {
   'guild-management': '/admin/guilds',
   'article-manager': '/admin/articles',
   'agent-list': '/admin/agent-list',
-  'vip-settings': '/admin/vip-settings'
+  'vip-settings': '/admin/vip-settings',
+  'vip-stats': '/admin/vip-stats'
 }
 
 // 根據當前路由更新選中的菜單項
@@ -175,6 +177,11 @@ const menuOptions = computed(() => [
         label: t('navigation.reportManagement'),
         key: 'report-management',
         icon: renderIcon(ReaderOutline)
+      },
+      {
+        label: t('navigation.vipStats'),
+        key: 'vip-stats',
+        icon: renderIcon(PieChartOutline)
       }
     ]
   },
@@ -202,16 +209,6 @@ const menuOptions = computed(() => [
         label: t('navigation.bonusHistory'),
         key: 'bonus-history',
         icon: renderIcon(GiftOutline)
-      },
-      {
-        label: t('navigation.assetLogs'),
-        key: 'asset-logs',
-        icon: renderIcon(WalletOutline)
-      },
-      {
-        label: t('navigation.gameLogs'),
-        key: 'game-logs',
-        icon: renderIcon(GameControllerOutline)
       }
     ]
   },
@@ -244,6 +241,11 @@ const menuOptions = computed(() => [
         label: t('navigation.paymentChannelManagement'),
         key: 'payment-channels',
         icon: renderIcon(LayersOutline)
+      },
+      {
+        label: t('navigation.assetLogs'),
+        key: 'asset-logs',
+        icon: renderIcon(WalletOutline)
       }
     ]
   },
@@ -271,6 +273,11 @@ const menuOptions = computed(() => [
         label: t('navigation.marketingTagConfig'),
         key: 'marketing-tag-config',
         icon: renderIcon(PricetagsOutline)
+      },
+      {
+        label: t('navigation.gameLogs'),
+        key: 'game-logs',
+        icon: renderIcon(GameControllerOutline)
       }
     ]
   },

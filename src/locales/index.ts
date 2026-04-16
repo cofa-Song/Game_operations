@@ -48,6 +48,23 @@ export const zhTW = {
     lightMode: '日常模式',
     darkMode: '護眼模式'
   },
+  vipStats: {
+    title: 'VIP 統計分析與監測',
+    settledUntil: '數據結算至',
+    distributionChart: '全平台 VIP 分佈比例',
+    retentionChart: '留存率',
+    demotionChart: '降級率',
+    promotionChart: '升級率',
+    selectedLevel: '當前選擇等級',
+    levelList: 'VIP 等級配置清單',
+    metrics: {
+      distribution: '當前分佈比例',
+      retention: '留存率',
+      demotion: '降級率',
+      promotion: '升級率'
+    },
+    totalVIP: '總 VIP 人數'
+  },
   imageConfig: {
     type: '圖片類型',
     title: '圖片標題',
@@ -139,6 +156,7 @@ export const zhTW = {
     playerList: '玩家列表',
     gameLogs: '遊戲對局紀錄',
     assetLogs: '資產變動日誌',
+    vipStats: 'VIP 分析',
     playerOperationLog: '玩家異動日誌',
     financeManagement: '帳務管理',
     userManagement: '用戶管理',
@@ -522,7 +540,16 @@ export const zhTW = {
       recalledAmount: '總回收活動金',
       convertedAmount: '總轉換活動金',
       conversionRate: '轉換率',
-      channelDeposits: '各通道儲值'
+      channelDeposits: '各通道儲值',
+      rtp: 'RTP'
+    },
+    quickButtons: {
+      today: '本日',
+      yesterday: '昨日',
+      thisWeek: '本週',
+      lastWeek: '上週',
+      thisMonth: '本月',
+      lastMonth: '上個月'
     },
     actions: {
       search: '查詢',
@@ -853,7 +880,11 @@ export const zhTW = {
       roundId: 'Round ID:',
       settleTime: 'Settle Time:'
     },
-    loadFailed: '載入失敗'
+    loadFailed: '載入失敗',
+    searchType: {
+      id: 'ID',
+      account: '帳號'
+    }
   },
   errors: {
     code_1001: '餘額不足',

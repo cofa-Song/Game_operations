@@ -75,6 +75,12 @@ const currencyOptions = [
   { label: '銅幣', value: 'bronze' }
 ]
 
+const granularityOptions = computed(() => [
+  { label: t('operationReport.granularities.hour'), value: 'hour' },
+  { label: t('operationReport.granularities.day'), value: 'day' },
+  { label: t('operationReport.granularities.month'), value: 'month' }
+])
+
 // 初始化預設時間 (根據粒度)
 const setTimeRangeByGranularity = () => {
   const now = new Date()
@@ -101,6 +107,44 @@ const setTimeRangeByGranularity = () => {
   searchModel.value.timeRange = [start.getTime(), end.getTime()]
 }
 
+// 快速選擇時間
+const handleQuickSelect = (type: string) => {
+  const now = new Date()
+  let start = new Date()
+  let end = new Date()
+
+  switch (type) {
+    case 'today':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+      end = now
+      break
+    case 'yesterday':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999)
+      break
+    case 'thisWeek':
+      // 週一為一週開始
+      const day = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastWeek':
+      const day2 = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2 - 6, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2, 23, 59, 59, 999)
+      break
+    case 'thisMonth':
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastMonth':
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+      break
+  }
+  searchModel.value.timeRange = [start.getTime(), end.getTime()]
+}
+
 // 動態表格欄位
 const columns = computed(() => {
   const type = searchModel.value.reportType
@@ -120,10 +164,19 @@ const columns = computed(() => {
         align: 'right' as const,
         render: (row: any) => h('span', { 
           style: { 
-            color: row.ggr >= 0 ? '#10b981' : '#ef4444',
+            color: row.ggr > 0 ? '#ef4444' : (row.ggr < 0 ? '#10b981' : 'inherit'),
             fontWeight: 'bold'
           } 
         }, `$${row.ggr.toLocaleString()}`)
+      },
+      {
+        title: t('operationReport.columns.rtp'),
+        key: 'rtp',
+        align: 'right' as const,
+        render: (row: any) => {
+          const rtp = row.betAmount > 0 ? (row.payoutAmount / row.betAmount) * 100 : 0
+          return `${rtp.toFixed(2)}%`
+        }
       },
       { title: t('operationReport.columns.betCount'), key: 'betCount', align: 'right' as const },
       { title: t('operationReport.columns.maxBet'), key: 'maxBet', align: 'right' as const },
@@ -157,7 +210,7 @@ const columns = computed(() => {
         align: 'right' as const,
         render: (row: any) => h('span', { 
           style: { 
-            color: row.ggr >= 0 ? '#10b981' : '#ef4444',
+            color: row.ggr > 0 ? '#ef4444' : (row.ggr < 0 ? '#10b981' : 'inherit'),
             fontWeight: 'bold'
           } 
         }, `$${row.ggr.toLocaleString()}`)
@@ -193,17 +246,25 @@ const summary = () => {
   let summaryRow: any = {}
 
   if (type === 'ggr') {
+    const totalBet = sum('betAmount')
+    const totalPayout = sum('payoutAmount')
+    const totalRtp = totalBet > 0 ? (totalPayout / totalBet) * 100 : 0
+
     summaryRow = {
       playerId: { value: h('span', { class: 'font-bold' }, rangeText), colSpan: 1 },
-      betAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('betAmount').toLocaleString()}`), align: 'right' },
+      betAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${totalBet.toLocaleString()}`), align: 'right' },
       rollingAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('rollingAmount').toLocaleString()}`), align: 'right' },
-      payoutAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${sum('payoutAmount').toLocaleString()}`), align: 'right' },
+      payoutAmount: { value: h('span', { class: 'font-bold text-blue-600' }, `$${totalPayout.toLocaleString()}`), align: 'right' },
       ggr: { 
         value: h('span', { 
           class: 'font-bold',
-          style: { color: sum('ggr') >= 0 ? '#10b981' : '#ef4444' }
+          style: { color: sum('ggr') > 0 ? '#ef4444' : (sum('ggr') < 0 ? '#10b981' : 'inherit') }
         }, `$${sum('ggr').toLocaleString()}`), 
         align: 'right' 
+      },
+      rtp: {
+        value: h('span', { class: 'font-bold text-blue-600' }, `${totalRtp.toFixed(2)}%`),
+        align: 'right'
       },
       betCount: { value: h('span', { class: 'font-bold text-blue-600' }, sum('betCount').toLocaleString()), align: 'right' },
       maxBet: { value: h('span', { class: 'font-bold text-orange-600' }, `$${max('maxBet').toLocaleString()}`), align: 'right' },
@@ -570,9 +631,9 @@ onBeforeUnmount(() => {
     <NCard class="rounded-xl shadow-sm border-0 premium-card" size="small">
       <div class="flex flex-col gap-4">
         <!-- 第一排條件 -->
-        <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:4">
+        <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:6">
           <!-- 報表類型 -->
-          <NGridItem>
+          <NGridItem span="1">
             <NFormItem :label="t('operationReport.reportType')" :show-feedback="false">
               <NSelect 
                 v-model:value="searchModel.reportType"
@@ -583,20 +644,32 @@ onBeforeUnmount(() => {
           </NGridItem>
 
           <!-- 數據粒度 -->
-          <NGridItem>
+          <NGridItem span="1">
             <NFormItem :label="t('operationReport.granularity')" :show-feedback="false">
+              <NSelect 
+                v-model:value="searchModel.granularity"
+                :options="granularityOptions"
+                class="bg-white/50"
+              />
+            </NFormItem>
+          </NGridItem>
+
+          <!-- 快速切換時間 -->
+          <NGridItem span="1 768:3 1024:2">
+            <NFormItem label="快速切換" :show-feedback="false">
               <NSpace wrap>
-                <NRadioGroup v-model:value="searchModel.granularity" name="granularities">
-                  <NRadioButton value="hour">{{ t('operationReport.granularities.hour') }}</NRadioButton>
-                  <NRadioButton value="day">{{ t('operationReport.granularities.day') }}</NRadioButton>
-                  <NRadioButton value="month">{{ t('operationReport.granularities.month') }}</NRadioButton>
-                </NRadioGroup>
+                <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
               </NSpace>
             </NFormItem>
           </NGridItem>
 
           <!-- 自訂時間區間 (根據粒度改變 DatePicker 類型) -->
-          <NGridItem span="1 768:2 1024:2">
+          <NGridItem span="1 768:3 1024:2">
             <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false">
                <!-- 根據粒度的情況切換 DatePicker -->
                <!-- 時: 精確到分 (datetimerange) -->
@@ -629,9 +702,9 @@ onBeforeUnmount(() => {
         </NGrid>
 
         <!-- 第二排條件與按鈕 -->
-        <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:4">
+        <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:6">
           <!-- 統計對象 -->
-          <NGridItem>
+          <NGridItem span="1">
             <NFormItem :label="t('operationReport.targetType')" :show-feedback="false">
               <NSelect 
                 v-model:value="searchModel.targetType"
@@ -642,7 +715,7 @@ onBeforeUnmount(() => {
           </NGridItem>
           
           <!-- 幣別 (僅損益表 GGR 顯示) -->
-          <NGridItem v-if="searchModel.reportType === 'ggr'">
+          <NGridItem v-if="searchModel.reportType === 'ggr'" span="1">
             <NFormItem label="幣別" :show-feedback="false">
               <NSelect 
                 v-model:value="searchModel.currency"
@@ -664,13 +737,14 @@ onBeforeUnmount(() => {
           </NGridItem>
 
           <!-- 排除測試帳號 -->
-          <NGridItem class="flex items-center">
+          <NGridItem class="flex items-center" span="1">
              <NCheckbox v-model:checked="searchModel.excludeTesting" class="mt-6 font-medium"> <!-- mt-6 offset for label spacing in flex -->
                {{ t('operationReport.excludeTesting') }}
              </NCheckbox>
           </NGridItem>
 
-          <NGridItem class="flex items-end justify-end gap-2 col-start-4">
+          <!-- Search Buttons -->
+          <NGridItem class="flex items-end justify-end gap-2 col-start-1 1024:col-start-6" span="1 1024:1">
             <NButton 
                type="primary" 
                size="medium" 

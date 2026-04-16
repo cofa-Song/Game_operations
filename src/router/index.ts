@@ -84,6 +84,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '報表管理' }
       },
       {
+        path: 'vip-stats',
+        name: 'VIPStats',
+        component: () => import('@/views/DataCenter/VIPStats.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: 'VIP 統計分析' }
+      },
+      {
         path: 'risk/alerts',
         name: 'RiskAlerts',
         component: () => import('@/views/Risk/AlertList.vue'), // Risk Alert List

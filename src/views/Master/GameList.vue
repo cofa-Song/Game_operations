@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, h, computed } from 'vue'
+import { ref, reactive, onMounted, h, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSwitch, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, useMessage, DataTableColumns } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSwitch, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns } from 'naive-ui'
 import { SearchOutline, RefreshOutline, CreateOutline } from '@vicons/ionicons5'
 import { gameListApi } from '@/api/game'
 import { providerApi } from '@/api/provider'
@@ -29,6 +29,18 @@ const searchForm = reactive<GameListSearchParams>({
     page: 1,
     page_size: 20
 })
+
+// 遊戲 ID/名稱 切換
+const gameSearchType = ref<'id' | 'name'>('id')
+const gameSearchQuery = ref('')
+
+// 數據粒度
+const granularity = ref<'hour' | 'day' | 'month'>('day')
+const granularityOptions = [
+  { label: '時', value: 'hour' },
+  { label: '日', value: 'day' },
+  { label: '月', value: 'month' }
+]
 
 const dateRange = ref<[number, number] | null>(null)
 const pendingChanges = ref<Record<string, GameStatus>>({})
@@ -253,6 +265,42 @@ onMounted(async () => {
     fetchData()
 })
 
+// 快速選擇時間
+const handleQuickSelect = (type: string) => {
+  const now = new Date()
+  let start = new Date()
+  let end = new Date()
+  switch (type) {
+    case 'today':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+      end = now
+      break
+    case 'yesterday':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999)
+      break
+    case 'thisWeek':
+      const day = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastWeek':
+      const day2 = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2 - 6, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2, 23, 59, 59, 999)
+      break
+    case 'thisMonth':
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastMonth':
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+      break
+  }
+  dateRange.value = [start.getTime(), end.getTime()]
+}
+
 const handleStatusChange = (row: Game, newStatus: GameStatus) => {
     if (row.status === newStatus) {
         delete pendingChanges.value[row.id]
@@ -286,6 +334,14 @@ const handleBatchSave = async () => {
 }
 
 const handleSearch = () => {
+    // 將合併欄位的值填回 searchForm
+    if (gameSearchType.value === 'id') {
+        searchForm.game_id = gameSearchQuery.value
+        searchForm.name = ''
+    } else {
+        searchForm.name = gameSearchQuery.value
+        searchForm.game_id = ''
+    }
     searchForm.page = 1
     pagination.page = 1
     fetchData()
@@ -329,55 +385,83 @@ const handleSubmit = async () => {
     <div class="p-6">
         <NCard :title="t('game.list.title')" class="mb-4">
             <NForm :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="handleSearch">
-                <NGrid :cols="24" :x-gap="12">
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.list.vendor')">
-                            <NSelect v-model:value="searchForm.provider_id" :options="providerOptions" :placeholder="t('common.all')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.list.gameId')">
-                            <NInput v-model:value="searchForm.game_id" :placeholder="t('common.search')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.list.gameName')">
-                            <NInput v-model:value="searchForm.name" :placeholder="t('common.search')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.list.tag')">
-                            <NSelect v-model:value="searchForm.marketing_tag" :options="tagOptions" :placeholder="t('common.all')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.list.typeTag')">
-                            <NSelect v-model:value="searchForm.type_id" :options="typeOptions" :placeholder="t('common.all')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('common.status')">
-                            <NSelect v-model:value="searchForm.status" :options="statusFilterOptions" :placeholder="t('common.all')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="8">
-                        <NFormItem :label="t('game.list.dateRange')">
-                            <NDatePicker v-model:value="dateRange" type="datetimerange" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="4">
-                        <div class="flex justify-end gap-2 h-full items-start pt-1">
-                            <NButton type="primary" @click="handleSearch" :loading="loading">
-                                <template #icon><SearchOutline /></template>
-                                {{ t('common.search') }}
-                            </NButton>
-                            <NButton secondary @click="() => { dateRange = null; fetchData() }" :loading="loading">
-                                <template #icon><RefreshOutline /></template>
-                                {{ t('common.all') }}
-                            </NButton>
+              <div class="flex flex-col gap-4">
+                <!-- 第一排: 遊戲搜尋 + 篩選 -->
+                <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+                    <NFormItem :label="t('game.list.gameName')" :show-feedback="false">
+                        <div class="relative">
+                            <NRadioGroup v-model:value="gameSearchType" name="gameSearchType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
+                                <NRadio value="id">ID</NRadio>
+                                <NRadio value="name">名稱</NRadio>
+                            </NRadioGroup>
+                            <NInput v-model:value="gameSearchQuery" :placeholder="gameSearchType === 'id' ? '請輸入遊戲 ID' : '請輸入遊戲名稱'" clearable style="width: 200px" />
                         </div>
-                    </NGridItem>
-                </NGrid>
+                    </NFormItem>
+                    <NFormItem :label="t('game.list.vendor')" :show-feedback="false">
+                        <NSelect v-model:value="searchForm.provider_id" :options="providerOptions" :placeholder="t('common.all')" clearable style="width: 160px" />
+                    </NFormItem>
+                    <NFormItem :label="t('game.list.tag')" :show-feedback="false">
+                        <NSelect v-model:value="searchForm.marketing_tag" :options="tagOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
+                    </NFormItem>
+                    <NFormItem :label="t('game.list.typeTag')" :show-feedback="false">
+                        <NSelect v-model:value="searchForm.type_id" :options="typeOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
+                    </NFormItem>
+                    <NFormItem :label="t('common.status')" :show-feedback="false">
+                        <NSelect v-model:value="searchForm.status" :options="statusFilterOptions" :placeholder="t('common.all')" clearable style="width: 120px" />
+                    </NFormItem>
+                </div>
+
+                <!-- 第二排: 粒度 + 快選 + 時間 + 按鈕 -->
+                <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+                    <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
+                        <NSelect v-model:value="granularity" :options="granularityOptions" class="bg-white/50" />
+                    </NFormItem>
+                    <NFormItem label="快速切換" :show-feedback="false">
+                        <NSpace wrap>
+                            <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
+                            <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
+                            <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
+                            <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
+                            <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
+                            <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
+                        </NSpace>
+                    </NFormItem>
+                    <NFormItem :label="t('game.list.dateRange')" :show-feedback="false" class="w-80">
+                        <NDatePicker 
+                          v-if="granularity === 'hour'"
+                          v-model:value="dateRange" 
+                          type="datetimerange" 
+                          clearable 
+                          format="yyyy-MM-dd HH:mm"
+                          class="w-full bg-white/50"
+                        />
+                        <NDatePicker 
+                          v-if="granularity === 'day'"
+                          v-model:value="dateRange" 
+                          type="daterange" 
+                          clearable 
+                          class="w-full bg-white/50"
+                        />
+                        <NDatePicker 
+                          v-if="granularity === 'month'"
+                          v-model:value="dateRange" 
+                          type="monthrange" 
+                          clearable 
+                          class="w-full bg-white/50"
+                        />
+                    </NFormItem>
+                    <div class="flex gap-2">
+                        <NButton type="primary" @click="handleSearch" :loading="loading">
+                            <template #icon><SearchOutline /></template>
+                            {{ t('common.search') }}
+                        </NButton>
+                        <NButton secondary @click="() => { dateRange = null; fetchData() }" :loading="loading">
+                            <template #icon><RefreshOutline /></template>
+                            {{ t('common.all') }}
+                        </NButton>
+                    </div>
+                </div>
+              </div>
             </NForm>
         </NCard>
 

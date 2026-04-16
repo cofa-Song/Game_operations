@@ -1,31 +1,92 @@
 <template>
   <div class="p-6">
     <NCard title="資產與流水變動日誌">
-      <NForm inline label-placement="left" class="mb-4">
-        <NFormItem label="玩家 ID">
-           <NInput v-model:value="searchForm.player_id" placeholder="ID / 帳號" clearable />
-        </NFormItem>
-        <NFormItem label="幣別">
-           <NSelect 
-             v-model:value="searchForm.currency" 
-             :options="currencyOptions" 
-             placeholder="全部" 
-             clearable 
-             style="width: 120px"
-           />
-        </NFormItem>
-        <NFormItem label="變動類型">
-           <NSelect 
-             v-model:value="searchForm.change_type" 
-             :options="typeOptions" 
-             placeholder="全部" 
-             clearable 
-             style="width: 150px"
-           />
-        </NFormItem>
-        <NFormItem>
-           <NButton type="primary" @click="handleSearch">查詢</NButton>
-        </NFormItem>
+      <NForm inline label-placement="left" class="mb-4 flex flex-col gap-4">
+        <!-- 第一排: 玩家搜尋 + 篩選 + 查詢按鈕 -->
+        <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+          <NFormItem label="玩家" :show-feedback="false">
+            <div class="relative">
+              <NRadioGroup v-model:value="searchForm.searchType" name="searchType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
+                <NRadio value="id">ID</NRadio>
+                <NRadio value="account">帳號</NRadio>
+              </NRadioGroup>
+              <NInput 
+                v-model:value="searchForm.player_id" 
+                :placeholder="searchForm.searchType === 'id' ? '請輸入玩家 ID' : '請輸入玩家帳號'" 
+                clearable 
+                style="width: 200px"
+              />
+            </div>
+          </NFormItem>
+          <NFormItem label="幣別" :show-feedback="false">
+             <NSelect 
+               v-model:value="searchForm.currency" 
+               :options="currencyOptions" 
+               placeholder="全部" 
+               clearable 
+               style="width: 120px"
+             />
+          </NFormItem>
+          <NFormItem label="變動類型" :show-feedback="false">
+             <NSelect 
+               v-model:value="searchForm.change_type" 
+               :options="typeOptions" 
+               placeholder="全部" 
+               clearable 
+               style="width: 150px"
+             />
+          </NFormItem>
+          <NFormItem :show-feedback="false">
+             <NButton type="primary" @click="handleSearch">查詢</NButton>
+          </NFormItem>
+        </div>
+
+        <!-- 第二排: 粒度 + 快選 + 時間區間 -->
+        <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+          <NFormItem label="數據粒度" :show-feedback="false" style="width: 140px">
+            <NSelect 
+              v-model:value="searchForm.granularity"
+              :options="granularityOptions"
+              class="bg-white/50"
+            />
+          </NFormItem>
+
+          <NFormItem label="快速切換" :show-feedback="false">
+            <NSpace wrap>
+              <NButton size="small" @click="handleQuickSelect('today')">本日</NButton>
+              <NButton size="small" @click="handleQuickSelect('yesterday')">昨日</NButton>
+              <NButton size="small" @click="handleQuickSelect('thisWeek')">本週</NButton>
+              <NButton size="small" @click="handleQuickSelect('lastWeek')">上週</NButton>
+              <NButton size="small" @click="handleQuickSelect('thisMonth')">本月</NButton>
+              <NButton size="small" @click="handleQuickSelect('lastMonth')">上個月</NButton>
+            </NSpace>
+          </NFormItem>
+
+          <NFormItem label="時間區間" :show-feedback="false" class="w-80">
+            <NDatePicker 
+              v-if="searchForm.granularity === 'hour'"
+              v-model:value="searchForm.timeRange" 
+              type="datetimerange" 
+              clearable 
+              format="yyyy-MM-dd HH:mm"
+              class="w-full bg-white/50"
+            />
+            <NDatePicker 
+              v-if="searchForm.granularity === 'day'"
+              v-model:value="searchForm.timeRange" 
+              type="daterange" 
+              clearable 
+              class="w-full bg-white/50"
+            />
+            <NDatePicker 
+              v-if="searchForm.granularity === 'month'"
+              v-model:value="searchForm.timeRange" 
+              type="monthrange" 
+              clearable 
+              class="w-full bg-white/50"
+            />
+          </NFormItem>
+        </div>
       </NForm>
 
       <NDataTable
@@ -40,8 +101,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, useMessage } from 'naive-ui'
+import { ref, reactive, onMounted, h, computed, watch } from 'vue'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage } from 'naive-ui'
 import { logApi } from '@/api/log'
 import { AssetLog, LogSearchParams } from '@/types/log'
 
@@ -51,8 +112,79 @@ const logs = ref<AssetLog[]>([])
 
 const searchForm = reactive({
     player_id: '',
+    searchType: 'id' as 'id' | 'account',
     currency: null as string | null,
     change_type: null as string | null,
+    granularity: 'day' as 'hour' | 'day' | 'month',
+    timeRange: null as [number, number] | null
+})
+
+const granularityOptions = [
+  { label: '時', value: 'hour' },
+  { label: '日', value: 'day' },
+  { label: '月', value: 'month' }
+]
+
+// 初始化預設時間
+const setTimeRangeByGranularity = () => {
+  const now = new Date()
+  let start = new Date()
+  let end = new Date()
+  switch (searchForm.granularity) {
+    case 'hour':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999)
+      break
+    case 'day':
+      start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      end = now
+      break
+    case 'month':
+      start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+      end = now
+      break
+  }
+  searchForm.timeRange = [start.getTime(), end.getTime()]
+}
+
+// 快速選擇時間
+const handleQuickSelect = (type: string) => {
+  const now = new Date()
+  let start = new Date()
+  let end = new Date()
+  switch (type) {
+    case 'today':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+      end = now
+      break
+    case 'yesterday':
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999)
+      break
+    case 'thisWeek':
+      const day = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastWeek':
+      const day2 = now.getDay() || 7
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2 - 6, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2, 23, 59, 59, 999)
+      break
+    case 'thisMonth':
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+      end = now
+      break
+    case 'lastMonth':
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
+      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+      break
+  }
+  searchForm.timeRange = [start.getTime(), end.getTime()]
+}
+
+watch(() => searchForm.granularity, () => {
+  setTimeRangeByGranularity()
 })
 
 const pagination = reactive({
@@ -173,6 +305,7 @@ const handlePageChange = (page: number) => {
 }
 
 onMounted(() => {
+    setTimeRangeByGranularity()
     fetchData()
 })
 </script>
