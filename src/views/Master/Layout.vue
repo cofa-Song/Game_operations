@@ -183,11 +183,16 @@ const menuOptions = computed(() => [
         label: t('navigation.vipStats'),
         key: 'vip-stats',
         icon: renderIcon(PieChartOutline)
+      },
+      {
+        label: t('navigation.bonusHistory'),
+        key: 'bonus-history',
+        icon: renderIcon(GiftOutline)
       }
     ]
   },
   {
-    label: t('navigation.userManagement'),
+    label: t('navigation.playerManagement'),
     key: 'user-management-group',
     icon: renderIcon(PeopleOutline),
     children: [
@@ -197,24 +202,21 @@ const menuOptions = computed(() => [
         icon: renderIcon(PersonOutline)
       },
       {
-        label: t('navigation.agentList'),
-        key: 'agent-list',
-        icon: renderIcon(ListOutline)
-      },
-      {
-        label: t('navigation.vipSettings'),
-        key: 'vip-settings',
-        icon: renderIcon(SettingsOutline)
-      },
-      {
-        label: t('navigation.bonusHistory'),
-        key: 'bonus-history',
-        icon: renderIcon(GiftOutline)
-      },
-      {
         label: t('navigation.gameLogs'),
         key: 'game-logs',
         icon: renderIcon(GameControllerOutline)
+      }
+    ]
+  },
+  {
+    label: t('navigation.agentManagement'),
+    key: 'agent-management-group',
+    icon: renderIcon(PeopleCircleOutline),
+    children: [
+      {
+        label: t('navigation.agentList'),
+        key: 'agent-list',
+        icon: renderIcon(ListOutline)
       }
     ]
   },
@@ -343,6 +345,11 @@ const menuOptions = computed(() => [
         label: t('navigation.articleManagement'),
         key: 'article-manager',
         icon: renderIcon(ReaderOutline)
+      },
+      {
+        label: t('navigation.vipSettings'),
+        key: 'vip-settings',
+        icon: renderIcon(SettingsOutline)
       },
       {
         label: t('navigation.systemStatus'),
