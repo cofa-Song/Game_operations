@@ -2,8 +2,8 @@
   <div class="p-6">
     <NCard :title="t('gameLogs.title')">
       <!-- Advanced Filters -->
-      <NForm inline label-placement="left" class="mb-4 flex flex-col gap-4">
-        <!-- 第一排: 玩家搜尋 + 其它篩選 + 按鈕 -->
+      <NForm :model="searchForm" label-placement="left" class="mb-4 flex flex-col gap-4">
+        <!-- 基礎搜尋條件 -->
         <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
           <NFormItem :label="t('gameLogs.playerId')" :show-feedback="false">
             <div class="relative">
@@ -19,34 +19,9 @@
               />
             </div>
           </NFormItem>
-          <NFormItem :label="t('gameLogs.provider')" :show-feedback="false">
-              <NSelect 
-                v-model:value="searchForm.provider" 
-                :options="providerOptions" 
-                :placeholder="t('gameLogs.providerAll')" 
-                clearable 
-                style="width: 140px"
-              />
-          </NFormItem>
+          
           <NFormItem :label="t('gameLogs.gameName')" :show-feedback="false">
-               <NInput v-model:value="searchForm.game_name" :placeholder="t('gameLogs.gameNamePlaceholder')" clearable />
-          </NFormItem>
-          <NFormItem :label="t('gameLogs.roundId')" :show-feedback="false">
-               <NInput v-model:value="searchForm.round_id" :placeholder="t('gameLogs.roundIdPlaceholder')" clearable />
-          </NFormItem>
-          <NFormItem :show-feedback="false">
-             <NButton type="primary" @click="handleSearch" :loading="loading">{{ t('gameLogs.search') }}</NButton>
-          </NFormItem>
-        </div>
-
-        <!-- 第二排: 粒度 + 快選 + 時間區間 -->
-        <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
-          <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
-            <NSelect 
-              v-model:value="searchForm.granularity"
-              :options="granularityOptions"
-              class="bg-white/50"
-            />
+               <NInput v-model:value="searchForm.game_name" :placeholder="t('gameLogs.gameNamePlaceholder')" clearable style="width: 150px" />
           </NFormItem>
 
           <NFormItem label="快速切換" :show-feedback="false">
@@ -60,31 +35,77 @@
             </NSpace>
           </NFormItem>
 
-          <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false" class="w-80">
-            <NDatePicker 
-              v-if="searchForm.granularity === 'hour'"
-              v-model:value="searchForm.timeRange" 
-              type="datetimerange" 
-              clearable 
-              format="yyyy-MM-dd HH:mm"
-              class="w-full bg-white/50"
-            />
-            <NDatePicker 
-              v-if="searchForm.granularity === 'day'"
-              v-model:value="searchForm.timeRange" 
-              type="daterange" 
-              clearable 
-              class="w-full bg-white/50"
-            />
-            <NDatePicker 
-              v-if="searchForm.granularity === 'month'"
-              v-model:value="searchForm.timeRange" 
-              type="monthrange" 
-              clearable 
-              class="w-full bg-white/50"
-            />
+          <NFormItem label="幣別" :show-feedback="false">
+              <NSelect 
+                v-model:value="searchForm.currency" 
+                :options="currencyOptions" 
+                placeholder="全部" 
+                style="width: 120px"
+              />
           </NFormItem>
+
+          <div class="flex gap-2 mb-[2px]">
+            <NButton type="primary" @click="handleSearch" :loading="loading">{{ t('gameLogs.search') }}</NButton>
+            <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                <template #icon>
+                    <NIcon>
+                        <ChevronDownOutline v-if="!showAdvancedSearch" />
+                        <ChevronUpOutline v-else />
+                    </NIcon>
+                </template>
+                {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+            </NButton>
+          </div>
         </div>
+
+        <!-- 進階搜尋條件 (可折疊) -->
+        <NCollapseTransition :show="showAdvancedSearch">
+            <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
+                <NFormItem :label="t('gameLogs.provider')" :show-feedback="false">
+                    <NSelect 
+                        v-model:value="searchForm.provider" 
+                        :options="providerOptions" 
+                        :placeholder="t('gameLogs.providerAll')" 
+                        clearable 
+                        style="width: 140px"
+                    />
+                </NFormItem>
+                <NFormItem :label="t('gameLogs.roundId')" :show-feedback="false">
+                    <NInput v-model:value="searchForm.round_id" :placeholder="t('gameLogs.roundIdPlaceholder')" clearable style="width: 220px" />
+                </NFormItem>
+                <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
+                    <NSelect 
+                        v-model:value="searchForm.granularity"
+                        :options="granularityOptions"
+                        class="bg-white/50"
+                    />
+                </NFormItem>
+                <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false" class="w-80">
+                    <NDatePicker 
+                        v-if="searchForm.granularity === 'hour'"
+                        v-model:value="searchForm.timeRange" 
+                        type="datetimerange" 
+                        clearable 
+                        format="yyyy-MM-dd HH:mm"
+                        class="w-full bg-white/50"
+                    />
+                    <NDatePicker 
+                        v-if="searchForm.granularity === 'day'"
+                        v-model:value="searchForm.timeRange" 
+                        type="daterange" 
+                        clearable 
+                        class="w-full bg-white/50"
+                    />
+                    <NDatePicker 
+                        v-if="searchForm.granularity === 'month'"
+                        v-model:value="searchForm.timeRange" 
+                        type="monthrange" 
+                        clearable 
+                        class="w-full bg-white/50"
+                    />
+                </NFormItem>
+            </div>
+        </NCollapseTransition>
       </NForm>
 
       <NDataTable
@@ -119,7 +140,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, h, computed, watch } from 'vue'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NDivider, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NDivider, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage, NCollapseTransition, NIcon } from 'naive-ui'
+import { ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import { useI18n } from 'vue-i18n'
 import { gameApi } from '@/api/game'
 import { GameLog, GameSearchParams } from '@/types/game'
@@ -139,18 +161,16 @@ const searchForm = reactive({
     game_name: '',
     round_id: '',
     granularity: 'day' as Granularity,
-    timeRange: null as [number, number] | null
+    timeRange: null as [number, number] | null,
+    currency: 'all' as string
 })
+
+const showAdvancedSearch = ref(false)
 
 const granularityOptions = computed(() => [
   { label: t('operationReport.granularities.hour'), value: 'hour' },
   { label: t('operationReport.granularities.day'), value: 'day' },
   { label: t('operationReport.granularities.month'), value: 'month' }
-])
-
-const searchTypeOptions = computed(() => [
-  { label: t('gameLogs.searchType.id'), value: 'id' },
-  { label: t('gameLogs.searchType.account'), value: 'account' }
 ])
 
 // 初始化預設時間 (根據粒度)
@@ -215,6 +235,10 @@ watch(() => searchForm.granularity, () => {
   setTimeRangeByGranularity()
 })
 
+watch(() => searchForm.currency, () => {
+  handleSearch()
+})
+
 const pagination = reactive({
     page: 1,
     pageSize: 10,
@@ -229,6 +253,13 @@ const providerOptions = [
     { label: 'Evolution', value: 'EVOLUTION' },
     { label: 'Pragmatic Play', value: 'PP' },
     { label: 'JDB', value: 'JDB' }
+]
+
+const currencyOptions = [
+    { label: '全部', value: 'all' },
+    { label: '金幣 (Gold)', value: 'GOLD' },
+    { label: '銀幣 (Silver)', value: 'SILVER' },
+    { label: '銅幣 (Bronze)', value: 'BRONZE' }
 ]
 
 const formatJson = (jsonStr: string) => {
@@ -246,6 +277,36 @@ const formatNumber = (num: number) => {
 const handleDetail = (row: GameLog) => {
     selectedLog.value = row
     showDetail.value = true
+}
+
+// Logic for weighted amount and currency icon
+const getConvertedValue = (amount: number, currency: string) => {
+    // Weighted summation formula: Gold*1 + Silver*0.01 + Bronze*0
+    switch (currency) {
+        case 'GOLD': return amount
+        case 'SILVER': return amount * 0.01
+        case 'BRONZE': return 0
+        default: return amount
+    }
+}
+
+const getWeightedValue = (amount: number, currency: string) => {
+    if (searchForm.currency !== 'all') return amount // Raw value for specific filter
+    return getConvertedValue(amount, currency)
+}
+
+const renderAmount = (amount: number, currency: string) => {
+    const val = getWeightedValue(amount, currency)
+    const formatted = formatNumber(val)
+    
+    if (searchForm.currency === 'all') return formatted
+    
+    // Show icon for specific currency
+    const iconColor = currency === 'GOLD' ? 'text-yellow-500' : currency === 'SILVER' ? 'text-gray-400' : 'text-orange-700'
+    return h('div', { class: 'flex items-center justify-end gap-1' }, [
+        h('span', formatted),
+        h('span', { class: [iconColor, 'text-xs font-bold border border-current rounded px-0.5 scale-90'] }, currency.charAt(0))
+    ])
 }
 
 const columns = computed(() => [
@@ -270,22 +331,31 @@ const columns = computed(() => [
         title: t('gameLogs.columns.bet'), 
         key: 'bet_amount', 
         align: 'right' as const,
-        render: (row: GameLog) => formatNumber(row.bet_amount)
+        render: (row: GameLog) => renderAmount(row.bet_amount, row.currency)
     },
     { 
         title: t('gameLogs.columns.win'), 
         key: 'win_amount', 
         align: 'right' as const,
-        render: (row: GameLog) => formatNumber(row.win_amount) 
+        render: (row: GameLog) => renderAmount(row.win_amount, row.currency) 
     },
     { 
         title: t('gameLogs.columns.net'), 
         key: 'net_amount', 
         align: 'right' as const,
         render: (row: GameLog) => {
-            const color = row.net_amount >= 0 ? 'text-green-600' : 'text-red-600'
-            const prefix = row.net_amount > 0 ? '+' : ''
-            return h('span', { class: ['font-bold', color] }, prefix + formatNumber(row.net_amount))
+            const val = getWeightedValue(row.net_amount, row.currency)
+            const color = val >= 0 ? 'text-green-600' : 'text-red-600'
+            const prefix = val > 0 ? '+' : ''
+            
+            const formatted = prefix + formatNumber(val)
+            if (searchForm.currency === 'all') return h('span', { class: ['font-bold', color] }, formatted)
+            
+            const iconColor = row.currency === 'GOLD' ? 'text-yellow-500' : row.currency === 'SILVER' ? 'text-gray-400' : 'text-orange-700'
+            return h('div', { class: ['flex items-center justify-end gap-1', 'font-bold', color] }, [
+                h('span', formatted),
+                h('span', { class: [iconColor, 'text-xs font-bold border border-current rounded px-0.5 scale-90'] }, row.currency.charAt(0))
+            ])
         }
     },
     { 
@@ -293,8 +363,11 @@ const columns = computed(() => [
         key: 'valid_turnover', 
         align: 'right' as const,
         render: (row: GameLog) => {
-           if (row.status === 'void') return h('span', { class: 'text-gray-400 line-through' }, formatNumber(row.valid_turnover))
-           return formatNumber(row.valid_turnover)
+           // 有效流水一律顯示換算後的真實幣值
+           const val = getConvertedValue(row.valid_turnover, row.currency)
+           const formatted = formatNumber(val)
+           if (row.status === 'void') return h('span', { class: 'text-gray-400 line-through' }, formatted)
+           return formatted
         }
     },
     { 
@@ -326,7 +399,8 @@ const fetchData = async () => {
             player_id: searchForm.player_id || undefined,
             provider: searchForm.provider || undefined,
             game_name: searchForm.game_name || undefined,
-            round_id: searchForm.round_id || undefined
+            round_id: searchForm.round_id || undefined,
+            currency: searchForm.currency || undefined
         }
         const res = await gameApi.getLogs(params)
         if (res.code === 0) {

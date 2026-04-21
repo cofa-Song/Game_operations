@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  NCard, NFormItem, NSelect, NRadioGroup, NRadioButton, NSpace,
-  NDatePicker, NInput, NButton, NDataTable, NCheckbox, useMessage, NIcon, NSpin
+  NCard, NFormItem, NSelect, NSpace,
+  NDatePicker, NInput, NButton, NDataTable, NCheckbox, useMessage, NIcon, NSpin,
+  NCollapseTransition
 } from 'naive-ui'
-import { SearchOutline, DownloadOutline } from '@vicons/ionicons5'
+import { SearchOutline, DownloadOutline, ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import type { GameStatsTargetType, GameStatsQuery, Granularity, GameStatsRecord } from '@/types/gameStats'
 import { gameStatsApi } from '@/api/gameStats'
 import * as echarts from 'echarts'
@@ -35,6 +36,7 @@ const searchModel = ref<{
 })
 
 const loading = ref(false)
+const showAdvancedSearch = ref(false)
 const exporting = ref(false)
 const tableData = ref<GameStatsRecord[]>([])
 
@@ -423,144 +425,161 @@ onBeforeUnmount(() => {
   }
 })
 
-// For TS compatibility in template
-import { h } from 'vue'
+// For TS compatibility in template - redundant since h is imported from naive-ui above but kept for consistency if needed or removed
 </script>
 
 <template>
   <div class="h-full flex flex-col gap-4">
     <!-- 搜尋條件區塊 -->
     <NCard class="rounded-xl shadow-sm border-0 premium-card" size="small">
-      <div class="flex flex-wrap items-end gap-x-6 gap-y-4 w-full">
-        <!-- 數據粒度 -->
-        <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" class="w-32">
-          <NSelect 
-            v-model:value="searchModel.granularity"
-            :options="granularityOptions"
-            class="bg-white/50"
-          />
-        </NFormItem>
+      <div class="flex flex-col gap-4 w-full">
+        <!-- 基礎搜尋條件 -->
+        <div class="flex flex-wrap items-end gap-x-6 gap-y-4 w-full">
+            <!-- 快速切換時間 -->
+            <NFormItem label="快速切換" :show-feedback="false">
+                <NSpace wrap>
+                    <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
+                    <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
+                    <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
+                    <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
+                    <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
+                    <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
+                </NSpace>
+            </NFormItem>
 
-        <!-- 快速切換時間 -->
-        <NFormItem label="快速切換" :show-feedback="false">
-          <NSpace wrap>
-            <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
-            <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
-            <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
-            <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
-            <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
-            <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
-          </NSpace>
-        </NFormItem>
+            <!-- 統計對象 -->
+            <NFormItem :label="t('gameStats.targetType')" :show-feedback="false" class="w-40">
+                <NSelect 
+                    v-model:value="searchModel.targetType"
+                    :options="targetTypeOptions"
+                    class="bg-white/50"
+                />
+            </NFormItem>
 
-        <!-- 自訂時間區間 -->
-        <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false" class="w-80">
-          <NDatePicker 
-            v-if="searchModel.granularity === 'hour'"
-            v-model:value="searchModel.timeRange" 
-            type="datetimerange" 
-            clearable 
-            format="yyyy-MM-dd HH:mm"
-            class="w-full bg-white/50"
-          />
-          <NDatePicker 
-            v-if="searchModel.granularity === 'day'"
-            v-model:value="searchModel.timeRange" 
-            type="daterange" 
-            clearable 
-            class="w-full bg-white/50"
-          />
-          <NDatePicker 
-            v-if="searchModel.granularity === 'month'"
-            v-model:value="searchModel.timeRange" 
-            type="monthrange" 
-            clearable 
-            class="w-full bg-white/50"
-          />
-        </NFormItem>
+            <!-- 幣別 -->
+            <NFormItem label="幣別" :show-feedback="false" class="w-32">
+                <NSelect 
+                    v-model:value="searchModel.currency"
+                    :options="currencyOptions"
+                    class="bg-white/50"
+                />
+            </NFormItem>
 
-        <!-- 統計對象 -->
-        <NFormItem :label="t('gameStats.targetType')" :show-feedback="false" class="w-40">
-          <NSelect 
-            v-model:value="searchModel.targetType"
-            :options="targetTypeOptions"
-            class="bg-white/50"
-          />
-        </NFormItem>
-        
-        <!-- 指定 ID 或 下拉 -->
-        <NFormItem v-if="searchModel.targetType !== 'all'" :label="t('gameStats.targetTypes.' + searchModel.targetType)" :show-feedback="false" class="w-48">
-          <!-- 廠商 -->
-          <NSelect
-            v-if="searchModel.targetType === 'provider'"
-            v-model:value="searchModel.targetProvider"
-            :options="providerOptions"
-            :placeholder="t('gameStats.providerPlaceholder')"
-            clearable
-            class="bg-white/50"
-          />
-          <!-- 類型 -->
-          <NSelect
-            v-else-if="searchModel.targetType === 'type'"
-            v-model:value="searchModel.targetGameType"
-            :options="gameTypeOptions"
-            :placeholder="t('gameStats.typePlaceholder')"
-            clearable
-            class="bg-white/50"
-          />
-          <!-- 遊戲ID -->
-          <NInput 
-            v-else
-            v-model:value="searchModel.targetId"
-            :placeholder="t('gameStats.targetIdPlaceholder')"
-            clearable
-          />
-        </NFormItem>
+            <!-- 按鈕區 -->
+            <div class="flex-grow flex justify-end gap-2 h-[34px] mb-[1px]">
+                <NButton 
+                    type="primary" 
+                    size="medium" 
+                    @click="handleSearch" 
+                    :loading="loading"
+                    class="font-bold shadow-md shadow-sky-500/20"
+                >
+                    <template #icon>
+                    <NIcon><SearchOutline /></NIcon>
+                    </template>
+                    {{ t('gameStats.search') }}
+                </NButton>
 
-        <!-- 幣別 -->
-        <NFormItem label="幣別" :show-feedback="false" class="w-32">
-          <NSelect 
-            v-model:value="searchModel.currency"
-            :options="currencyOptions"
-            class="bg-white/50"
-          />
-        </NFormItem>
+                <NButton 
+                    type="info" 
+                    size="medium" 
+                    @click="handleExport" 
+                    :disabled="exporting"
+                    class="font-bold shadow-md shadow-blue-500/20"
+                >
+                    <template #icon>
+                    <NIcon><DownloadOutline /></NIcon>
+                    </template>
+                    {{ t('gameStats.export') }}
+                </NButton>
 
-        <!-- 排除測試帳號 -->
-        <div class="flex items-center h-[34px] mb-[1px]">
-           <NCheckbox v-model:checked="searchModel.excludeTesting" class="font-medium">
-             {{ t('operationReport.excludeTesting') }}
-           </NCheckbox>
+                <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                    <template #icon>
+                        <NIcon>
+                            <ChevronDownOutline v-if="!showAdvancedSearch" />
+                            <ChevronUpOutline v-else />
+                        </NIcon>
+                    </template>
+                    {{ showAdvancedSearch ? '收起' : '進階' }}
+                </NButton>
+            </div>
         </div>
 
-        <!-- 按鈕區 -->
-        <div class="flex-grow flex justify-end gap-2 h-[34px] mb-[1px]">
-           <NButton 
-             type="primary" 
-             size="medium" 
-             @click="handleSearch" 
-             :loading="loading"
-             class="font-bold shadow-md shadow-sky-500/20"
-           >
-             <template #icon>
-               <NIcon><SearchOutline /></NIcon>
-             </template>
-             {{ t('gameStats.search') }}
-           </NButton>
+        <!-- 進階搜尋條件 (可折疊) -->
+        <NCollapseTransition :show="showAdvancedSearch">
+            <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4 w-full">
+                <!-- 數據粒度 -->
+                <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" class="w-32">
+                    <NSelect 
+                        v-model:value="searchModel.granularity"
+                        :options="granularityOptions"
+                        class="bg-white/50"
+                    />
+                </NFormItem>
 
-           <NButton 
-             type="info" 
-             size="medium" 
-             @click="handleExport" 
-             :disabled="exporting"
-             class="font-bold shadow-md shadow-blue-500/20"
-           >
-             <template #icon>
-               <NIcon><DownloadOutline /></NIcon>
-             </template>
-             {{ t('gameStats.export') }}
-           </NButton>
-        </div>
+                <!-- 自訂時間區間 -->
+                <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false" class="w-80">
+                    <NDatePicker 
+                        v-if="searchModel.granularity === 'hour'"
+                        v-model:value="searchModel.timeRange" 
+                        type="datetimerange" 
+                        clearable 
+                        format="yyyy-MM-dd HH:mm"
+                        class="w-full bg-white/50"
+                    />
+                    <NDatePicker 
+                        v-if="searchModel.granularity === 'day'"
+                        v-model:value="searchModel.timeRange" 
+                        type="daterange" 
+                        clearable 
+                        class="w-full bg-white/50"
+                    />
+                    <NDatePicker 
+                        v-if="searchModel.granularity === 'month'"
+                        v-model:value="searchModel.timeRange" 
+                        type="monthrange" 
+                        clearable 
+                        class="w-full bg-white/50"
+                    />
+                </NFormItem>
+
+                <!-- 指定詳情 (廠商/類型/ID) -->
+                <NFormItem v-if="searchModel.targetType !== 'all'" :label="t('gameStats.targetTypes.' + searchModel.targetType)" :show-feedback="false" class="w-48">
+                    <!-- 廠商 -->
+                    <NSelect
+                        v-if="searchModel.targetType === 'provider'"
+                        v-model:value="searchModel.targetProvider"
+                        :options="providerOptions"
+                        :placeholder="t('gameStats.providerPlaceholder')"
+                        clearable
+                        class="bg-white/50"
+                    />
+                    <!-- 類型 -->
+                    <NSelect
+                        v-else-if="searchModel.targetType === 'type'"
+                        v-model:value="searchModel.targetGameType"
+                        :options="gameTypeOptions"
+                        :placeholder="t('gameStats.typePlaceholder')"
+                        clearable
+                        class="bg-white/50"
+                    />
+                    <!-- 遊戲ID -->
+                    <NInput 
+                        v-else
+                        v-model:value="searchModel.targetId"
+                        :placeholder="t('gameStats.targetIdPlaceholder')"
+                        clearable
+                    />
+                </NFormItem>
+
+                <!-- 排除測試帳號 -->
+                <div class="flex items-center h-[34px] mb-[1px]">
+                   <NCheckbox v-model:checked="searchModel.excludeTesting" class="font-medium">
+                     {{ t('operationReport.excludeTesting') }}
+                   </NCheckbox>
+                </div>
+            </div>
+        </NCollapseTransition>
       </div>
     </NCard>
 

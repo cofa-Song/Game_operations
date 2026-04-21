@@ -1,8 +1,8 @@
 <template>
   <div class="p-6">
     <NCard title="資產與流水變動日誌">
-      <NForm inline label-placement="left" class="mb-4 flex flex-col gap-4">
-        <!-- 第一排: 玩家搜尋 + 篩選 + 查詢按鈕 -->
+      <NForm :model="searchForm" label-placement="left" class="mb-4 flex flex-col gap-4">
+        <!-- 基礎搜尋條件 -->
         <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
           <NFormItem label="玩家" :show-feedback="false">
             <div class="relative">
@@ -18,15 +18,6 @@
               />
             </div>
           </NFormItem>
-          <NFormItem label="幣別" :show-feedback="false">
-             <NSelect 
-               v-model:value="searchForm.currency" 
-               :options="currencyOptions" 
-               placeholder="全部" 
-               clearable 
-               style="width: 120px"
-             />
-          </NFormItem>
           <NFormItem label="變動類型" :show-feedback="false">
              <NSelect 
                v-model:value="searchForm.change_type" 
@@ -36,21 +27,6 @@
                style="width: 150px"
              />
           </NFormItem>
-          <NFormItem :show-feedback="false">
-             <NButton type="primary" @click="handleSearch">查詢</NButton>
-          </NFormItem>
-        </div>
-
-        <!-- 第二排: 粒度 + 快選 + 時間區間 -->
-        <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
-          <NFormItem label="數據粒度" :show-feedback="false" style="width: 140px">
-            <NSelect 
-              v-model:value="searchForm.granularity"
-              :options="granularityOptions"
-              class="bg-white/50"
-            />
-          </NFormItem>
-
           <NFormItem label="快速切換" :show-feedback="false">
             <NSpace wrap>
               <NButton size="small" @click="handleQuickSelect('today')">本日</NButton>
@@ -61,32 +37,67 @@
               <NButton size="small" @click="handleQuickSelect('lastMonth')">上個月</NButton>
             </NSpace>
           </NFormItem>
-
-          <NFormItem label="時間區間" :show-feedback="false" class="w-80">
-            <NDatePicker 
-              v-if="searchForm.granularity === 'hour'"
-              v-model:value="searchForm.timeRange" 
-              type="datetimerange" 
-              clearable 
-              format="yyyy-MM-dd HH:mm"
-              class="w-full bg-white/50"
-            />
-            <NDatePicker 
-              v-if="searchForm.granularity === 'day'"
-              v-model:value="searchForm.timeRange" 
-              type="daterange" 
-              clearable 
-              class="w-full bg-white/50"
-            />
-            <NDatePicker 
-              v-if="searchForm.granularity === 'month'"
-              v-model:value="searchForm.timeRange" 
-              type="monthrange" 
-              clearable 
-              class="w-full bg-white/50"
-            />
+          <NFormItem label="幣別" :show-feedback="false">
+             <NSelect 
+               v-model:value="searchForm.currency" 
+               :options="currencyOptions" 
+               placeholder="全部" 
+               clearable 
+               style="width: 120px"
+             />
           </NFormItem>
+
+          <div class="flex gap-2 mb-[2px]">
+            <NButton type="primary" @click="handleSearch">查詢</NButton>
+            <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                <template #icon>
+                    <NIcon>
+                        <ChevronDownOutline v-if="!showAdvancedSearch" />
+                        <ChevronUpOutline v-else />
+                    </NIcon>
+                </template>
+                {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+            </NButton>
+          </div>
         </div>
+
+        <!-- 進階搜尋條件 (可折疊) -->
+        <NCollapseTransition :show="showAdvancedSearch">
+            <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
+                <NFormItem label="數據粒度" :show-feedback="false" style="width: 140px">
+                    <NSelect 
+                        v-model:value="searchForm.granularity"
+                        :options="granularityOptions"
+                        class="bg-white/50"
+                    />
+                </NFormItem>
+
+                <NFormItem label="時間區間" :show-feedback="false" class="w-80">
+                    <NDatePicker 
+                        v-if="searchForm.granularity === 'hour'"
+                        v-model:value="searchForm.timeRange" 
+                        type="datetimerange" 
+                        clearable 
+                        format="yyyy-MM-dd HH:mm"
+                        class="w-full bg-white/50"
+                    />
+                    <NDatePicker 
+                        v-if="searchForm.granularity === 'day'"
+                        v-model:value="searchForm.timeRange" 
+                        type="daterange" 
+                        clearable 
+                        class="w-full bg-white/50"
+                    />
+                    <NDatePicker 
+                        v-if="searchForm.granularity === 'month'"
+                        v-model:value="searchForm.timeRange" 
+                        type="monthrange" 
+                        clearable 
+                        class="w-full bg-white/50"
+                    />
+                </NFormItem>
+            </div>
+        </NCollapseTransition>
       </NForm>
 
       <NDataTable
@@ -101,8 +112,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h, computed, watch } from 'vue'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage } from 'naive-ui'
+import { ref, reactive, onMounted, h, watch } from 'vue'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage, NCollapseTransition, NIcon } from 'naive-ui'
+import { ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import { logApi } from '@/api/log'
 import { AssetLog, LogSearchParams } from '@/types/log'
 
@@ -118,6 +130,8 @@ const searchForm = reactive({
     granularity: 'day' as 'hour' | 'day' | 'month',
     timeRange: null as [number, number] | null
 })
+
+const showAdvancedSearch = ref(false)
 
 const granularityOptions = [
   { label: '時', value: 'hour' },

@@ -81,7 +81,7 @@ const generateMockLogs = () => {
             create_time: createTime.toISOString(),
             status: status,
             raw_json: JSON.stringify(raw),
-            currency: 'SILVER' // Mocking silver game by default
+            currency: ['GOLD', 'SILVER', 'BRONZE'][Math.floor(Math.random() * 3)] // Mocking multiple currencies
         })
     }
     // Sort by settle time desc
@@ -116,6 +116,9 @@ export const gameApi = {
                 const t = new Date(l.settle_time).getTime()
                 return t >= start && t <= end
             })
+        }
+        if (params.currency && params.currency !== 'all') {
+            logs = logs.filter(l => l.currency === params.currency)
         }
 
         const total = logs.length
@@ -262,6 +265,61 @@ export const gameListApi = {
         }
 
         game.updated_at = new Date().toISOString()
+
+        return { code: 0, msg: 'success' }
+    },
+
+    // Mock API for syncing with third-party providers
+    fetchLatestProviderGames: async (): Promise<{ code: number; msg: string; data: import('@/types/game').ThirdPartyGame[] }> => {
+        await delay(500)
+        
+        // Simulating the fetched list where some games exist, some are new, and some old are missing
+        const list: import('@/types/game').ThirdPartyGame[] = [
+            // Existing ones
+            { provider_game_id: 'PG_MAHJONG2', name: '麻將胡了2', name_en: 'Mahjong Ways 2', provider_id: 'PV-001', type_id: 'T001' },
+            { provider_game_id: 'PG_NEKO', name: '招財貓', name_en: 'Lucky Neko', provider_id: 'PV-001', type_id: 'T001' },
+            { provider_game_id: 'JILI_SUPERACE', name: '超級王牌', name_en: 'Super Ace', provider_id: 'PV-003', type_id: 'T001' },
+            { provider_game_id: 'JILI_EMPIRE', name: '黃金帝國', name_en: 'Golden Empire', provider_id: 'PV-003', type_id: 'T001' },
+            { provider_game_id: 'EVO_CRAZYTIME', name: '瘋狂時刻', name_en: 'Crazy Time', provider_id: 'PV-002', type_id: 'T002' },
+            { provider_game_id: 'EVO_LIGHTNING', name: '閃電輪盤', name_en: 'Lightning Roulette', provider_id: 'PV-002', type_id: 'T002' },
+            { provider_game_id: 'PP_GATES', name: '眾神之門', name_en: 'Gates of Olympus', provider_id: 'PV-004', type_id: 'T001' },
+            { provider_game_id: 'PP_BONANZA', name: '甜蜜糖果', name_en: 'Sweet Bonanza', provider_id: 'PV-004', type_id: 'T001' },
+            { provider_game_id: 'KY_BIRD', name: '捕鳥達人', name_en: 'Birds Party', provider_id: 'PV-006', type_id: 'T001' },
+            
+            // New ones to appear as "Unpublished"
+            { provider_game_id: 'PG_DRAGON', name: '神龍傳說', name_en: 'Dragon Legend', provider_id: 'PV-001', type_id: 'T001' },
+            { provider_game_id: 'JILI_RICH', name: '財神到', name_en: 'God of Wealth', provider_id: 'PV-003', type_id: 'T001' },
+            { provider_game_id: 'EVO_BLACKJACK', name: '無極黑傑克', name_en: 'Infinite Blackjack', provider_id: 'PV-002', type_id: 'T002' }
+
+            // Note: 'PG_AZTEC', 'JILI_BOXING', 'EVO_BACCARAT_A', 'KY_DRAGON' are intentionally missing from this new list
+        ]
+
+        return { code: 0, msg: 'success', data: list }
+    },
+
+    // Batch insert new games
+    batchAddGames: async (newGames: Partial<Game>[]): Promise<{ code: number; msg: string }> => {
+        await delay(300)
+        
+        for (const g of newGames) {
+            mockGames.unshift({
+                ...g,
+                id: `G0${Math.floor(Math.random() * 1000) + 100}`,
+                cumulative_turnover: 0,
+                total_bet: 0,
+                total_payout: 0,
+                marketing_tag: null,
+                tag_source: 'AUTO',
+                type_rate: 100,
+                tag_rate: 0,
+                final_rate: 100,
+                allowed_currencies: ['SILVER'],
+                min_vip_level: 0,
+                sort_order: 99,
+                updated_at: new Date().toISOString(),
+                profit_rate: 5.0
+            } as Game)
+        }
 
         return { code: 0, msg: 'success' }
     }

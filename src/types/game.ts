@@ -24,6 +24,7 @@ export interface GameSearchParams {
     round_id?: string // provider_round_id
     date_start?: string
     date_end?: string
+    currency?: string
     page: number
     page_size: number
 }
@@ -63,7 +64,15 @@ export interface ProviderUpdateRequest {
 
 export type MarketingTag = 'HOT' | 'RECOMMENDED' | 'DOUBLE_TURNOVER'
 export type TagSource = 'AUTO' | 'MANUAL'
-export type GameStatus = 'ACTIVE' | 'DISABLED' | 'MAINTENANCE'
+export type GameStatus = 'ACTIVE' | 'DISABLED' | 'MAINTENANCE' | 'UNPUBLISHED' | 'SOURCE_MISSING'
+
+export interface ThirdPartyGame {
+    provider_game_id: string
+    name: string
+    name_en: string
+    provider_id: string
+    type_id: string
+}
 
 export interface Game {
     id: string
@@ -98,6 +107,7 @@ export interface GameListSearchParams {
     tag_source?: TagSource
     date_start?: string
     date_end?: string
+    currency?: string
     page: number
     page_size: number
 }

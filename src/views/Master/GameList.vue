@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, h, computed, watch } from 'vue'
+import { ref, reactive, onMounted, h, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSwitch, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns } from 'naive-ui'
-import { SearchOutline, RefreshOutline, CreateOutline } from '@vicons/ionicons5'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns, NCollapseTransition } from 'naive-ui'
+import { SearchOutline, RefreshOutline, CreateOutline, AddOutline, ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import { gameListApi } from '@/api/game'
 import { providerApi } from '@/api/provider'
 import { configApi } from '@/api/config'
-import type { Game, GameListSearchParams, GameUpdateRequest, MarketingTag, GameStatus, GameType } from '@/types/game'
+import type { Game, GameListSearchParams, GameUpdateRequest, MarketingTag, GameStatus, GameType, ThirdPartyGame } from '@/types/game'
 import type { GameProvider } from '@/types/game'
 
 const { t } = useI18n()
@@ -96,10 +96,121 @@ const statusFilterOptions = [
     { label: t('game.list.maintenance'), value: 'MAINTENANCE' as GameStatus }
 ]
 
+const statusSelectOptions = [
+    { label: '正常', value: 'ACTIVE' },
+    { label: '維護', value: 'MAINTENANCE' },
+    { label: '停用', value: 'DISABLED' }
+]
+
+const newStatusOptions = [
+    { label: '正常', value: 'ACTIVE' as GameStatus },
+    { label: '維護', value: 'MAINTENANCE' as GameStatus },
+    { label: '停用', value: 'DISABLED' as GameStatus }
+]
+
 const typeOptions = computed(() => [
     { label: t('common.all'), value: undefined },
     ...gameTypes.value.map(t => ({ label: t.name, value: t.id }))
 ])
+
+const showAddGameModal = ref(false)
+const showAdvancedSearch = ref(false)
+const syncLoading = ref(false)
+const lastUpdateTime = ref<string | null>(null)
+const unpublishedGames = ref<ThirdPartyGame[]>([])
+const newlyPublished = ref<ThirdPartyGame[]>([])
+const newStatus = ref<GameStatus>('ACTIVE')
+
+const addSearchForm = reactive({
+    gameId: '',
+    name: '',
+    providerId: undefined as string | undefined,
+    typeId: undefined as string | undefined
+})
+
+const filteredUnpublished = computed(() => {
+    return unpublishedGames.value.filter(g => {
+        if (addSearchForm.providerId && g.provider_id !== addSearchForm.providerId) return false
+        if (addSearchForm.typeId && g.type_id !== addSearchForm.typeId) return false
+        if (addSearchForm.gameId && !g.provider_game_id.includes(addSearchForm.gameId)) return false
+        if (addSearchForm.name && !g.name.includes(addSearchForm.name) && !g.name_en.toLowerCase().includes(addSearchForm.name.toLowerCase())) return false
+        return true
+    })
+})
+
+const handleUpdateProviderGames = async () => {
+    syncLoading.value = true
+    try {
+        const res = await gameListApi.fetchLatestProviderGames()
+        if (res.code === 0) {
+            const thirdPartyGames = res.data
+            unpublishedGames.value = []
+            
+            const dbProviderIds = new Set(games.value.map(g => g.provider_game_id))
+            
+            for (const tpg of thirdPartyGames) {
+                if (!dbProviderIds.has(tpg.provider_game_id) && !newlyPublished.value.find(n => n.provider_game_id === tpg.provider_game_id)) {
+                    unpublishedGames.value.push(tpg)
+                }
+            }
+
+            const externalIds = new Set(thirdPartyGames.map(t => t.provider_game_id))
+            games.value.forEach(g => {
+                if (!externalIds.has(g.provider_game_id) && g.status !== 'SOURCE_MISSING') {
+                    // Update frontend state immediately to reflect missing status
+                    g.status = 'SOURCE_MISSING'
+                }
+            })
+            
+            lastUpdateTime.value = new Date().toLocaleString()
+            message.success('更新清單並比對完成')
+        }
+    } catch {
+        message.error('獲取清單失敗')
+    } finally {
+        syncLoading.value = false
+    }
+}
+
+const moveToPublished = (game: ThirdPartyGame) => {
+    unpublishedGames.value = unpublishedGames.value.filter(g => g.provider_game_id !== game.provider_game_id)
+    newlyPublished.value.push(game)
+}
+
+const moveToUnpublished = (game: ThirdPartyGame) => {
+    newlyPublished.value = newlyPublished.value.filter(g => g.provider_game_id !== game.provider_game_id)
+    unpublishedGames.value.push(game)
+}
+
+const handleConfirmAdd = async () => {
+    if (newlyPublished.value.length === 0) return
+    syncLoading.value = true
+    try {
+        const payload = newlyPublished.value.map(g => ({
+            provider_id: g.provider_id,
+            provider_game_id: g.provider_game_id,
+            type_id: g.type_id,
+            name: g.name,
+            name_en: g.name_en,
+            status: newStatus.value === 'UNPUBLISHED' ? 'ACTIVE' : newStatus.value
+        }))
+        
+        const res = await gameListApi.batchAddGames(payload as any)
+        if (res.code === 0) {
+            message.success('新增成功')
+            showAddGameModal.value = false
+            newlyPublished.value = []
+            addSearchForm.gameId = ''
+            addSearchForm.name = ''
+            newStatus.value = 'UNPUBLISHED'
+            fetchData()
+        }
+    } catch {
+        message.error('新增失敗')
+    } finally {
+        syncLoading.value = false
+    }
+}
 
 const columns: DataTableColumns<Game> = [
     { title: 'ID', key: 'id', width: 80, fixed: 'left' },
@@ -153,39 +264,30 @@ const columns: DataTableColumns<Game> = [
         render: (row) => h('span', { class: row.final_rate > 100 ? 'text-green-600 font-bold' : 'font-mono' }, `${row.final_rate}%`)
     },
     {
-        title: t('game.list.setProfitRate'),
-        key: 'profit_rate',
-        width: 100,
-        render: (row) => h('span', { class: 'text-purple-600 font-mono font-bold' }, `${(100 - row.profit_rate).toFixed(2)}%`)
-    },
-    {
-        title: t('game.list.enable'),
-        key: 'is_enabled',
-        width: 100,
+        title: t('common.status'),
+        key: 'status',
+        width: 120,
         render: (row) => {
             const currentStatus = pendingChanges.value[row.id] || row.status
-            const isEnabled = currentStatus !== 'DISABLED'
-            return h(NSwitch, {
-                value: isEnabled,
-                onUpdateValue: (val: boolean) => {
-                    handleStatusChange(row, val ? 'ACTIVE' : 'DISABLED')
-                }
-            })
-        }
-    },
-    {
-        title: t('game.list.maintenance'),
-        key: 'is_maintenance',
-        width: 100,
-        render: (row) => {
-            const currentStatus = pendingChanges.value[row.id] || row.status
-            const isMaintenance = currentStatus === 'MAINTENANCE'
-            const isEnabled = currentStatus !== 'DISABLED'
-            return h(NSwitch, {
-                value: isMaintenance,
-                disabled: !isEnabled,
-                onUpdateValue: (val: boolean) => {
-                    handleStatusChange(row, val ? 'MAINTENANCE' : 'ACTIVE')
+            const isSourceMissing = currentStatus === 'SOURCE_MISSING'
+            
+            // If the current status is not one of the manual three, we should show it in the dropdown options
+            // but the user says "only these three are manual", so we map the options.
+            // If the current status is UNPUBLISHED or SOURCE_MISSING, we add it to the options so it can be displayed.
+            const displayOptions = [...statusSelectOptions]
+            if (currentStatus === 'UNPUBLISHED') {
+                displayOptions.push({ label: '未上架', value: 'UNPUBLISHED' })
+            } else if (currentStatus === 'SOURCE_MISSING') {
+                displayOptions.push({ label: '來源遺失', value: 'SOURCE_MISSING' })
+            }
+
+            return h(NSelect, {
+                value: currentStatus,
+                options: displayOptions,
+                size: 'small',
+                disabled: isSourceMissing,
+                onUpdateValue: (val: GameStatus) => {
+                    handleStatusChange(row, val)
                 }
             })
         }
@@ -386,7 +488,7 @@ const handleSubmit = async () => {
         <NCard :title="t('game.list.title')" class="mb-4">
             <NForm :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="handleSearch">
               <div class="flex flex-col gap-4">
-                <!-- 第一排: 遊戲搜尋 + 篩選 -->
+                <!-- 第一排: 基礎搜尋條件 -->
                 <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
                     <NFormItem :label="t('game.list.gameName')" :show-feedback="false">
                         <div class="relative">
@@ -400,21 +502,8 @@ const handleSubmit = async () => {
                     <NFormItem :label="t('game.list.vendor')" :show-feedback="false">
                         <NSelect v-model:value="searchForm.provider_id" :options="providerOptions" :placeholder="t('common.all')" clearable style="width: 160px" />
                     </NFormItem>
-                    <NFormItem :label="t('game.list.tag')" :show-feedback="false">
-                        <NSelect v-model:value="searchForm.marketing_tag" :options="tagOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
-                    </NFormItem>
-                    <NFormItem :label="t('game.list.typeTag')" :show-feedback="false">
-                        <NSelect v-model:value="searchForm.type_id" :options="typeOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
-                    </NFormItem>
                     <NFormItem :label="t('common.status')" :show-feedback="false">
                         <NSelect v-model:value="searchForm.status" :options="statusFilterOptions" :placeholder="t('common.all')" clearable style="width: 120px" />
-                    </NFormItem>
-                </div>
-
-                <!-- 第二排: 粒度 + 快選 + 時間 + 按鈕 -->
-                <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
-                    <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
-                        <NSelect v-model:value="granularity" :options="granularityOptions" class="bg-white/50" />
                     </NFormItem>
                     <NFormItem label="快速切換" :show-feedback="false">
                         <NSpace wrap>
@@ -426,31 +515,8 @@ const handleSubmit = async () => {
                             <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
                         </NSpace>
                     </NFormItem>
-                    <NFormItem :label="t('game.list.dateRange')" :show-feedback="false" class="w-80">
-                        <NDatePicker 
-                          v-if="granularity === 'hour'"
-                          v-model:value="dateRange" 
-                          type="datetimerange" 
-                          clearable 
-                          format="yyyy-MM-dd HH:mm"
-                          class="w-full bg-white/50"
-                        />
-                        <NDatePicker 
-                          v-if="granularity === 'day'"
-                          v-model:value="dateRange" 
-                          type="daterange" 
-                          clearable 
-                          class="w-full bg-white/50"
-                        />
-                        <NDatePicker 
-                          v-if="granularity === 'month'"
-                          v-model:value="dateRange" 
-                          type="monthrange" 
-                          clearable 
-                          class="w-full bg-white/50"
-                        />
-                    </NFormItem>
-                    <div class="flex gap-2">
+
+                    <div class="flex gap-2 mb-[2px]">
                         <NButton type="primary" @click="handleSearch" :loading="loading">
                             <template #icon><SearchOutline /></template>
                             {{ t('common.search') }}
@@ -459,24 +525,78 @@ const handleSubmit = async () => {
                             <template #icon><RefreshOutline /></template>
                             {{ t('common.all') }}
                         </NButton>
+                        <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                            <template #icon>
+                                <ChevronDownOutline v-if="!showAdvancedSearch" />
+                                <ChevronUpOutline v-else />
+                            </template>
+                            {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+                        </NButton>
                     </div>
                 </div>
+
+                <!-- 第二排: 進階搜尋條件 (可折疊) -->
+                <NCollapseTransition :show="showAdvancedSearch">
+                    <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
+                        <NFormItem :label="t('game.list.tag')" :show-feedback="false">
+                            <NSelect v-model:value="searchForm.marketing_tag" :options="tagOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
+                        </NFormItem>
+                        <NFormItem :label="t('game.list.typeTag')" :show-feedback="false">
+                            <NSelect v-model:value="searchForm.type_id" :options="typeOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
+                        </NFormItem>
+                        <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
+                            <NSelect v-model:value="granularity" :options="granularityOptions" class="bg-white/50" />
+                        </NFormItem>
+                        <NFormItem :label="t('game.list.dateRange')" :show-feedback="false" class="w-80">
+                            <NDatePicker 
+                            v-if="granularity === 'hour'"
+                            v-model:value="dateRange" 
+                            type="datetimerange" 
+                            clearable 
+                            format="yyyy-MM-dd HH:mm"
+                            class="w-full bg-white/50"
+                            />
+                            <NDatePicker 
+                            v-if="granularity === 'day'"
+                            v-model:value="dateRange" 
+                            type="daterange" 
+                            clearable 
+                            class="w-full bg-white/50"
+                            />
+                            <NDatePicker 
+                            v-if="granularity === 'month'"
+                            v-model:value="dateRange" 
+                            type="monthrange" 
+                            clearable 
+                            class="w-full bg-white/50"
+                            />
+                        </NFormItem>
+                    </div>
+                </NCollapseTransition>
               </div>
             </NForm>
         </NCard>
 
         <NCard>
-            <div class="mb-4 flex gap-2">
-                <NButton 
-                    type="warning" 
-                    :disabled="!hasPendingChanges" 
-                    @click="showSaveConfirmModal = true"
-                    :loading="loading"
-                >
-                    <template #icon><CreateOutline /></template>
-                    {{ t('game.list.accessOperation') }}
-                    <span v-if="hasPendingChanges" class="ml-1">({{ Object.keys(pendingChanges).length }})</span>
-                </NButton>
+            <div class="mb-4 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex gap-2">
+                    <NButton 
+                        type="warning" 
+                        :disabled="!hasPendingChanges" 
+                        @click="showSaveConfirmModal = true"
+                        :loading="loading"
+                    >
+                        <template #icon><CreateOutline /></template>
+                        {{ t('game.list.accessOperation') }}
+                        <span v-if="hasPendingChanges" class="ml-1">({{ Object.keys(pendingChanges).length }})</span>
+                    </NButton>
+                </div>
+                <div>
+                    <NButton type="primary" @click="showAddGameModal = true">
+                        <template #icon><AddOutline /></template>
+                        新增遊戲
+                    </NButton>
+                </div>
             </div>
             <NDataTable
                 :columns="columns"
@@ -532,6 +652,83 @@ const handleSubmit = async () => {
                 <div class="flex justify-end gap-2">
                     <NButton @click="showEditModal = false">{{ t('common.cancel') }}</NButton>
                     <NButton type="primary" @click="handleSubmit">{{ t('common.save') }}</NButton>
+                </div>
+            </template>
+        </NModal>
+
+        <!-- Add Game Modal -->
+        <NModal v-model:show="showAddGameModal" preset="card" title="新增遊戲" style="width: 1000px; max-width: 90vw;">
+            <div class="flex flex-col gap-4">
+                <div class="flex justify-between items-center bg-gray-50 p-4 rounded">
+                    <div class="text-sm text-gray-600">
+                        遊戲清單最後更新日期：{{ lastUpdateTime || '尚未更新' }}
+                    </div>
+                    <NButton type="primary" @click="handleUpdateProviderGames" :loading="syncLoading">
+                        <template #icon><RefreshOutline /></template>
+                        更新遊戲
+                    </NButton>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 未上架 (Unpublished) -->
+                    <NCard title="未上架" size="small" class="h-[500px] flex flex-col" style="display: flex; flex-direction: column;">
+                        <NForm :model="addSearchForm" inline size="small" class="mb-2">
+                            <NGrid :cols="2" x-gap="4" y-gap="4">
+                                <NGridItem>
+                                    <NInput v-model:value="addSearchForm.gameId" placeholder="遊戲 ID" clearable />
+                                </NGridItem>
+                                <NGridItem>
+                                    <NInput v-model:value="addSearchForm.name" placeholder="遊戲名稱" clearable />
+                                </NGridItem>
+                                <NGridItem>
+                                    <NSelect v-model:value="addSearchForm.providerId" :options="providerOptions" placeholder="廠商" clearable />
+                                </NGridItem>
+                                <NGridItem>
+                                    <NSelect v-model:value="addSearchForm.typeId" :options="typeOptions" placeholder="類型" clearable />
+                                </NGridItem>
+                            </NGrid>
+                        </NForm>
+                        <div class="flex-1 overflow-y-auto mt-2" style="flex: 1; overflow-y: auto;">
+                            <div v-for="game in filteredUnpublished" :key="game.provider_game_id" 
+                                 class="p-2 mb-2 border rounded cursor-pointer hover:bg-gray-100 transition-colors"
+                                 @click="moveToPublished(game)">
+                                <div class="font-bold text-sm">{{ game.name }} ({{ game.name_en }})</div>
+                                <div class="text-xs text-gray-500 flex justify-between mt-1">
+                                    <span>ID: {{ game.provider_game_id }}</span>
+                                    <span>{{ providers.find(p => p.id === game.provider_id)?.code || game.provider_id }} | {{ gameTypes.find(t => t.id === game.type_id)?.name || game.type_id }}</span>
+                                </div>
+                            </div>
+                            <div v-if="filteredUnpublished.length === 0" class="text-center text-gray-400 mt-4">{{ unpublishedGames.length === 0 ? '請點擊上方更新遊戲獲取新名單' : '沒有符合條件的資料' }}</div>
+                        </div>
+                    </NCard>
+
+                    <!-- 新上架 (Newly Published) -->
+                    <NCard title="新上架" size="small" class="h-[500px] flex flex-col" style="display: flex; flex-direction: column;">
+                        <div class="flex-1" style="flex: 1; overflow-y: auto;">
+                            <div v-for="game in newlyPublished" :key="game.provider_game_id" 
+                                 class="p-2 mb-2 border border-green-200 bg-green-50 rounded cursor-pointer hover:bg-green-100 transition-colors"
+                                 @click="moveToUnpublished(game)">
+                                <div class="font-bold text-sm">{{ game.name }} ({{ game.name_en }})</div>
+                                <div class="text-xs text-gray-500 flex justify-between mt-1">
+                                    <span>ID: {{ game.provider_game_id }}</span>
+                                    <span>{{ providers.find(p => p.id === game.provider_id)?.code || game.provider_id }} | {{ gameTypes.find(t => t.id === game.type_id)?.name || game.type_id }}</span>
+                                </div>
+                            </div>
+                            <div v-if="newlyPublished.length === 0" class="text-center text-gray-400 mt-4">請從左側點選以加入上架清單</div>
+                        </div>
+                        <template #action>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold whitespace-nowrap">新上架遊戲狀態:</span>
+                                <NSelect v-model:value="newStatus" :options="newStatusOptions" class="w-32" />
+                            </div>
+                        </template>
+                    </NCard>
+                </div>
+            </div>
+            <template #footer>
+                <div class="flex justify-end gap-2 mt-4 border-t pt-4">
+                    <NButton @click="showAddGameModal = false">{{ t('common.cancel') }}</NButton>
+                    <NButton type="primary" @click="handleConfirmAdd" :disabled="newlyPublished.length === 0" :loading="syncLoading">{{ t('common.confirm') }}</NButton>
                 </div>
             </template>
         </NModal>

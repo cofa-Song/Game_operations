@@ -4,10 +4,11 @@ import { ref, reactive, onMounted, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   NCard, NInput, NSelect, NDatePicker, NButton, NDataTable, NSpace, NTag,
-  NBadge, NModal, NForm, NFormItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NSwitch, NInputNumber
+  NBadge, NModal, NForm, NFormItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NSwitch, NInputNumber, NCollapseTransition
 } from 'naive-ui'
 import { 
-  SearchOutline, AddOutline, EyeOutline, ListOutline, GameControllerOutline, PricetagOutline 
+  SearchOutline, AddOutline, EyeOutline, ListOutline, GameControllerOutline, PricetagOutline,
+  ChevronDownOutline, ChevronUpOutline
 } from '@vicons/ionicons5'
 import { playerApi } from '@/api/player'
 import { tagApi } from '@/api/tag'
@@ -45,6 +46,7 @@ const statusOptions = computed(() => [
 
 const tagOptions = ref<SelectOption[]>([])
 const showTagDrawer = ref(false)
+const showAdvancedSearch = ref(false)
 
 // Function to fetch tags for dropdowns
 const fetchTagOptions = async () => {
@@ -273,52 +275,69 @@ onMounted(() => {
         </div>
       </template>
       
-      <NForm inline :model="searchForm" label-placement="left" class="flex-wrap gap-4 mt-4">
-        <NFormItem :label="t('common.search')">
-            <div class="relative">
-                <NRadioGroup v-model:value="searchForm.search_type" name="searchType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
-                    <NRadio value="id">{{ t('common.id') }}</NRadio>
-                    <NRadio value="username">{{ t('auth.username') }}</NRadio>
-                    <NRadio value="phone">{{ t('common.phone') }}</NRadio>
-                </NRadioGroup>
-                <NInput v-model:value="searchForm.q" :placeholder="t('common.keywordPlaceholder')" />
+      <NForm :model="searchForm" label-placement="left" class="flex flex-col gap-4 mt-4">
+        <!-- 基礎搜尋條件 -->
+        <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+            <NFormItem :label="t('common.search')" :show-feedback="false">
+                <div class="relative">
+                    <NRadioGroup v-model:value="searchForm.search_type" name="searchType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
+                        <NRadio value="id">{{ t('common.id') }}</NRadio>
+                        <NRadio value="username">{{ t('auth.username') }}</NRadio>
+                        <NRadio value="phone">{{ t('common.phone') }}</NRadio>
+                    </NRadioGroup>
+                    <NInput v-model:value="searchForm.q" :placeholder="t('common.keywordPlaceholder')" style="width: 200px" />
+                </div>
+            </NFormItem>
+            <NFormItem :label="t('navigation.affiliation')" :show-feedback="false">
+                <div class="relative">
+                    <NRadioGroup v-model:value="searchForm.affiliation_type" name="affiliationType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
+                        <NRadio value="invite_code">{{ t('navigation.inviteCode') }}</NRadio>
+                        <NRadio value="referrer_id">{{ t('navigation.referrerId') }}</NRadio>
+                    </NRadioGroup>
+                    <NInput v-model:value="searchForm.affiliation_query" :placeholder="t('common.inputPlaceholder')" style="width: 180px" />
+                </div>
+            </NFormItem>
+            <NFormItem :label="t('common.status')" :show-feedback="false">
+                <NSelect v-model:value="searchForm.status" :options="statusOptions" :placeholder="t('common.all')" clearable style="width: 120px" />
+            </NFormItem>
+
+            <div class="flex gap-2 mb-[2px]">
+                <NButton type="primary" attr-type="button" @click="fetchData">
+                    <template #icon><SearchOutline /></template>
+                    {{ t('common.search') }}
+                </NButton>
+                <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                    <template #icon>
+                        <ChevronDownOutline v-if="!showAdvancedSearch" />
+                        <ChevronUpOutline v-else />
+                    </template>
+                    {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+                </NButton>
             </div>
-        </NFormItem>
-        <NFormItem :label="t('navigation.affiliation')">
-            <div class="relative">
-                <NRadioGroup v-model:value="searchForm.affiliation_type" name="affiliationType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
-                    <NRadio value="invite_code">{{ t('navigation.inviteCode') }}</NRadio>
-                    <NRadio value="referrer_id">{{ t('navigation.referrerId') }}</NRadio>
-                </NRadioGroup>
-                <NInput v-model:value="searchForm.affiliation_query" :placeholder="t('common.inputPlaceholder')" />
+        </div>
+
+        <!-- 進階搜尋條件 (可折疊) -->
+        <NCollapseTransition :show="showAdvancedSearch">
+            <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
+                <NFormItem :label="t('player.list.tags')" :show-feedback="false">
+                    <NSelect v-model:value="searchForm.tags" :options="tagOptions" multiple :placeholder="t('common.all')" clearable style="width: 180px" />
+                </NFormItem>
+                <NFormItem :label="t('player.list.registerIp')" :show-feedback="false">
+                    <NInput v-model:value="searchForm.register_ip" :placeholder="t('common.keywordPlaceholder')" style="width: 150px" />
+                </NFormItem>
+                <NFormItem :label="t('player.list.registerDate')" :show-feedback="false">
+                    <NDatePicker 
+                        v-model:value="registerDateRange" 
+                        type="daterange" 
+                        clearable 
+                        @update:value="([start, end]: [number, number]) => {
+                            searchForm.register_date_start = start ? new Date(start).toISOString() : undefined
+                            searchForm.register_date_end = end ? new Date(end).toISOString() : undefined
+                        }"
+                    />
+                </NFormItem>
             </div>
-        </NFormItem>
-        <NFormItem :label="t('common.status')">
-          <NSelect v-model:value="searchForm.status" :options="statusOptions" :placeholder="t('common.all')" clearable style="width: 120px" />
-        </NFormItem>
-        <NFormItem :label="t('player.list.tags')">
-          <NSelect v-model:value="searchForm.tags" :options="tagOptions" multiple :placeholder="t('common.all')" clearable style="width: 180px" />
-        </NFormItem>
-        <NFormItem :label="t('player.list.registerIp')">
-            <NInput v-model:value="searchForm.register_ip" :placeholder="t('common.keywordPlaceholder')" style="width: 150px" />
-        </NFormItem>
-        <NFormItem :label="t('player.list.registerDate')">
-            <NDatePicker 
-                v-model:value="registerDateRange" 
-                type="daterange" 
-                clearable 
-                @update:value="([start, end]: [number, number]) => {
-                    searchForm.register_date_start = start ? new Date(start).toISOString() : undefined
-                    searchForm.register_date_end = end ? new Date(end).toISOString() : undefined
-                }"
-            />
-        </NFormItem>
-        <NFormItem>
-          <NButton type="primary" attr-type="button" @click="fetchData">
-            <template #icon><SearchOutline /></template>
-            {{ t('common.search') }}
-          </NButton>
-        </NFormItem>
+        </NCollapseTransition>
       </NForm>
     </NCard>
 

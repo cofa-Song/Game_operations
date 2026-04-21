@@ -3,9 +3,10 @@ import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount, h
 import { useI18n } from 'vue-i18n'
 import {
   NCard, NSpace, NGrid, NGridItem, NFormItem, NSelect, NRadioGroup, NRadioButton,
-  NDatePicker, NInput, NButton, NDataTable, NCheckbox, useMessage, NIcon, NSpin
+  NDatePicker, NInput, NButton, NDataTable, NCheckbox, useMessage, NIcon, NSpin,
+  NCollapseTransition
 } from 'naive-ui'
-import { SearchOutline, DownloadOutline } from '@vicons/ionicons5'
+import { SearchOutline, DownloadOutline, ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import type { ReportType, TargetType, OperationReportQuery, Granularity } from '@/types/operationReport'
 import { operationReportApi } from '@/api/operationReport'
 import * as echarts from 'echarts'
@@ -33,6 +34,7 @@ const searchModel = ref<{
 })
 
 const loading = ref(false)
+const showAdvancedSearch = ref(false)
 const exporting = ref(false)
 const tableData = ref<any[]>([])
 
@@ -630,8 +632,8 @@ onBeforeUnmount(() => {
     <!-- 搜尋條件區塊 -->
     <NCard class="rounded-xl shadow-sm border-0 premium-card" size="small">
       <div class="flex flex-col gap-4">
-        <!-- 第一排條件 -->
-        <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:6">
+        <!-- 第一排條件: 基礎搜尋條件 -->
+        <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:8">
           <!-- 報表類型 -->
           <NGridItem span="1">
             <NFormItem :label="t('operationReport.reportType')" :show-feedback="false">
@@ -643,66 +645,6 @@ onBeforeUnmount(() => {
             </NFormItem>
           </NGridItem>
 
-          <!-- 數據粒度 -->
-          <NGridItem span="1">
-            <NFormItem :label="t('operationReport.granularity')" :show-feedback="false">
-              <NSelect 
-                v-model:value="searchModel.granularity"
-                :options="granularityOptions"
-                class="bg-white/50"
-              />
-            </NFormItem>
-          </NGridItem>
-
-          <!-- 快速切換時間 -->
-          <NGridItem span="1 768:3 1024:2">
-            <NFormItem label="快速切換" :show-feedback="false">
-              <NSpace wrap>
-                <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
-                <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
-                <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
-                <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
-                <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
-                <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
-              </NSpace>
-            </NFormItem>
-          </NGridItem>
-
-          <!-- 自訂時間區間 (根據粒度改變 DatePicker 類型) -->
-          <NGridItem span="1 768:3 1024:2">
-            <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false">
-               <!-- 根據粒度的情況切換 DatePicker -->
-               <!-- 時: 精確到分 (datetimerange) -->
-               <NDatePicker 
-                 v-if="searchModel.granularity === 'hour'"
-                 v-model:value="searchModel.timeRange" 
-                 type="datetimerange" 
-                 clearable 
-                 format="yyyy-MM-dd HH:mm"
-                 class="w-full bg-white/50"
-               />
-               <!-- 日: daterange -->
-               <NDatePicker 
-                 v-if="searchModel.granularity === 'day'"
-                 v-model:value="searchModel.timeRange" 
-                 type="daterange" 
-                 clearable 
-                 class="w-full bg-white/50"
-               />
-               <!-- 月: monthrange -->
-               <NDatePicker 
-                 v-if="searchModel.granularity === 'month'"
-                 v-model:value="searchModel.timeRange" 
-                 type="monthrange" 
-                 clearable 
-                 class="w-full bg-white/50"
-               />
-            </NFormItem>
-          </NGridItem>
-        </NGrid>
-
-        <!-- 第二排條件與按鈕 -->
-        <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:6">
           <!-- 統計對象 -->
           <NGridItem span="1">
             <NFormItem :label="t('operationReport.targetType')" :show-feedback="false">
@@ -724,27 +666,23 @@ onBeforeUnmount(() => {
               />
             </NFormItem>
           </NGridItem>
-          
-          <!-- 指定 ID (當選擇代理或玩家時顯示) -->
-          <NGridItem v-if="searchModel.targetType !== 'all'" span="1">
-            <NFormItem :label="t('operationReport.targetTypes.' + searchModel.targetType)" :show-feedback="false">
-              <NInput 
-                v-model:value="searchModel.targetId"
-                :placeholder="t('operationReport.targetIdPlaceholder')"
-                clearable
-              />
+
+          <!-- 快速切換時間 -->
+          <NGridItem :span="searchModel.reportType === 'ggr' ? '1 768:3 1024:2' : '1 768:3 1024:3'">
+            <NFormItem label="快速切換" :show-feedback="false">
+              <NSpace wrap>
+                <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
+              </NSpace>
             </NFormItem>
           </NGridItem>
 
-          <!-- 排除測試帳號 -->
-          <NGridItem class="flex items-center" span="1">
-             <NCheckbox v-model:checked="searchModel.excludeTesting" class="mt-6 font-medium"> <!-- mt-6 offset for label spacing in flex -->
-               {{ t('operationReport.excludeTesting') }}
-             </NCheckbox>
-          </NGridItem>
-
-          <!-- Search Buttons -->
-          <NGridItem class="flex items-end justify-end gap-2 col-start-1 1024:col-start-6" span="1 1024:1">
+          <!-- 按鈕區 -->
+          <NGridItem class="flex items-end justify-end gap-2" :span="searchModel.reportType === 'ggr' ? '1 768:3 1024:3' : '1 768:3 1024:3'">
             <NButton 
                type="primary" 
                size="medium" 
@@ -770,8 +708,82 @@ onBeforeUnmount(() => {
                </template>
                {{ t('operationReport.actions.export') }}
              </NButton>
+
+             <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                <template #icon>
+                    <NIcon>
+                        <ChevronDownOutline v-if="!showAdvancedSearch" />
+                        <ChevronUpOutline v-else />
+                    </NIcon>
+                </template>
+                {{ showAdvancedSearch ? '收起' : '進階' }}
+            </NButton>
           </NGridItem>
         </NGrid>
+
+        <!-- 進階搜尋條件 (可折疊) -->
+        <NCollapseTransition :show="showAdvancedSearch">
+            <div class="pt-4 border-t border-dashed flex flex-col gap-4">
+                <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:6">
+                    <!-- 數據粒度 -->
+                    <NGridItem span="1">
+                        <NFormItem :label="t('operationReport.granularity')" :show-feedback="false">
+                        <NSelect 
+                            v-model:value="searchModel.granularity"
+                            :options="granularityOptions"
+                            class="bg-white/50"
+                        />
+                        </NFormItem>
+                    </NGridItem>
+
+                    <!-- 自訂時間區間 -->
+                    <NGridItem span="1 768:3 1024:2">
+                        <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false">
+                        <NDatePicker 
+                            v-if="searchModel.granularity === 'hour'"
+                            v-model:value="searchModel.timeRange" 
+                            type="datetimerange" 
+                            clearable 
+                            format="yyyy-MM-dd HH:mm"
+                            class="w-full bg-white/50"
+                        />
+                        <NDatePicker 
+                            v-if="searchModel.granularity === 'day'"
+                            v-model:value="searchModel.timeRange" 
+                            type="daterange" 
+                            clearable 
+                            class="w-full bg-white/50"
+                        />
+                        <NDatePicker 
+                            v-if="searchModel.granularity === 'month'"
+                            v-model:value="searchModel.timeRange" 
+                            type="monthrange" 
+                            clearable 
+                            class="w-full bg-white/50"
+                        />
+                        </NFormItem>
+                    </NGridItem>
+
+                    <!-- 指定 ID -->
+                    <NGridItem v-if="searchModel.targetType !== 'all'" span="1">
+                        <NFormItem :label="t('operationReport.targetTypes.' + searchModel.targetType)" :show-feedback="false">
+                        <NInput 
+                            v-model:value="searchModel.targetId"
+                            :placeholder="t('operationReport.targetIdPlaceholder')"
+                            clearable
+                        />
+                        </NFormItem>
+                    </NGridItem>
+
+                    <!-- 排除測試帳號 -->
+                    <NGridItem class="flex items-center" span="1">
+                        <NCheckbox v-model:checked="searchModel.excludeTesting" class="mt-6 font-medium">
+                        {{ t('operationReport.excludeTesting') }}
+                        </NCheckbox>
+                    </NGridItem>
+                </NGrid>
+            </div>
+        </NCollapseTransition>
       </div>
     </NCard>
 
