@@ -152,9 +152,9 @@ export const zhTW = {
     settings: '設定',
     profile: '個人資料',
     logout: '登出',
-    playerManagement: '玩家管理',
-    playerList: '玩家列表',
-    gameLogs: '玩家遊戲紀錄',
+    playerManagement: '會員管理',
+    playerList: '會員列表',
+    gameLogs: '遊戲紀錄',
     assetLogs: '資產變動日誌',
     vipStats: 'VIP 分析',
     playerOperationLog: '玩家異動日誌',
@@ -215,7 +215,7 @@ export const zhTW = {
     adminLog: '管理員日誌',
     accountSettings: '帳號設置',
     providerReport: '遊戲商報表',
-    playerWinLossRanking: '玩家輸贏排名'
+    playerWinLossRanking: '會員排名'
   },
   playerWinLoss: {
     dimType: '遊戲類別',
@@ -1258,9 +1258,9 @@ export const zhCN = {
     settings: '设置',
     profile: '个人资料',
     logout: '退出',
-    playerManagement: '玩家管理',
-    playerList: '玩家列表',
-    gameLogs: '游戏对局纪录',
+    playerManagement: '会员管理',
+    playerList: '会员列表',
+    gameLogs: '游戏纪录',
     assetLogs: '资产变动日志',
     playerOperationLog: '玩家异动日志',
     financeManagement: '账务管理',
@@ -1315,7 +1315,7 @@ export const zhCN = {
     adminLog: '管理员日志',
     accountSettings: '账号设置',
     providerReport: '游戏商报表',
-    playerWinLossRanking: '玩家输赢排名'
+    playerWinLossRanking: '会员排名'
   },
   article: {
     category: '文章类别',
@@ -2079,8 +2079,8 @@ export const en = {
     settings: 'Settings',
     profile: 'Profile',
     logout: 'Logout',
-    playerManagement: 'Player Management',
-    playerList: 'Player List',
+    playerManagement: 'Member Management',
+    playerList: 'Member List',
     gameLogs: 'Game Records',
     assetLogs: 'Asset Logs',
     playerOperationLog: 'Player Operation Logs',
@@ -2133,7 +2133,7 @@ export const en = {
     adminLog: 'Admin Logs',
     accountSettings: 'Account Settings',
     providerReport: 'Provider Report',
-    playerWinLossRanking: 'Player Win/Loss Ranking'
+    playerWinLossRanking: 'Member Ranking'
   },
   appVersion: {
     title: 'Version Management',
