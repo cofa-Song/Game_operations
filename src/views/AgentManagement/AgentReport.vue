@@ -25,10 +25,10 @@ const filterForm = reactive<AgentReportParams>({
 const dateRange = ref<[number, number] | null>(null)
 
 const identityOptions = [
-  { label: '全部', value: null },
-  { label: '總代理', value: 'MASTER' },
-  { label: '子代理', value: 'SUB' },
-  { label: '助手',   value: 'ASSISTANT' }
+  { label: '全部',   value: undefined as AgentIdentity | undefined },
+  { label: '總代理', value: 'MASTER'    as AgentIdentity },
+  { label: '子代理', value: 'SUB'       as AgentIdentity },
+  { label: '助手',   value: 'ASSISTANT' as AgentIdentity }
 ]
 
 // ── Data ──────────────────────────────────────────────────
