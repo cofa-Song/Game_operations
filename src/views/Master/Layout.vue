@@ -135,6 +135,7 @@ const menuKeyToRoute: Record<string, string> = {
   'article-manager': '/admin/articles',
   'agent-list': '/admin/agent-list',
   'agent-report': '/admin/agent-report',
+  'refund-management': '/admin/refund-management',
   'vip-settings': '/admin/vip-settings',
   'vip-stats': '/admin/vip-stats',
   'account-settings': '/admin/account',
@@ -219,12 +220,14 @@ const menuOptions = computed(() => [
     key: 'finance-management-group',
     icon: renderIcon(WalletOutline),
     children: [
-      { label: t('navigation.financialOverview'),       key: 'financial-overview', icon: renderIcon(WalletOutline) },
-      { label: t('navigation.manualAdjustment'),        key: 'manual-adjustment',  icon: renderIcon(WalletOutline) },
-      { label: t('navigation.commodityConfig'),         key: 'commodity-config',   icon: renderIcon(PricetagsOutline) },
-      { label: t('navigation.depositOrderManagement'),  key: 'deposit-orders',     icon: renderIcon(WalletOutline) },
-      { label: t('navigation.paymentChannelManagement'), key: 'payment-channels',  icon: renderIcon(LayersOutline) },
-      { label: t('navigation.assetLogs'),               key: 'asset-logs',         icon: renderIcon(WalletOutline) }
+      { label: t('navigation.financialOverview'),        key: 'financial-overview',  icon: renderIcon(WalletOutline) },
+      { label: t('navigation.manualAdjustment'),         key: 'manual-adjustment',   icon: renderIcon(WalletOutline) },
+      { label: t('navigation.commodityConfig'),          key: 'commodity-config',    icon: renderIcon(PricetagsOutline) },
+      { label: t('navigation.depositOrderManagement'),   key: 'deposit-orders',      icon: renderIcon(WalletOutline) },
+      { label: t('navigation.refundManagement'),         key: 'refund-management',   icon: renderIcon(ReaderOutline) },
+      { label: t('navigation.paymentChannelManagement'), key: 'payment-channels',    icon: renderIcon(LayersOutline) },
+      { label: t('navigation.assetLogs'),                key: 'asset-logs',          icon: renderIcon(WalletOutline) },
+      { label: t('navigation.agentReport'),              key: 'agent-report',        icon: renderIcon(DataCenterIcon) }
     ]
   }] : []),
 

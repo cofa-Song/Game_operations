@@ -326,6 +326,12 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'MissionManagement',
         component: () => import('@/views/Master/MissionManagement.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '任務管理' }
+      },
+      {
+        path: 'refund-management',
+        name: 'RefundManagement',
+        component: () => import('@/views/Master/RefundManagement.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '退款管理' }
       }
     ]
   }
