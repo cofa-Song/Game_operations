@@ -1,5 +1,13 @@
 // User & Auth Types
-export type UserRole = 'DEVELOPER' | 'MANAGER' | 'USER' | 'MERCHANT'
+export type UserRole =
+  | 'DEVELOPER' | 'MANAGER' | 'USER' | 'MERCHANT' // legacy
+  | 'BOSS'      // 老闆
+  | 'PM'        // 產品經理
+  | 'OPERATOR'  // 營運
+  | 'DEVOPS'    // 運維
+  | 'FINANCE'   // 財務
+  | 'CS'        // 客服
+  | 'TECH'      // 技術
 export type UserStatus = 'ENABLED' | 'DISABLED' | 'LOCKED'
 
 export interface UserInfo {

@@ -355,6 +355,9 @@ const router = createRouter({
   routes
 })
 
+// All roles that can access the admin backend (nav filtering is done in Layout.vue)
+const ADMIN_ROLES = ['DEVELOPER', 'MANAGER', 'USER', 'BOSS', 'PM', 'OPERATOR', 'DEVOPS', 'FINANCE', 'CS', 'TECH']
+
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
 
@@ -369,15 +372,16 @@ router.beforeEach((to, _from, next) => {
       return
     }
 
-    // 檢查角色權限
-    if (to.meta.roles) {
-      const roles = Array.isArray(to.meta.roles) ? to.meta.roles : [to.meta.roles]
-      if (!roles.includes(authStore.user?.role || '')) {
-        // 重定向到仪表板
-        next('/admin/dashboard')
-        return
-      }
-    } else if (to.meta.role && authStore.user?.role !== to.meta.role) {
+    const userRole = authStore.user?.role || ''
+
+    // Admin roles: pass through — nav visibility is handled by Layout.vue
+    if (ADMIN_ROLES.includes(userRole) && to.path.startsWith('/admin')) {
+      next()
+      return
+    }
+
+    // MERCHANT role check
+    if (to.meta.role && userRole !== to.meta.role) {
       next('/')
       return
     }

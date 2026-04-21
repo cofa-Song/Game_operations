@@ -69,7 +69,7 @@ const auditingAccount = ref<AdminAccount | null>(null)
 const accountForm = reactive({
   username: '',
   display_name: '',
-  role: 'USER' as 'DEVELOPER' | 'MANAGER' | 'USER',
+  role: 'USER' as Exclude<import('@/types').UserRole, 'MERCHANT'>,
   groups: [] as string[],
   password: '',
   confirmPassword: '',
