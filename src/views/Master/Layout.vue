@@ -129,7 +129,9 @@ const menuKeyToRoute: Record<string, string> = {
   'vip-settings': '/admin/vip-settings',
   'vip-stats': '/admin/vip-stats',
   'account-settings': '/admin/account',
-  'player-win-loss-ranking': '/admin/player-win-loss-ranking'
+  'player-win-loss-ranking': '/admin/player-win-loss-ranking',
+  'cs-channels': '/admin/cs-channels',
+  'sms-providers': '/admin/sms-providers'
 }
 
 // 根據當前路由更新選中的菜單項
@@ -328,15 +330,10 @@ const menuOptions = computed(() => [
     ]
   },
   {
-    label: t('navigation.systemOperations'),
-    key: 'system-operations-group',
-    icon: renderIcon(SettingsOutline),
+    label: t('navigation.marketingOperations'),
+    key: 'marketing-operations-group',
+    icon: renderIcon(GiftOutline),
     children: [
-      {
-        label: t('navigation.operationConfig'),
-        key: 'operation-config',
-        icon: renderIcon(BuildOutline)
-      },
       {
         label: t('navigation.announcement'),
         key: 'announcement-manager',
@@ -356,6 +353,18 @@ const menuOptions = computed(() => [
         label: t('navigation.vipSettings'),
         key: 'vip-settings',
         icon: renderIcon(SettingsOutline)
+      }
+    ]
+  },
+  {
+    label: t('navigation.systemOperations'),
+    key: 'system-operations-group',
+    icon: renderIcon(SettingsOutline),
+    children: [
+      {
+        label: t('navigation.operationConfig'),
+        key: 'operation-config',
+        icon: renderIcon(BuildOutline)
       },
       {
         label: t('navigation.systemStatus'),
@@ -366,6 +375,16 @@ const menuOptions = computed(() => [
         label: t('navigation.adminWhitelist'),
         key: 'admin-whitelist',
         icon: renderIcon(ShieldOutline)
+      },
+      {
+        label: t('navigation.csChannels'),
+        key: 'cs-channels',
+        icon: renderIcon(ChatIcon)
+      },
+      {
+        label: t('navigation.smsProviders'),
+        key: 'sms-providers',
+        icon: renderIcon(MailIcon)
       }
     ]
   },

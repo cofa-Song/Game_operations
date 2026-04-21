@@ -278,6 +278,18 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'PlayerWinLossRanking',
         component: () => import('@/views/Master/PlayerWinLossRanking.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '玩家輸贏排名' }
+      },
+      {
+        path: 'cs-channels',
+        name: 'CustomerServiceChannels',
+        component: () => import('@/views/Master/CustomerServiceChannels.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '客服通道管理' }
+      },
+      {
+        path: 'sms-providers',
+        name: 'SmsProviderManagement',
+        component: () => import('@/views/Master/SmsProviderManagement.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '簡訊商管理' }
       }
     ]
   }
