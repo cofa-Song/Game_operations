@@ -1,4 +1,4 @@
-import { GameLog, GameSearchParams, GameReportStatus, ProviderType } from '@/types/game'
+import { GameLog, GameSearchParams, GameReportStatus, ProviderType, CurrencyType } from '@/types/game'
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -82,8 +82,9 @@ const generateMockLogs = () => {
             settle_time: settleTime.toISOString(),
             create_time: createTime.toISOString(),
             status,
+            // ~35% GOLD (purchased), ~65% SILVER (activity rewards)
             raw_json: JSON.stringify({ transaction_id: uid, vendor: provKey, game: gameName, user: playerId, amount_bet: bet, amount_win: win, status, ts: settleTime.getTime() }),
-            currency: 'SILVER'
+            currency: (Math.random() < 0.35 ? 'GOLD' : 'SILVER') as CurrencyType
         })
     }
     mockGameLogs.sort((a, b) => new Date(b.settle_time).getTime() - new Date(a.settle_time).getTime())
@@ -109,6 +110,9 @@ export const gameApi = {
         }
         if (params.round_id) {
             logs = logs.filter(l => l.provider_round_id.includes(params.round_id!))
+        }
+        if (params.currency) {
+            logs = logs.filter(l => l.currency === params.currency)
         }
         if (params.date_start && params.date_end) {
             const start = new Date(params.date_start).getTime()

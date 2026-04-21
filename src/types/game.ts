@@ -18,11 +18,14 @@ export interface GameLog {
     currency: string
 }
 
+export type CurrencyType = 'GOLD' | 'SILVER'
+
 export interface GameSearchParams {
     player_id?: string
     provider?: string
     game_name?: string
     round_id?: string // provider_round_id
+    currency?: CurrencyType
     date_start?: string
     date_end?: string
     page: number

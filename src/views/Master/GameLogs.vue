@@ -34,6 +34,13 @@
           <NFormItem :label="t('gameLogs.roundId')" :show-feedback="false">
                <NInput v-model:value="searchForm.round_id" :placeholder="t('gameLogs.roundIdPlaceholder')" clearable />
           </NFormItem>
+          <NFormItem :label="t('gameLogs.currency')" :show-feedback="false">
+            <NRadioGroup v-model:value="searchForm.currency" name="currency">
+              <NRadio value="">{{ t('gameLogs.currencyAll') }}</NRadio>
+              <NRadio value="GOLD">{{ t('gameLogs.currencyGold') }}</NRadio>
+              <NRadio value="SILVER">{{ t('gameLogs.currencySilver') }}</NRadio>
+            </NRadioGroup>
+          </NFormItem>
           <NFormItem :show-feedback="false">
              <NButton type="primary" @click="handleSearch" :loading="loading">{{ t('gameLogs.search') }}</NButton>
           </NFormItem>
@@ -122,7 +129,7 @@ import { ref, reactive, onMounted, h, computed, watch } from 'vue'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NDivider, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { gameApi } from '@/api/game'
-import { GameLog, GameSearchParams } from '@/types/game'
+import { GameLog, GameSearchParams, CurrencyType } from '@/types/game'
 import type { Granularity } from '@/types/operationReport'
 
 const { t } = useI18n()
@@ -138,6 +145,7 @@ const searchForm = reactive({
     provider: null as string | null,
     game_name: '',
     round_id: '',
+    currency: '' as CurrencyType | '',
     granularity: 'day' as Granularity,
     timeRange: null as [number, number] | null
 })
@@ -297,9 +305,20 @@ const columns = computed(() => [
            return formatNumber(row.valid_turnover)
         }
     },
-    { 
-        title: t('gameLogs.columns.status'), 
-        key: 'status', 
+    {
+        title: t('gameLogs.columns.currency'),
+        key: 'currency',
+        width: 80,
+        render: (row: GameLog) => {
+            if (row.currency === 'GOLD') {
+                return h(NTag, { type: 'warning', size: 'small', bordered: false }, { default: () => t('gameLogs.currencyGold') })
+            }
+            return h(NTag, { type: 'default', size: 'small', bordered: false }, { default: () => t('gameLogs.currencySilver') })
+        }
+    },
+    {
+        title: t('gameLogs.columns.status'),
+        key: 'status',
         width: 80,
         render: (row: GameLog) => {
             if (row.status === 'void') return h(NTag, { type: 'error', size: 'small', bordered: false }, { default: () => t('gameLogs.statusText.void') })
@@ -326,7 +345,8 @@ const fetchData = async () => {
             player_id: searchForm.player_id || undefined,
             provider: searchForm.provider || undefined,
             game_name: searchForm.game_name || undefined,
-            round_id: searchForm.round_id || undefined
+            round_id: searchForm.round_id || undefined,
+            currency: (searchForm.currency as CurrencyType) || undefined
         }
         const res = await gameApi.getLogs(params)
         if (res.code === 0) {
