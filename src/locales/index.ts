@@ -106,7 +106,20 @@ export const zhTW = {
       activityWallet: '活動錢包',
       gameWallet: '遊戲錢包',
       safeWallet: '保險箱',
-      rolloverMonitor: '流水活動監控'
+      rolloverMonitor: '流水活動監控',
+      muteStatus: '禁止發言',
+      giftStatus: '禁止贈禮',
+      auditHistory: '異動紀錄',
+      assetHistory: '資產變動',
+      gameHistory: '對局紀錄',
+      advancedSearch: '進階搜尋'
+    },
+    muteOptions: {
+      NONE: '無',
+      '15M': '15分鐘',
+      '1H': '1小時',
+      '1D': '1天',
+      PERMANENT: '永久'
     },
     status: {
       ACTIVE: '正常',
@@ -133,7 +146,7 @@ export const zhTW = {
   auth: {
     login: '登入',
     logout: '登出',
-    username: '使用者名稱',
+    username: '帳號',
     password: '密碼',
     email: '電子郵件',
     rememberMe: '記住我',
@@ -825,7 +838,9 @@ export const zhTW = {
       saveConfirm: '確定要存取狀態變更?',
       maintenance: '維護',
       enable: '啟用',
-      vip: 'VIP',
+      vip: '遊玩',
+      image: '圖片',
+      selectSeat: '選座',
       editTitle: '編輯遊戲設定',
       tagOptions: {
         none: '無',
@@ -1155,7 +1170,20 @@ export const zhCN = {
       activityWallet: '活动钱包',
       gameWallet: '游戏钱包',
       safeWallet: '保险箱',
-      rolloverMonitor: '流水活动监控'
+      rolloverMonitor: '流水活动监控',
+      muteStatus: '禁止发言',
+      giftStatus: '禁止赠礼',
+      auditHistory: '异动纪录',
+      assetHistory: '资产变动',
+      gameHistory: '对局纪录',
+      advancedSearch: '进阶搜索'
+    },
+    muteOptions: {
+      NONE: '无',
+      '15M': '15分钟',
+      '1H': '1小时',
+      '1D': '1天',
+      PERMANENT: '永久'
     },
     status: {
       ACTIVE: '正常',
@@ -1173,7 +1201,7 @@ export const zhCN = {
   auth: {
     login: '登录',
     logout: '退出',
-    username: '用户名',
+    username: '账号',
     password: '密码',
     email: '电子邮件',
     rememberMe: '记住我',
@@ -1676,7 +1704,9 @@ export const zhCN = {
       saveConfirm: '确定要存取状态变更?',
       maintenance: '维护',
       enable: '启用',
-      vip: 'VIP',
+      vip: '游玩',
+      image: '图片',
+      selectSeat: '选座',
       editTitle: '编辑游戏设定',
       tagOptions: {
         none: '无',

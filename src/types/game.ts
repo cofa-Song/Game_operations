@@ -89,6 +89,8 @@ export interface Game {
     final_rate: number
     allowed_currencies: string[]
     min_vip_level: number
+    min_seat_vip_level: number
+    image_url: string | null
     sort_order: number
     status: GameStatus
     updated_at: string
@@ -116,6 +118,8 @@ export interface GameUpdateRequest {
     marketing_tag?: MarketingTag | null
     allowed_currencies?: string[]
     min_vip_level?: number
+    min_seat_vip_level?: number
+    image_url?: string | null
     sort_order?: number
     status?: GameStatus
     final_rate?: number

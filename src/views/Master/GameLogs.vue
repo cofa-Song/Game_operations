@@ -108,6 +108,23 @@
         </NCollapseTransition>
       </NForm>
 
+      <div v-if="searchForm.currency === 'all'" class="mb-4 bg-gray-50 p-4 rounded-lg flex justify-around border border-gray-100">
+        <div class="text-center">
+            <div class="text-xs text-gray-500 mb-1">轉折總投注 (Gold Unit)</div>
+            <div class="text-lg font-bold text-blue-600">{{ formatNumber(gameSummary.bet) }}</div>
+        </div>
+        <div class="text-center">
+            <div class="text-xs text-gray-500 mb-1">轉折總派彩 (Gold Unit)</div>
+            <div class="text-lg font-bold text-orange-600">{{ formatNumber(gameSummary.win) }}</div>
+        </div>
+        <div class="text-center">
+            <div class="text-xs text-gray-500 mb-1">轉折總盈虧 (Gold Unit)</div>
+            <div class="text-lg font-bold" :class="gameSummary.net >= 0 ? 'text-green-600' : 'text-red-600'">
+                {{ gameSummary.net >= 0 ? '+' : '' }}{{ formatNumber(gameSummary.net) }}
+            </div>
+        </div>
+      </div>
+
       <NDataTable
         :columns="columns"
         :data="logs"
@@ -280,34 +297,44 @@ const handleDetail = (row: GameLog) => {
 }
 
 // Logic for weighted amount and currency icon
-const getConvertedValue = (amount: number, currency: string) => {
-    // Weighted summation formula: Gold*1 + Silver*0.01 + Bronze*0
-    switch (currency) {
-        case 'GOLD': return amount
-        case 'SILVER': return amount * 0.01
-        case 'BRONZE': return 0
-        default: return amount
+const renderCurrencyIcon = (currency: string, small = false) => {
+    const config: Record<string, { color: string; label: string; icon: string }> = {
+        GOLD: { color: '#f0a020', label: '金', icon: '🟡' },
+        SILVER: { color: '#909090', label: '銀', icon: '⚪' },
+        BRONZE: { color: '#a05020', label: '銅', icon: '🟤' }
     }
+    const c = config[currency] || { color: '#ccc', label: '?', icon: '❓' }
+    
+    if (small) {
+        return h('span', { style: { color: c.color, fontSize: '12px' } }, c.icon)
+    }
+
+    return h(NTag, { size: 'small', bordered: false, style: { backgroundColor: c.color + '20', color: c.color } }, { 
+        default: () => [h('span', { style: { marginRight: '4px' } }, c.icon), c.label] 
+    })
 }
 
-const getWeightedValue = (amount: number, currency: string) => {
-    if (searchForm.currency !== 'all') return amount // Raw value for specific filter
-    return getConvertedValue(amount, currency)
-}
-
-const renderAmount = (amount: number, currency: string) => {
-    const val = getWeightedValue(amount, currency)
-    const formatted = formatNumber(val)
+const gameSummary = computed(() => {
+    let bet = 0
+    let win = 0
+    let net = 0
     
-    if (searchForm.currency === 'all') return formatted
+    logs.value.forEach(log => {
+        let factor = 0
+        if (log.currency === 'GOLD') factor = 1
+        else if (log.currency === 'SILVER') factor = 0.01
+        
+        bet += log.bet_amount * factor
+        win += log.win_amount * factor
+        net += log.net_amount * factor
+    })
     
-    // Show icon for specific currency
-    const iconColor = currency === 'GOLD' ? 'text-yellow-500' : currency === 'SILVER' ? 'text-gray-400' : 'text-orange-700'
-    return h('div', { class: 'flex items-center justify-end gap-1' }, [
-        h('span', formatted),
-        h('span', { class: [iconColor, 'text-xs font-bold border border-current rounded px-0.5 scale-90'] }, currency.charAt(0))
-    ])
-}
+    return { 
+        bet: parseFloat(bet.toFixed(2)), 
+        win: parseFloat(win.toFixed(2)), 
+        net: parseFloat(net.toFixed(2)) 
+    }
+})
 
 const columns = computed(() => [
     { title: t('gameLogs.columns.uid'), key: 'id', width: 100, ellipsis: true },
@@ -327,35 +354,32 @@ const columns = computed(() => [
              h('span', row.game_name)
         ])
     },
+    { title: '幣別', key: 'currency', width: 80, render: (row: GameLog) => renderCurrencyIcon(row.currency) },
     { 
         title: t('gameLogs.columns.bet'), 
         key: 'bet_amount', 
         align: 'right' as const,
-        render: (row: GameLog) => renderAmount(row.bet_amount, row.currency)
+        render: (row: GameLog) => h(NSpace, { align: 'center', justify: 'end', size: 4 }, { default: () => [h('span', formatNumber(row.bet_amount)), renderCurrencyIcon(row.currency, true)] })
     },
     { 
         title: t('gameLogs.columns.win'), 
         key: 'win_amount', 
         align: 'right' as const,
-        render: (row: GameLog) => renderAmount(row.win_amount, row.currency) 
+        render: (row: GameLog) => h(NSpace, { align: 'center', justify: 'end', size: 4 }, { default: () => [h('span', formatNumber(row.win_amount)), renderCurrencyIcon(row.currency, true)] })
     },
     { 
         title: t('gameLogs.columns.net'), 
         key: 'net_amount', 
         align: 'right' as const,
         render: (row: GameLog) => {
-            const val = getWeightedValue(row.net_amount, row.currency)
-            const color = val >= 0 ? 'text-green-600' : 'text-red-600'
-            const prefix = val > 0 ? '+' : ''
-            
-            const formatted = prefix + formatNumber(val)
-            if (searchForm.currency === 'all') return h('span', { class: ['font-bold', color] }, formatted)
-            
-            const iconColor = row.currency === 'GOLD' ? 'text-yellow-500' : row.currency === 'SILVER' ? 'text-gray-400' : 'text-orange-700'
-            return h('div', { class: ['flex items-center justify-end gap-1', 'font-bold', color] }, [
-                h('span', formatted),
-                h('span', { class: [iconColor, 'text-xs font-bold border border-current rounded px-0.5 scale-90'] }, row.currency.charAt(0))
-            ])
+            const color = row.net_amount >= 0 ? 'text-green-600' : 'text-red-600'
+            const prefix = row.net_amount > 0 ? '+' : ''
+            return h(NSpace, { align: 'center', justify: 'end', size: 4 }, { 
+                default: () => [
+                    h('span', { class: ['font-bold', color] }, prefix + formatNumber(row.net_amount)), 
+                    renderCurrencyIcon(row.currency, true)
+                ] 
+            })
         }
     },
     { 
@@ -363,11 +387,9 @@ const columns = computed(() => [
         key: 'valid_turnover', 
         align: 'right' as const,
         render: (row: GameLog) => {
-           // 有效流水一律顯示換算後的真實幣值
-           const val = getConvertedValue(row.valid_turnover, row.currency)
-           const formatted = formatNumber(val)
+           const formatted = formatNumber(row.valid_turnover)
            if (row.status === 'void') return h('span', { class: 'text-gray-400 line-through' }, formatted)
-           return formatted
+           return h(NSpace, { align: 'center', justify: 'end', size: 4 }, { default: () => [h('span', formatted), renderCurrencyIcon(row.currency, true)] })
         }
     },
     { 

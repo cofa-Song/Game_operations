@@ -1,28 +1,56 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, watch, computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { 
   NCard, NTabs, NTabPane, NGrid, NGridItem, NDescriptions, NDescriptionsItem,
   NTag, NButton, NSpace, NAvatar, NStatistic, NList, NListItem, NThing,
   NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage,
-  NProgress, NDivider, NDatePicker, NInputNumber
+  NProgress, NDivider, NDatePicker, NInputNumber, NDataTable
 } from 'naive-ui'
 import { 
-  WalletOutline, AlertCircleOutline
+  WalletOutline, AlertCircleOutline, SearchOutline
 } from '@vicons/ionicons5'
 import { playerApi } from '@/api/player'
-import { Player, PlayerAuditLog, UpdatePlayerRequest, PlayerStatus } from '@/types/player'
+import { logApi } from '@/api/log'
+import { gameApi } from '@/api/game'
+import { Player, PlayerAuditLog, UpdatePlayerRequest, PlayerStatus, WalletType } from '@/types/player'
+import { AssetLog } from '@/types/log'
+import { GameLog } from '@/types/game'
 import { RolloverEngine } from '@/mocks/engine'
-import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const { t } = useI18n()
-import { computed } from 'vue' // Ensure computed is imported if not already
 
 const playerId = route.params.id as string
 const player = ref<Player | null>(null)
+
+// History Tabs Data
+const assetLogs = ref<AssetLog[]>([])
+const gameLogs = ref<GameLog[]>([])
+const auditHistory = ref<PlayerAuditLog[]>([])
+
+// History Filters
+const auditFilter = reactive({
+    timeRange: null as [number, number] | null
+})
+
+const assetFilter = reactive({
+    currency: null as string | null,
+    changeType: null as string | null,
+    timeRange: null as [number, number] | null
+})
+
+const gameFilter = reactive({
+    currency: 'all' as string,
+    gameName: '',
+    timeRange: null as [number, number] | null
+})
+
+const historyLoading = ref(false)
+const currentTab = ref('wallet')
 // ... existing refs ...
 
 const auditLogs = ref<PlayerAuditLog[]>([])
@@ -60,6 +88,28 @@ const genderOptions = computed(() => [
     { label: t('player.gender.UNKNOWN'), value: 'UNKNOWN' }
 ])
 
+const muteOptions = computed(() => [
+    { label: t('player.muteOptions.NONE'), value: 'NONE' },
+    { label: t('player.muteOptions.15M'), value: '15M' },
+    { label: t('player.muteOptions.1H'), value: '1H' },
+    { label: t('player.muteOptions.1D'), value: '1D' },
+    { label: t('player.muteOptions.PERMANENT'), value: 'PERMANENT' }
+])
+
+const currencyOptions = [
+    { label: '金幣 (Gold)', value: 'GOLD' },
+    { label: '銀幣 (Silver)', value: 'SILVER' },
+    { label: '銅幣 (Bronze)', value: 'BRONZE' }
+]
+
+const assetTypeOptions = [
+    { label: '投注 (BET)', value: 'BET' },
+    { label: '派彩 (WIN)', value: 'WIN' },
+    { label: '領取 (CLAIM)', value: 'CLAIM' },
+    { label: '解鎖 (UNLOCK)', value: 'UNLOCK' },
+    { label: '清零 (WIPE)', value: 'WIPE' }
+]
+
 // Abandon Bonus State
 const showAbandonModal = ref(false)
 const abandonReason = ref('')
@@ -91,7 +141,8 @@ const handleEdit = () => {
     if (!player.value) return
     editModel.display_name = player.value.display_name
     editModel.phone = player.value.phone
-    editModel.is_muted = player.value.is_muted
+    // Handle legacy boolean is_muted values
+    editModel.is_muted = player.value.is_muted === true ? 'PERMANENT' : (player.value.is_muted === false ? 'NONE' : player.value.is_muted)
     editModel.is_gift_disabled = player.value.is_gift_disabled
     editModel.gender = player.value.gender
     editModel.birthday = player.value.birthday
@@ -115,6 +166,148 @@ const submitEdit = async () => {
         message.error('更新失敗')
     }
 }
+
+// History Loaders & Search
+const handleQuickSelect = (tab: string, type: string) => {
+    const now = new Date()
+    let start = new Date()
+    let end = new Date()
+    
+    switch (type) {
+        case 'today':
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+            end = now
+            break
+        case 'yesterday':
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0)
+            end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59)
+            break
+        case 'thisWeek':
+            const day = now.getDay() || 7
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1, 0, 0, 0)
+            end = now
+            break
+        case 'lastWeek':
+            const day2 = now.getDay() || 7
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2 - 6, 0, 0, 0)
+            end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day2, 23, 59, 59)
+            break
+        case 'thisMonth':
+            start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0)
+            end = now
+            break
+        case 'lastMonth':
+            start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0)
+            end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+            break
+    }
+    
+    const range: [number, number] = [start.getTime(), end.getTime()]
+    if (tab === 'audit') auditFilter.timeRange = range
+    if (tab === 'asset') assetFilter.timeRange = range
+    if (tab === 'game') gameFilter.timeRange = range
+}
+
+const jumpToAssetLogs = () => {
+    router.push({
+        path: '/admin/asset-logs',
+        query: { player_id: playerId }
+    })
+}
+
+const jumpToGameLogs = () => {
+    router.push({
+        path: '/admin/game-logs',
+        query: { player_id: playerId }
+    })
+}
+
+// Columns definitions
+const assetColumns = [
+    { title: '時間', key: 'timestamp', width: 150, render: (row: AssetLog) => row.timestamp.replace('T', ' ').split('.')[0] },
+    { title: '幣別', key: 'currency', width: 80, render: (row: AssetLog) => h(NTag, { size: 'small', type: row.currency === 'GOLD' ? 'warning' : 'info' }, { default: () => row.currency }) },
+    { title: '類型', key: 'change_type', render: (row: AssetLog) => h(NTag, { size: 'small', bordered: false }, { default: () => row.change_type }) },
+    { title: '金額', key: 'amount', align: 'right' as const, render: (row: AssetLog) => h('span', { class: row.amount > 0 ? 'text-green-600' : 'text-red-600' }, row.amount) },
+    { title: '餘額', key: 'post_balance', align: 'right' as const }
+]
+
+const gameColumns = [
+    { title: '結算時間', key: 'settle_time', width: 150, render: (row: GameLog) => row.settle_time.replace('T', ' ').split('.')[0] },
+    { title: '遊戲', key: 'game_name' },
+    { title: '幣別', key: 'currency', width: 80, render: (row: GameLog) => renderCurrencyIcon(row.currency) },
+    { title: '投注', key: 'bet_amount', align: 'right' as const, render: (row: GameLog) => h(NSpace, { align: 'center', justify: 'end', size: 4 }, { default: () => [h('span', row.bet_amount), renderCurrencyIcon(row.currency, true)] }) },
+    { title: '派彩', key: 'win_amount', align: 'right' as const, render: (row: GameLog) => h(NSpace, { align: 'center', justify: 'end', size: 4 }, { default: () => [h('span', row.win_amount), renderCurrencyIcon(row.currency, true)] }) },
+    { title: '盈虧', key: 'net_amount', align: 'right' as const, render: (row: GameLog) => h(NSpace, { align: 'center', justify: 'end', size: 4 }, { default: () => [h('span', { class: row.net_amount >= 0 ? 'text-green-600' : 'text-red-600' }, row.net_amount), renderCurrencyIcon(row.currency, true)] }) }
+]
+
+const renderCurrencyIcon = (currency: string, small = false) => {
+    const config: Record<string, { color: string; label: string; icon: string }> = {
+        GOLD: { color: '#f0a020', label: '金', icon: '🟡' },
+        SILVER: { color: '#909090', label: '銀', icon: '⚪' },
+        BRONZE: { color: '#a05020', label: '銅', icon: '🟤' }
+    }
+    const c = config[currency] || { color: '#ccc', label: '?', icon: '❓' }
+    
+    if (small) {
+        return h('span', { style: { color: c.color, fontSize: '12px' } }, c.icon)
+    }
+
+    return h(NTag, { size: 'small', bordered: false, style: { backgroundColor: c.color + '20', color: c.color } }, { 
+        default: () => [h('span', { style: { marginRight: '4px' } }, c.icon), c.label] 
+    })
+}
+
+const fetchHistory = async () => {
+    if (!playerId) return
+    historyLoading.value = true
+    try {
+        if (currentTab.value === 'asset') {
+            const currency = assetFilter.currency === 'all' ? undefined : assetFilter.currency
+            const res = await logApi.getLogs({ player_id: playerId, currency: currency || undefined, change_type: assetFilter.changeType || undefined, page: 1, page_size: 10 })
+            if (res.code === 0) assetLogs.value = res.data.list
+        } else if (currentTab.value === 'game') {
+            const res = await gameApi.getLogs({ player_id: playerId, currency: gameFilter.currency === 'all' ? undefined : gameFilter.currency, game_name: gameFilter.gameName || undefined, page: 1, page_size: 10 })
+            if (res.code === 0) gameLogs.value = res.data.list
+        } else if (currentTab.value === 'audit') {
+            const res = await playerApi.getAuditLogs(playerId)
+            if (res.code === 0) auditLogs.value = res.data
+        }
+    } catch (e) {
+        console.error('Fetch history failed', e)
+    } finally {
+        historyLoading.value = false
+    }
+}
+
+watch(currentTab, () => {
+    fetchHistory()
+})
+
+watch([assetFilter, gameFilter], () => {
+    fetchHistory()
+}, { deep: true })
+
+const gameSummary = computed(() => {
+    let bet = 0
+    let win = 0
+    let net = 0
+    
+    gameLogs.value.forEach(log => {
+        let factor = 0
+        if (log.currency === 'GOLD') factor = 1
+        else if (log.currency === 'SILVER') factor = 0.01
+        
+        bet += log.bet_amount * factor
+        win += log.win_amount * factor
+        net += log.net_amount * factor
+    })
+    
+    return { 
+        bet: parseFloat(bet.toFixed(2)), 
+        win: parseFloat(win.toFixed(2)), 
+        net: parseFloat(net.toFixed(2)) 
+    }
+})
 
 const handleStatusChange = () => {
     if (!player.value) return
@@ -200,6 +393,7 @@ onMounted(() => {
     return
   }
   fetchData()
+  fetchHistory()
 })
 </script>
 
@@ -209,6 +403,12 @@ onMounted(() => {
       <!-- Left Column: Basic Info -->
       <NGridItem span="1">
         <NCard :title="t('player.list.basicInfo')" class="mb-4">
+          <template #header-extra>
+            <NSpace>
+                <NButton size="small" type="primary" @click="handleEdit">{{ t('common.editInfo') }}</NButton>
+                <NButton size="small" type="warning" @click="handleStatusChange">{{ t('player.list.statusManagement') }}</NButton>
+            </NSpace>
+          </template>
           <div class="flex flex-col items-center mb-6">
             <NAvatar round :size="80" class="mb-2">{{ player.username.substring(0, 1).toUpperCase() }}</NAvatar>
             <div class="text-xl font-bold">{{ player.display_name }}</div>
@@ -236,19 +436,16 @@ onMounted(() => {
             <NDescriptionsItem :label="t('player.list.lastLoginDate')">{{ player.last_login_at?.split('T')[0] || '-' }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('player.list.lastLoginIp')">{{ player.last_login_ip || '-' }}</NDescriptionsItem>
           </NDescriptions>
-          
-          <div class="mt-4 flex flex-wrap gap-2">
-            <NButton block class="flex-1 min-w-[120px]" type="primary" @click="handleEdit">{{ t('common.editInfo') }}</NButton>
-            <NButton block class="flex-1 min-w-[120px]" type="warning" @click="handleStatusChange">{{ t('player.list.statusManagement') }}</NButton>
-          </div>
         </NCard>
         
         <NCard title="帳號權限" size="small">
              <NDescriptions :column="1" label-placement="left">
-                <NDescriptionsItem label="全服禁言">
-                    <NTag :type="player.is_muted ? 'error' : 'success'">{{ player.is_muted ? '開啟' : '關閉' }}</NTag>
+                <NDescriptionsItem :label="t('player.list.muteStatus')">
+                    <NTag :type="(player.is_muted === 'NONE' || player.is_muted === false) ? 'success' : 'error'">
+                        {{ (player.is_muted === 'NONE' || player.is_muted === false) ? '正常' : t(`player.muteOptions.${player.is_muted}`) }}
+                    </NTag>
                 </NDescriptionsItem>
-                <NDescriptionsItem label="禁止贈禮">
+                <NDescriptionsItem :label="t('player.list.giftStatus')">
                     <NTag :type="player.is_gift_disabled ? 'error' : 'success'">{{ player.is_gift_disabled ? '開啟' : '關閉' }}</NTag>
                 </NDescriptionsItem>
              </NDescriptions>
@@ -258,7 +455,7 @@ onMounted(() => {
       <!-- Right Column: Details Tabs -->
       <NGridItem span="2">
         <NCard content-style="padding: 0;">
-          <NTabs type="line" size="large" :tabs-padding="20" pane-style="padding: 20px;">
+          <NTabs v-model:value="currentTab" type="line" size="large" :tabs-padding="20" pane-style="padding: 20px;">
             <NTabPane name="wallet" :tab="t('player.list.walletMonitor')">
               <NGrid cols="2" :x-gap="12" :y-gap="12">
                  <NGridItem>
@@ -359,7 +556,23 @@ onMounted(() => {
               </NGrid>
             </NTabPane>
             
-            <NTabPane name="audit" tab="異動紀錄">
+            <NTabPane name="audit" :tab="t('player.list.auditHistory')">
+                <div class="mb-4 flex gap-4 items-end">
+                    <NFormItem label="快速切換" :show-feedback="false">
+                        <NSpace>
+                            <NButton size="small" @click="handleQuickSelect('audit', 'today')">本日</NButton>
+                            <NButton size="small" @click="handleQuickSelect('audit', 'yesterday')">昨日</NButton>
+                            <NButton size="small" @click="handleQuickSelect('audit', 'thisWeek')">本週</NButton>
+                            <NButton size="small" @click="handleQuickSelect('audit', 'lastWeek')">上一週</NButton>
+                            <NButton size="small" @click="handleQuickSelect('audit', 'thisMonth')">本月</NButton>
+                            <NButton size="small" @click="handleQuickSelect('audit', 'lastMonth')">上個月</NButton>
+                        </NSpace>
+                    </NFormItem>
+                    <NFormItem label="時間區間" :show-feedback="false">
+                        <NDatePicker v-model:value="auditFilter.timeRange" type="daterange" clearable />
+                    </NFormItem>
+                    <NButton type="primary" @click="fetchHistory">查詢</NButton>
+                </div>
                 <NList>
                     <NListItem v-for="log in auditLogs" :key="log.id">
                         <NThing :title="log.action" :content-style="{ marginTop: '10px' }">
@@ -376,6 +589,76 @@ onMounted(() => {
                         </NThing>
                     </NListItem>
                 </NList>
+            </NTabPane>
+
+            <NTabPane name="asset" :tab="t('player.list.assetHistory')">
+                 <div class="mb-4 flex flex-wrap gap-4 items-end">
+                    <NFormItem label="快速切換" :show-feedback="false">
+                        <NSpace>
+                            <NButton size="small" @click="handleQuickSelect('asset', 'today')">本日</NButton>
+                            <NButton size="small" @click="handleQuickSelect('asset', 'yesterday')">昨日</NButton>
+                            <NButton size="small" @click="handleQuickSelect('asset', 'thisWeek')">本週</NButton>
+                            <NButton size="small" @click="handleQuickSelect('asset', 'lastWeek')">上一週</NButton>
+                            <NButton size="small" @click="handleQuickSelect('asset', 'thisMonth')">本月</NButton>
+                            <NButton size="small" @click="handleQuickSelect('asset', 'lastMonth')">上個月</NButton>
+                        </NSpace>
+                    </NFormItem>
+                    <NFormItem label="幣別" :show-feedback="false">
+                         <NSelect v-model:value="assetFilter.currency" :options="[{ label: '全部', value: 'all' }, ...currencyOptions]" style="width: 120px" placeholder="全部" />
+                    </NFormItem>
+                    <NFormItem label="變動類型" :show-feedback="false">
+                         <NSelect v-model:value="assetFilter.changeType" :options="assetTypeOptions" style="width: 120px" placeholder="全部" clearable />
+                    </NFormItem>
+                    <NButton type="primary" @click="fetchHistory">查詢</NButton>
+                    <NButton type="primary" secondary @click="jumpToAssetLogs">
+                         <template #icon><SearchOutline /></template>
+                         {{ t('player.list.advancedSearch') }}
+                    </NButton>
+                </div>
+                <NDataTable :columns="assetColumns" :data="assetLogs" :loading="historyLoading" size="small" />
+            </NTabPane>
+
+            <NTabPane name="game" :tab="t('player.list.gameHistory')">
+                <div class="mb-4 flex flex-wrap gap-4 items-end">
+                    <NFormItem label="快速切換" :show-feedback="false">
+                        <NSpace>
+                            <NButton size="small" @click="handleQuickSelect('game', 'today')">本日</NButton>
+                            <NButton size="small" @click="handleQuickSelect('game', 'yesterday')">昨日</NButton>
+                            <NButton size="small" @click="handleQuickSelect('game', 'thisWeek')">本週</NButton>
+                            <NButton size="small" @click="handleQuickSelect('game', 'lastWeek')">上一週</NButton>
+                            <NButton size="small" @click="handleQuickSelect('game', 'thisMonth')">本月</NButton>
+                            <NButton size="small" @click="handleQuickSelect('game', 'lastMonth')">上個月</NButton>
+                        </NSpace>
+                    </NFormItem>
+                    <NFormItem label="幣別" :show-feedback="false">
+                         <NSelect v-model:value="gameFilter.currency" :options="[{ label: '全部', value: 'all' }, ...currencyOptions]" style="width: 120px" />
+                    </NFormItem>
+                    <NFormItem label="遊戲名稱" :show-feedback="false">
+                         <NInput v-model:value="gameFilter.gameName" style="width: 150px" placeholder="搜尋遊戲" clearable />
+                    </NFormItem>
+                    <NButton type="primary" @click="fetchHistory">查詢</NButton>
+                    <NButton type="primary" secondary @click="jumpToGameLogs">
+                         <template #icon><SearchOutline /></template>
+                         {{ t('player.list.advancedSearch') }}
+                    </NButton>
+                </div>
+                <div v-if="gameFilter.currency === 'all'" class="mb-4 bg-gray-50 p-4 rounded-lg flex justify-around border border-gray-100">
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-1">轉折總投注 (Gold Unit)</div>
+                        <div class="text-lg font-bold text-blue-600">{{ formatAmount(gameSummary.bet) }}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-1">轉折總派彩 (Gold Unit)</div>
+                        <div class="text-lg font-bold text-orange-600">{{ formatAmount(gameSummary.win) }}</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs text-gray-500 mb-1">轉折總盈虧 (Gold Unit)</div>
+                        <div class="text-lg font-bold" :class="gameSummary.net >= 0 ? 'text-green-600' : 'text-red-600'">
+                            {{ gameSummary.net >= 0 ? '+' : '' }}{{ formatAmount(gameSummary.net) }}
+                        </div>
+                    </div>
+                </div>
+                <NDataTable :columns="gameColumns" :data="gameLogs" :loading="historyLoading" size="small" />
             </NTabPane>
           </NTabs>
         </NCard>
@@ -406,10 +689,10 @@ onMounted(() => {
             <NFormItem :label="t('player.list.vipLevel')">
                  <NInputNumber v-model:value="editModel.vip_level" :min="0" style="width: 100%" />
             </NFormItem>
-             <NFormItem label="全服禁言">
-                <NSwitch v-model:value="editModel.is_muted" />
+             <NFormItem :label="t('player.list.muteStatus')">
+                <NSelect v-model:value="editModel.is_muted" :options="muteOptions" />
             </NFormItem>
-            <NFormItem label="禁止贈禮">
+            <NFormItem :label="t('player.list.giftStatus')">
                 <NSwitch v-model:value="editModel.is_gift_disabled" />
             </NFormItem>
             <NFormItem :label="t('player.list.retentionCheck')">

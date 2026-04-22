@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, h, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns, NCollapseTransition } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns, NCollapseTransition, NImage, NUpload } from 'naive-ui'
 import { SearchOutline, RefreshOutline, CreateOutline, AddOutline, ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import { gameListApi } from '@/api/game'
 import { providerApi } from '@/api/provider'
@@ -74,10 +74,17 @@ const editForm = ref<GameUpdateRequest>({
     marketing_tag: undefined,
     allowed_currencies: [],
     min_vip_level: 0,
+    min_seat_vip_level: 0,
+    image_url: null,
     sort_order: 999,
     final_rate: 100,
     profit_rate: 5.0
 })
+
+const vipOptions = Array.from({ length: 11 }, (_, i) => ({
+    label: `VIP ${i}`,
+    value: i
+}))
 
 const tagOptions = computed(() => [
     { label: t('game.list.tagOptions.none'), value: null as any },
@@ -223,6 +230,21 @@ const columns: DataTableColumns<Game> = [
             return provider ? provider.code : row.provider_id
         }
     },
+    {
+        title: t('game.list.image'),
+        key: 'image_url',
+        width: 100,
+        render: (row) => {
+            if (!row.image_url) return h('div', { class: 'w-12 h-12 bg-gray-100 flex items-center justify-center rounded text-gray-400 text-xs' }, '無圖片')
+            return h(NImage, {
+                width: 48,
+                height: 48,
+                src: row.image_url,
+                class: 'rounded shadow-sm',
+                objectFit: 'cover'
+            })
+        }
+    },
     { title: t('game.list.gameName'), key: 'name', width: 150, ellipsis: { tooltip: true } },
     {
         title: t('game.list.winRate'),
@@ -305,7 +327,8 @@ const columns: DataTableColumns<Game> = [
             return row.allowed_currencies.map(c => labelMap[c] || c).join(', ')
         }
     },
-    { title: t('game.list.vip'), key: 'min_vip_level', width: 60 },
+    { title: t('game.list.vip'), key: 'min_vip_level', width: 70, render: (row) => `VIP ${row.min_vip_level}` },
+    { title: t('game.list.selectSeat'), key: 'min_seat_vip_level', width: 70, render: (row) => `VIP ${row.min_seat_vip_level}` },
     { title: t('game.provider.sortOrder'), key: 'sort_order', width: 70 },
     {
         title: t('game.list.typeTag'),
@@ -455,6 +478,8 @@ const handleEdit = (game: Game) => {
         marketing_tag: game.marketing_tag,
         allowed_currencies: game.allowed_currencies,
         min_vip_level: game.min_vip_level,
+        min_seat_vip_level: game.min_seat_vip_level,
+        image_url: game.image_url,
         sort_order: game.sort_order,
         final_rate: game.final_rate,
         profit_rate: game.profit_rate
@@ -625,8 +650,19 @@ const handleSubmit = async () => {
                         <NCheckbox value="BRONZE" :label="t('common.bronze')" />
                     </NCheckboxGroup>
                 </NFormItem>
+                <NFormItem :label="t('game.list.image')">
+                    <div class="flex flex-col gap-2 w-full">
+                        <NInput v-model:value="editForm.image_url" placeholder="請輸入圖片連結或點擊上傳" />
+                        <div v-if="editForm.image_url" class="mt-2">
+                            <NImage :src="editForm.image_url" width="100" class="rounded border" />
+                        </div>
+                    </div>
+                </NFormItem>
                 <NFormItem :label="t('game.list.vip')">
-                    <NInputNumber v-model:value="editForm.min_vip_level" :min="0" :max="10" style="width: 100%" />
+                    <NSelect v-model:value="editForm.min_vip_level" :options="vipOptions" />
+                </NFormItem>
+                <NFormItem :label="t('game.list.selectSeat')">
+                    <NSelect v-model:value="editForm.min_seat_vip_level" :options="vipOptions" />
                 </NFormItem>
                 <NFormItem :label="t('game.list.effectiveTurnoverRate')">
                     <NInputNumber v-model:value="editForm.final_rate" :min="0" :max="1000" style="width: 100%">

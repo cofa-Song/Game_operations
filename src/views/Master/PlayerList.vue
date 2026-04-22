@@ -166,14 +166,15 @@ const columns = computed<DataTableColumns<Player>>(() => [
     width: 200,
     fixed: 'right',
     render(row) {
-      return h(NSpace, {}, { default: () => [
-        h(NButton, { size: 'small', secondary: true, onClick: () => router.push(`/admin/players/${row.id}`) }, 
-          { icon: () => h(EyeOutline) }),
-        h(NButton, { size: 'small', secondary: true, onClick: () => message.info(t('player.list.jumpToAssetLog')) }, 
-          { icon: () => h(ListOutline) }),
-        h(NButton, { size: 'small', secondary: true, onClick: () => message.info(t('player.list.jumpToGameLog')) }, 
-          { icon: () => h(GameControllerOutline) })
-      ]})
+      return h(NButton, { 
+        size: 'small', 
+        secondary: true, 
+        type: 'primary',
+        onClick: () => router.push(`/admin/players/${row.id}`) 
+      }, { 
+        default: () => '檢視詳情',
+        icon: () => h(EyeOutline) 
+      })
     }
   }
 ])

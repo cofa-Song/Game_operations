@@ -57,7 +57,7 @@ export interface Player {
     rollover_container?: RolloverContainer
 
     // Permissions
-    is_muted: boolean // 禁言
+    is_muted: string // 禁言 (NONE, 15M, 1H, 1D, PERMANENT)
     is_gift_disabled: boolean // 禁止贈禮
 
     // Computed/Helper fields for UI
@@ -99,7 +99,7 @@ export interface CreatePlayerRequest {
     birthday?: string
     email?: string
     vip_level?: number
-    is_muted?: boolean
+    is_muted?: string
     is_gift_disabled?: boolean
     is_retention_active?: boolean
     referrer_id?: string
@@ -112,7 +112,7 @@ export interface UpdatePlayerRequest {
     password?: string
     tags?: PlayerTag[]
     vip_level?: number
-    is_muted?: boolean
+    is_muted?: string
     is_gift_disabled?: boolean
     gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
     birthday?: string

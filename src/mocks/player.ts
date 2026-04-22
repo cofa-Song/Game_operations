@@ -33,7 +33,7 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
         last_login_ip: `192.168.1.${i % 255}`,
         is_online: Math.random() > 0.7,
         wallets: generateWallets(),
-        is_muted: false,
+        is_muted: 'NONE',
         is_gift_disabled: false,
         // Extended Profile
         gender: i % 3 === 0 ? 'MALE' : (i % 3 === 1 ? 'FEMALE' : 'UNKNOWN'),

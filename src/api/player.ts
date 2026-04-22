@@ -119,7 +119,7 @@ export const playerApi = {
             birthday: data.birthday,
             email: data.email,
             is_retention_active: data.is_retention_active,
-            is_muted: data.is_muted || false,
+            is_muted: data.is_muted || 'NONE',
             is_gift_disabled: data.is_gift_disabled || false,
             register_source: 'Admin_Manual',
             register_ip: '127.0.0.1',
