@@ -191,18 +191,6 @@ const menuOptions = computed(() => [
     ]
   }] : []),
 
-  // ── 會員管理：老闆、PM、營運、客服 ─────────────────────────
-  ...(sees(...LEADERSHIP, 'OPERATOR', 'CS') ? [{
-    label: t('navigation.playerManagement'),
-    key: 'user-management-group',
-    icon: renderIcon(PeopleOutline),
-    children: [
-      { label: t('navigation.playerList'),           key: 'player-list',           icon: renderIcon(PersonOutline) },
-      { label: t('navigation.gameLogs'),              key: 'game-logs',             icon: renderIcon(GameControllerOutline) },
-      { label: t('navigation.playerWinLossRanking'), key: 'player-win-loss-ranking', icon: renderIcon(DataCenterIcon) }
-    ]
-  }] : []),
-
   // ── 代理管理：老闆、PM ──────────────────────────────────────
   ...(sees(...LEADERSHIP) ? [{
     label: t('navigation.agentManagement'),
@@ -214,33 +202,15 @@ const menuOptions = computed(() => [
     ]
   }] : []),
 
-  // ── 財務管理：老闆、PM、財務 ────────────────────────────────
-  ...(sees(...LEADERSHIP, 'FINANCE') ? [{
-    label: t('navigation.finance'),
-    key: 'finance-management-group',
-    icon: renderIcon(WalletOutline),
+  // ── 會員管理：老闆、PM、營運、客服 ─────────────────────────
+  ...(sees(...LEADERSHIP, 'OPERATOR', 'CS') ? [{
+    label: t('navigation.playerManagement'),
+    key: 'user-management-group',
+    icon: renderIcon(PeopleOutline),
     children: [
-      { label: t('navigation.financialOverview'),        key: 'financial-overview',  icon: renderIcon(WalletOutline) },
-      { label: t('navigation.manualAdjustment'),         key: 'manual-adjustment',   icon: renderIcon(WalletOutline) },
-      { label: t('navigation.commodityConfig'),          key: 'commodity-config',    icon: renderIcon(PricetagsOutline) },
-      { label: t('navigation.depositOrderManagement'),   key: 'deposit-orders',      icon: renderIcon(WalletOutline) },
-      { label: t('navigation.refundManagement'),         key: 'refund-management',   icon: renderIcon(ReaderOutline) },
-      { label: t('navigation.paymentChannelManagement'), key: 'payment-channels',    icon: renderIcon(LayersOutline) },
-      { label: t('navigation.assetLogs'),                key: 'asset-logs',          icon: renderIcon(WalletOutline) },
-      { label: t('navigation.agentReport'),              key: 'agent-report',        icon: renderIcon(DataCenterIcon) }
-    ]
-  }] : []),
-
-  // ── 遊戲管理：老闆、PM、技術 ────────────────────────────────
-  ...(sees(...LEADERSHIP, 'TECH') ? [{
-    label: t('navigation.gameManagement'),
-    key: 'game-management',
-    icon: renderIcon(ExtensionPuzzleOutline),
-    children: [
-      { label: t('navigation.gameProviders'),    key: 'game-providers',    icon: renderIcon(LayersOutline) },
-      { label: t('navigation.gameList'),         key: 'game-list',         icon: renderIcon(ListOutline) },
-      { label: t('navigation.marketingTagConfig'), key: 'marketing-tag-config', icon: renderIcon(PricetagsOutline) },
-      { label: t('navigation.providerReport'),   key: 'provider-report',   icon: renderIcon(ReaderOutline) }
+      { label: t('navigation.playerList'),            key: 'player-list',             icon: renderIcon(PersonOutline) },
+      { label: t('navigation.gameLogs'),              key: 'game-logs',               icon: renderIcon(GameControllerOutline) },
+      { label: t('navigation.playerWinLossRanking'),  key: 'player-win-loss-ranking', icon: renderIcon(DataCenterIcon) }
     ]
   }] : []),
 
@@ -281,9 +251,22 @@ const menuOptions = computed(() => [
     key: 'content-management-group',
     icon: renderIcon(ReaderOutline),
     children: [
-      { label: t('navigation.announcement'),     key: 'announcement-manager', icon: renderIcon(ListOutline) },
-      { label: t('navigation.imageConfig'),      key: 'image-config',         icon: renderIcon(LayersOutline) },
-      { label: t('navigation.articleManagement'), key: 'article-manager',     icon: renderIcon(ReaderOutline) }
+      { label: t('navigation.announcement'),      key: 'announcement-manager',     icon: renderIcon(ListOutline) },
+      { label: t('navigation.imageConfig'),        key: 'image-config',             icon: renderIcon(LayersOutline) },
+      { label: t('navigation.articleManagement'), key: 'article-manager',          icon: renderIcon(ReaderOutline) }
+    ]
+  }] : []),
+
+  // ── 遊戲管理：老闆、PM、技術 ────────────────────────────────
+  ...(sees(...LEADERSHIP, 'TECH') ? [{
+    label: t('navigation.gameManagement'),
+    key: 'game-management',
+    icon: renderIcon(ExtensionPuzzleOutline),
+    children: [
+      { label: t('navigation.gameProviders'),      key: 'game-providers',      icon: renderIcon(LayersOutline) },
+      { label: t('navigation.gameList'),           key: 'game-list',           icon: renderIcon(ListOutline) },
+      { label: t('navigation.marketingTagConfig'), key: 'marketing-tag-config', icon: renderIcon(PricetagsOutline) },
+      { label: t('navigation.providerReport'),     key: 'provider-report',     icon: renderIcon(ReaderOutline) }
     ]
   }] : []),
 
@@ -293,10 +276,10 @@ const menuOptions = computed(() => [
     key: 'communication-management-group',
     icon: renderIcon(ChatIcon),
     children: [
-      { label: t('navigation.systemMessage'),       key: 'message-management',    icon: renderIcon(MailIcon) },
-      { label: t('navigation.messageSettings'),     key: 'message-settings',      icon: renderIcon(SettingsOutline) },
-      { label: t('navigation.chatRoomManagement'),  key: 'chat-management',       icon: renderIcon(ChatIcon) },
-      { label: '玩家訊息模板',                       key: 'player-message-templates', icon: renderIcon(ListOutline) }
+      { label: t('navigation.systemMessage'),          key: 'message-management',       icon: renderIcon(MailIcon) },
+      { label: t('navigation.messageSettings'),        key: 'message-settings',         icon: renderIcon(SettingsOutline) },
+      { label: t('navigation.chatRoomManagement'),     key: 'chat-management',          icon: renderIcon(ChatIcon) },
+      { label: '玩家訊息模板',                          key: 'player-message-templates', icon: renderIcon(ListOutline) }
     ]
   }] : []),
 
@@ -309,6 +292,23 @@ const menuOptions = computed(() => [
       { label: t('navigation.riskAlerts'),          key: 'risk-alerts',   icon: renderIcon(PulseIcon) },
       { label: t('navigation.chatKeywordSettings'), key: 'chat-keywords', icon: renderIcon(OptionsOutline) },
       { label: t('navigation.chatTriggerAudit'),    key: 'chat-audit',    icon: renderIcon(ReaderOutline) }
+    ]
+  }] : []),
+
+  // ── 財務管理：老闆、PM、財務 ────────────────────────────────
+  ...(sees(...LEADERSHIP, 'FINANCE') ? [{
+    label: t('navigation.finance'),
+    key: 'finance-management-group',
+    icon: renderIcon(WalletOutline),
+    children: [
+      { label: t('navigation.financialOverview'),        key: 'financial-overview',  icon: renderIcon(WalletOutline) },
+      { label: t('navigation.manualAdjustment'),         key: 'manual-adjustment',   icon: renderIcon(WalletOutline) },
+      { label: t('navigation.commodityConfig'),          key: 'commodity-config',    icon: renderIcon(PricetagsOutline) },
+      { label: t('navigation.depositOrderManagement'),   key: 'deposit-orders',      icon: renderIcon(WalletOutline) },
+      { label: t('navigation.refundManagement'),         key: 'refund-management',   icon: renderIcon(ReaderOutline) },
+      { label: t('navigation.paymentChannelManagement'), key: 'payment-channels',    icon: renderIcon(LayersOutline) },
+      { label: t('navigation.assetLogs'),                key: 'asset-logs',          icon: renderIcon(WalletOutline) },
+      { label: t('navigation.agentReport'),              key: 'agent-report',        icon: renderIcon(DataCenterIcon) }
     ]
   }] : []),
 
