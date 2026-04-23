@@ -180,16 +180,10 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
       },
       {
-        path: 'game-type-config',
-        name: 'GameTypeConfig',
-        component: () => import('@/views/Master/GameTypeConfig.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
-      },
-      {
-        path: 'marketing-tag-config',
-        name: 'MarketingTagConfig',
-        component: () => import('@/views/Master/MarketingTagConfig.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+        path: 'game-settings',
+        name: 'GameSettings',
+        component: () => import('@/views/Master/GameSettings.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '遊戲標籤配置' }
       }
       ,
       {
@@ -260,6 +254,12 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'AgentList',
         component: () => import('@/views/AgentManagement/AgentList.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '代理列表' }
+      },
+      {
+        path: 'agent-withdrawal-audit',
+        name: 'AgentWithdrawalAudit',
+        component: () => import('@/views/AgentManagement/AgentWithdrawalAudit.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '代理提領審核' }
       },
       {
         path: 'vip-settings',

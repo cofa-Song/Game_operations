@@ -57,3 +57,24 @@ export interface UpdateAgentParams extends Partial<Omit<Agent, 'id' | 'uid' | 'u
 export interface CreateAgentParams extends Omit<Agent, 'id' | 'uid' | 'path' | 'created_at' | 'sub_agent_count' | 'direct_player_count' | 'commission_wallet' | 'promo_wallet'> {
   password: string
 }
+
+export type AgentWithdrawalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface AgentWithdrawalRequest {
+  id: string
+  order_no: string
+  agent_id: string
+  agent_name: string
+  amount: number
+  frozen_balance: number
+  method: 'BANK' | 'OFFLINE'
+  account_info: string
+  status: AgentWithdrawalStatus
+  created_at: string
+}
+
+export interface AgentWithdrawalSearchParams {
+  status?: AgentWithdrawalStatus | 'ALL'
+  start_time?: number
+  end_time?: number
+}

@@ -100,8 +100,7 @@ const menuKeyToRoute: Record<string, string> = {
   'deposit-orders': '/admin/deposit-orders',
   'game-providers': '/admin/game-providers',
   'game-list': '/admin/game-list',
-  'game-type-config': '/admin/game-type-config',
-  'marketing-tag-config': '/admin/marketing-tag-config',
+  'game-settings': '/admin/game-settings',
   'thirdparty-keys': '/admin/thirdparty-keys',
   'app-versions': '/admin/app-versions',
   'admin-whitelist': '/admin/admin-whitelist',
@@ -126,6 +125,7 @@ const menuKeyToRoute: Record<string, string> = {
   'guild-management': '/admin/guilds',
   'article-manager': '/admin/articles',
   'agent-list': '/admin/agent-list',
+  'agent-withdrawal-audit': '/admin/agent-withdrawal-audit',
   'vip-settings': '/admin/vip-settings',
   'vip-stats': '/admin/vip-stats'
 }
@@ -201,6 +201,11 @@ const menuOptions = computed(() => [
         icon: renderIcon(ListOutline)
       },
       {
+        label: t('navigation.agentWithdrawalAudit'),
+        key: 'agent-withdrawal-audit',
+        icon: renderIcon(ReaderOutline)
+      },
+      {
         label: t('navigation.vipSettings'),
         key: 'vip-settings',
         icon: renderIcon(SettingsOutline)
@@ -265,14 +270,9 @@ const menuOptions = computed(() => [
         icon: renderIcon(ListOutline)
       },
       {
-        label: t('navigation.gameTypeConfig'),
-        key: 'game-type-config',
-        icon: renderIcon(OptionsOutline)
-      },
-      {
-        label: t('navigation.marketingTagConfig'),
-        key: 'marketing-tag-config',
-        icon: renderIcon(PricetagsOutline)
+        label: t('navigation.gameSettings'),
+        key: 'game-settings',
+        icon: renderIcon(SettingsOutline)
       },
       {
         label: t('navigation.gameLogs'),

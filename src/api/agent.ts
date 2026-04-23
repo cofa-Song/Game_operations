@@ -106,5 +106,31 @@ export const agentApi = {
     agent.promo_wallet += amount
     console.log(`[Audit] Adjust Promo Wallet ${id}: ${amount}. Reason: ${reason}`)
     return { code: 0, msg: 'success' }
+  },
+
+  async getWithdrawalRequests(params: AgentWithdrawalSearchParams): Promise<ApiResponse<AgentWithdrawalRequest[]>> {
+    await delay(SIMULATE_DELAY)
+    const { mockWithdrawals } = await import('@/mocks/agentWithdrawal')
+    let filtered = [...mockWithdrawals]
+    if (params.status && params.status !== 'ALL') {
+      filtered = filtered.filter(r => r.status === params.status)
+    }
+    if (params.start_time) {
+      filtered = filtered.filter(r => new Date(r.created_at).getTime() >= params.start_time!)
+    }
+    if (params.end_time) {
+      filtered = filtered.filter(r => new Date(r.created_at).getTime() <= params.end_time!)
+    }
+    return { code: 0, msg: 'success', data: filtered }
+  },
+
+  async processWithdrawal(id: string, action: 'APPROVE' | 'REJECT'): Promise<ApiResponse<void>> {
+    await delay(SIMULATE_DELAY)
+    const { mockWithdrawals } = await import('@/mocks/agentWithdrawal')
+    const req = mockWithdrawals.find(r => r.id === id)
+    if (!req) return { code: 404, msg: 'Request not found' }
+    req.status = action === 'APPROVE' ? 'APPROVED' : 'REJECTED'
+    console.log(`[Audit] Process Withdrawal ${id}: ${action}`)
+    return { code: 0, msg: 'success' }
   }
 }
