@@ -371,7 +371,7 @@ const columns = computed<DataTableColumns<Promotion>>(() => [
                 >
                   <NInputNumber v-model:value="tier.min_deposit"  :min="1" placeholder="金幣" />
                   <NInputNumber v-model:value="tier.reward_silver" :min="1" placeholder="銀幣" />
-                  <NButton size="small" quaternary type="error" @click="removeTier(idx)" :disabled="(form as any).tiers?.length <= 1">
+                  <NButton size="small" quaternary type="error" @click="removeTier(idx as number)" :disabled="(form as any).tiers?.length <= 1">
                     <NIcon :component="TrashOutline" />
                   </NButton>
                 </div>
