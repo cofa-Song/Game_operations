@@ -58,6 +58,19 @@ export interface Mission {
   created_by: string
 }
 
+// ── Checkin config (singleton, not a list item) ───────────────
+export interface CheckinConfig {
+  cycle_days: number
+  daily_silver: number
+  milestones: CheckinMilestone[]
+  status: MissionStatus
+  submitted_by?: string
+  submitted_at?: string
+  reviewed_by?: string
+  reviewed_at?: string
+  reject_reason?: string
+}
+
 // ── Claim record ──────────────────────────────────────────────
 export interface MissionClaimRecord {
   id: string

@@ -1,5 +1,5 @@
-import type { Mission, MissionClaimRecord, MissionType, MissionStatus } from '@/types/mission'
-import { mockMissions, mockMissionClaimRecords } from '@/mocks/mission'
+import type { Mission, MissionClaimRecord, MissionType, MissionStatus, CheckinConfig } from '@/types/mission'
+import { mockMissions, mockMissionClaimRecords, mockCheckinConfig } from '@/mocks/mission'
 import type { ApiResponse } from '@/types'
 
 const delay = (ms = 400) => new Promise(r => setTimeout(r, ms))
@@ -111,6 +111,38 @@ export const missionApi = {
     await delay()
     const idx = mockMissions.findIndex(i => i.id === id)
     if (idx !== -1) mockMissions.splice(idx, 1)
+    return { code: 0, msg: 'success' }
+  },
+
+  // ── Checkin config ─────────────────────────────────────────
+  async getCheckinConfig(): Promise<ApiResponse<CheckinConfig>> {
+    await delay()
+    return { code: 0, msg: 'success', data: { ...mockCheckinConfig, milestones: mockCheckinConfig.milestones.map(m => ({ ...m, rewards: m.rewards.map(r => ({ ...r })) })) } }
+  },
+
+  async saveCheckinConfig(payload: Partial<CheckinConfig>): Promise<ApiResponse<void>> {
+    await delay()
+    if (payload.cycle_days  !== undefined) mockCheckinConfig.cycle_days  = payload.cycle_days
+    if (payload.daily_silver !== undefined) mockCheckinConfig.daily_silver = payload.daily_silver
+    if (payload.milestones   !== undefined) mockCheckinConfig.milestones   = payload.milestones
+    if (payload.status       !== undefined) mockCheckinConfig.status       = payload.status
+    return { code: 0, msg: 'success' }
+  },
+
+  async submitCheckinForReview(submittedBy: string): Promise<ApiResponse<void>> {
+    await delay()
+    mockCheckinConfig.status       = 'PENDING'
+    mockCheckinConfig.submitted_by = submittedBy
+    mockCheckinConfig.submitted_at = new Date().toISOString()
+    return { code: 0, msg: 'success' }
+  },
+
+  async reviewCheckin(action: 'approve' | 'reject', rejectReason?: string): Promise<ApiResponse<void>> {
+    await delay()
+    mockCheckinConfig.status      = action === 'approve' ? 'ACTIVE' : 'REJECTED'
+    mockCheckinConfig.reviewed_by = 'manager'
+    mockCheckinConfig.reviewed_at = new Date().toISOString()
+    if (action === 'reject') mockCheckinConfig.reject_reason = rejectReason
     return { code: 0, msg: 'success' }
   },
 

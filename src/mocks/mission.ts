@@ -1,4 +1,4 @@
-import type { Mission, MissionClaimRecord } from '@/types/mission'
+import type { Mission, MissionClaimRecord, CheckinConfig } from '@/types/mission'
 
 export const mockMissions: Mission[] = [
   // ── 每日任務 ──────────────────────────────────────────────
@@ -150,83 +150,46 @@ export const mockMissions: Mission[] = [
     created_at: '2026-03-30T09:00:00Z', created_by: 'operator_lee'
   },
 
-  // ── 每日簽到 ──────────────────────────────────────────────
-  {
-    id: 'ms009',
-    name: '每日簽到禮（4 月版）',
-    type: 'CHECKIN',
-    status: 'ACTIVE',
-    description: '每天簽到累積天數，里程碑日有額外大獎等你拿！',
-    cycle_days: 30,
-    daily_silver: 100,
-    milestones: [
-      {
-        id: 'ml1', day: 5,
-        rewards: [
-          { id: 'r1', type: 'SILVER', silver_amount: 500 }
-        ]
-      },
-      {
-        id: 'ml2', day: 10,
-        rewards: [
-          { id: 'r1', type: 'SILVER', silver_amount: 1000 },
-          { id: 'r2', type: 'AVATAR', item_name: '簽到達人頭像' }
-        ]
-      },
-      {
-        id: 'ml3', day: 15,
-        rewards: [
-          { id: 'r1', type: 'SILVER', silver_amount: 2000 },
-          { id: 'r2', type: 'AVATAR_FRAME', item_name: '月半之輝頭像框' }
-        ]
-      },
-      {
-        id: 'ml4', day: 30,
-        rewards: [
-          { id: 'r1', type: 'SILVER', silver_amount: 10000 },
-          { id: 'r2', type: 'AVATAR_FRAME', item_name: '滿月金框' },
-          { id: 'r3', type: 'GIFT_CARD', item_name: '簽到滿月大禮', item_desc: '全家禮物卡 500 元，需本人到店兌換' }
-        ]
-      }
-    ],
-    is_limited: false,
-    claim_count: 2341,
-    submitted_by: 'operator_wang', submitted_at: '2026-03-28T10:00:00Z',
-    reviewed_by: 'manager', reviewed_at: '2026-03-29T09:00:00Z',
-    created_at: '2026-03-28T09:00:00Z', created_by: 'operator_wang'
-  },
-  {
-    id: 'ms010',
-    name: '端午節限定簽到（草稿）',
-    type: 'CHECKIN',
-    status: 'DRAFT',
-    description: '端午節特別版簽到，里程碑獎勵更豐厚！',
-    cycle_days: 7,
-    daily_silver: 200,
-    milestones: [
-      {
-        id: 'ml1', day: 3,
-        rewards: [
-          { id: 'r1', type: 'SILVER', silver_amount: 1000 },
-          { id: 'r2', type: 'AVATAR', item_name: '端午粽子頭像' }
-        ]
-      },
-      {
-        id: 'ml2', day: 7,
-        rewards: [
-          { id: 'r1', type: 'SILVER', silver_amount: 5000 },
-          { id: 'r2', type: 'AVATAR_FRAME', item_name: '端午龍舟框' },
-          { id: 'r3', type: 'GIFT_CARD', item_name: '端午好禮', item_desc: '7-11 禮物卡 300 元' }
-        ]
-      }
-    ],
-    is_limited: true,
-    scheduled_start: '2026-05-31T00:00:00Z',
-    scheduled_end: '2026-06-08T23:59:59Z',
-    claim_count: 0,
-    created_at: '2026-04-22T16:00:00Z', created_by: 'operator_wang'
-  }
 ]
+
+// ── Checkin Config (singleton) ────────────────────────────────
+export const mockCheckinConfig: CheckinConfig = {
+  cycle_days: 30,
+  daily_silver: 100,
+  milestones: [
+    {
+      id: 'ml1', day: 5,
+      rewards: [{ id: 'r1', type: 'SILVER', silver_amount: 500 }]
+    },
+    {
+      id: 'ml2', day: 10,
+      rewards: [
+        { id: 'r1', type: 'SILVER', silver_amount: 1000 },
+        { id: 'r2', type: 'AVATAR', item_name: '簽到達人頭像' }
+      ]
+    },
+    {
+      id: 'ml3', day: 15,
+      rewards: [
+        { id: 'r1', type: 'SILVER', silver_amount: 2000 },
+        { id: 'r2', type: 'AVATAR_FRAME', item_name: '月半之輝頭像框' }
+      ]
+    },
+    {
+      id: 'ml4', day: 30,
+      rewards: [
+        { id: 'r1', type: 'SILVER', silver_amount: 10000 },
+        { id: 'r2', type: 'AVATAR_FRAME', item_name: '滿月金框' },
+        { id: 'r3', type: 'GIFT_CARD', item_name: '簽到滿月大禮', item_desc: '全家禮物卡 500 元，需本人到店兌換' }
+      ]
+    }
+  ],
+  status: 'ACTIVE',
+  submitted_by: 'operator_wang',
+  submitted_at: '2026-03-28T10:00:00Z',
+  reviewed_by: 'manager',
+  reviewed_at: '2026-03-29T09:00:00Z'
+}
 
 // ── Claim Records ─────────────────────────────────────────────
 const players = [
