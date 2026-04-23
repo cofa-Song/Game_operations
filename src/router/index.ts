@@ -332,6 +332,24 @@ const masterRoutes: RouteRecordRaw[] = [
         name: 'RefundManagement',
         component: () => import('@/views/Master/RefundManagement.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '退款管理' }
+      },
+      {
+        path: 'cs-workbench',
+        name: 'CSWorkbench',
+        component: () => import('@/views/CustomerService/CSWorkbench.vue'),
+        meta: { requiresAuth: true, breadcrumb: '客服工作台' }
+      },
+      {
+        path: 'cs-player-search',
+        name: 'PlayerConversationSearch',
+        component: () => import('@/views/CustomerService/PlayerConversationSearch.vue'),
+        meta: { requiresAuth: true, breadcrumb: '玩家對話查詢' }
+      },
+      {
+        path: 'cs-world-monitor',
+        name: 'WorldChannelMonitor',
+        component: () => import('@/views/CustomerService/WorldChannelMonitor.vue'),
+        meta: { requiresAuth: true, breadcrumb: '世界頻道監控' }
       }
     ]
   }

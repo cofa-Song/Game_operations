@@ -29,6 +29,8 @@ import {
   MoonOutline,
   MailOutline as MailIcon,
   ChatbubbleEllipsesOutline as ChatIcon,
+  ChatbubblesOutline as ChatbubblesIcon,
+  SearchOutline,
   SunnyOutline,
   PieChartOutline
 } from '@vicons/ionicons5'
@@ -136,6 +138,9 @@ const menuKeyToRoute: Record<string, string> = {
   'agent-list': '/admin/agent-list',
   'agent-report': '/admin/agent-report',
   'refund-management': '/admin/refund-management',
+  'cs-workbench': '/admin/cs-workbench',
+  'cs-player-search': '/admin/cs-player-search',
+  'cs-world-monitor': '/admin/cs-world-monitor',
   'vip-settings': '/admin/vip-settings',
   'vip-stats': '/admin/vip-stats',
   'account-settings': '/admin/account',
@@ -270,8 +275,20 @@ const menuOptions = computed(() => [
     ]
   }] : []),
 
-  // ── 通訊管理：老闆、PM、營運、客服 ─────────────────────────
-  ...(sees(...LEADERSHIP, 'OPERATOR', 'CS') ? [{
+  // ── 客服管理：客服、老闆、PM ────────────────────────────────
+  ...(sees(...LEADERSHIP, 'CS') ? [{
+    label: t('navigation.csManagement'),
+    key: 'cs-management-group',
+    icon: renderIcon(ChatIcon),
+    children: [
+      { label: t('navigation.csWorkbench'),     key: 'cs-workbench',    icon: renderIcon(ChatbubblesIcon) },
+      { label: t('navigation.csPlayerSearch'),  key: 'cs-player-search', icon: renderIcon(SearchOutline) },
+      { label: t('navigation.csWorldMonitor'),  key: 'cs-world-monitor', icon: renderIcon(PulseIcon) }
+    ]
+  }] : []),
+
+  // ── 通訊管理：老闆、PM、營運 ────────────────────────────────（客服改用客服管理）
+  ...(sees(...LEADERSHIP, 'OPERATOR') ? [{
     label: t('navigation.communication'),
     key: 'communication-management-group',
     icon: renderIcon(ChatIcon),
@@ -321,7 +338,6 @@ const menuOptions = computed(() => [
       { label: t('navigation.operationConfig'), key: 'operation-config', icon: renderIcon(BuildOutline) },
       { label: t('navigation.systemStatus'),    key: 'system-status',    icon: renderIcon(PulseIcon) },
       { label: t('navigation.adminWhitelist'),  key: 'admin-whitelist',  icon: renderIcon(ShieldOutline) },
-      { label: t('navigation.csChannels'),      key: 'cs-channels',      icon: renderIcon(ChatIcon) },
       { label: t('navigation.smsProviders'),    key: 'sms-providers',    icon: renderIcon(MailIcon) }
     ]
   }] : []),
