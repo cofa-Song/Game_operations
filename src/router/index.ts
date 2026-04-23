@@ -231,12 +231,7 @@ const masterRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/Master/Announcement.vue'),
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
       },
-      {
-        path: 'image-config',
-        name: 'ImageConfig',
-        component: () => import('@/views/Master/ImageConfig.vue'),
-        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
-      },
+
       {
         path: 'guilds',
         name: 'GuildManagement',

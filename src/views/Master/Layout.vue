@@ -117,7 +117,7 @@ const menuKeyToRoute: Record<string, string> = {
   'admin-whitelist': '/admin/admin-whitelist',
   'operation-config': '/admin/operation-config',
   'announcement-manager': '/admin/announcements',
-  'image-config': '/admin/image-config',
+
   'payment-channels': '/admin/payment-channels',
   'risk-alerts': '/admin/risk/alerts',
   'system-status': '/admin/system-status',
@@ -259,7 +259,6 @@ const menuOptions = computed(() => [
     icon: renderIcon(ReaderOutline),
     children: [
       { label: t('navigation.announcement'),      key: 'announcement-manager',     icon: renderIcon(ListOutline) },
-      { label: t('navigation.imageConfig'),        key: 'image-config',             icon: renderIcon(LayersOutline) },
       { label: t('navigation.articleManagement'), key: 'article-manager',          icon: renderIcon(ReaderOutline) }
     ]
   }] : []),
