@@ -148,7 +148,7 @@
             </div>
           </div>
 
-          <n-scrollbar ref="csScrollbarInst" class="flex-1 p-6 bg-[url('@/assets/chat-bg-pattern.svg')] dark:bg-[url('@/assets/chat-bg-pattern-dark.svg')] bg-repeat opacity-95">
+          <n-scrollbar ref="csScrollbarInst" class="flex-1 p-6 bg-slate-50 dark:bg-slate-900/50 opacity-95">
             <div v-for="msg in mockCsHistory" :key="msg.id" class="flex flex-col mb-6" :class="msg.sender === 'agent' ? 'items-end' : 'items-start'">
               <div class="flex items-center gap-2 mb-1.5" :class="msg.sender === 'agent' ? 'flex-row-reverse' : 'flex-row'">
                 <span class="text-xs font-bold text-slate-500 dark:text-gray-400 bg-white/80 dark:bg-gray-800/80 px-1.5 py-0.5 rounded">{{ msg.senderName }}</span>
