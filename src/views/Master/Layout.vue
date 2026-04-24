@@ -118,6 +118,7 @@ const menuKeyToRoute: Record<string, string> = {
   'chat-keywords': '/admin/chat/keywords',
   'chat-audit': '/admin/chat/audit',
   'chat-management': '/admin/chat-management',
+  'chat-tickets': '/admin/chat/tickets',
   'player-message-templates': '/admin/chat/templates',
   'financial-overview': '/admin/financial-overview',
   'manual-adjustment': '/admin/manual-adjustment',
@@ -196,16 +197,6 @@ const menuOptions = computed(() => [
         icon: renderIcon(PersonOutline)
       },
       {
-        label: t('navigation.agentList'),
-        key: 'agent-list',
-        icon: renderIcon(ListOutline)
-      },
-      {
-        label: t('navigation.agentWithdrawalAudit'),
-        key: 'agent-withdrawal-audit',
-        icon: renderIcon(ReaderOutline)
-      },
-      {
         label: t('navigation.vipSettings'),
         key: 'vip-settings',
         icon: renderIcon(SettingsOutline)
@@ -218,8 +209,25 @@ const menuOptions = computed(() => [
     ]
   },
   {
-    label: t('navigation.finance'),
-    key: 'finance-management-group',
+    label: t('navigation.agentManagement'),
+    key: 'agent-management-group',
+    icon: renderIcon(PeopleCircleOutline),
+    children: [
+      {
+        label: t('navigation.agentList'),
+        key: 'agent-list',
+        icon: renderIcon(ListOutline)
+      },
+      {
+        label: t('navigation.agentWithdrawalAudit'),
+        key: 'agent-withdrawal-audit',
+        icon: renderIcon(ReaderOutline)
+      }
+    ]
+  },
+  {
+    label: t('navigation.financeOperations'),
+    key: 'finance-operations-group',
     icon: renderIcon(WalletOutline),
     children: [
       {
@@ -228,24 +236,31 @@ const menuOptions = computed(() => [
         icon: renderIcon(WalletOutline)
       },
       {
-        label: t('navigation.manualAdjustment'),
-        key: 'manual-adjustment',
-        icon: renderIcon(WalletOutline)
-      },
-      {
         label: t('navigation.commodityConfig'),
         key: 'commodity-config',
         icon: renderIcon(PricetagsOutline)
       },
+      {
+        label: t('navigation.paymentChannelManagement'),
+        key: 'payment-channels',
+        icon: renderIcon(LayersOutline)
+      }
+    ]
+  },
+  {
+    label: t('navigation.transactionAsset'),
+    key: 'transaction-asset-group',
+    icon: renderIcon(ReaderOutline),
+    children: [
       {
         label: t('navigation.depositOrderManagement'),
         key: 'deposit-orders',
         icon: renderIcon(WalletOutline)
       },
       {
-        label: t('navigation.paymentChannelManagement'),
-        key: 'payment-channels',
-        icon: renderIcon(LayersOutline)
+        label: t('navigation.manualAdjustment'),
+        key: 'manual-adjustment',
+        icon: renderIcon(WalletOutline)
       },
       {
         label: t('navigation.assetLogs'),
@@ -282,9 +297,9 @@ const menuOptions = computed(() => [
     ]
   },
   {
-    label: t('navigation.communication'),
-    key: 'communication-management-group',
-    icon: renderIcon(ChatIcon),
+    label: t('navigation.messageCenter'),
+    key: 'message-center-group',
+    icon: renderIcon(MailIcon),
     children: [
       {
         label: t('navigation.systemMessage'),
@@ -297,9 +312,26 @@ const menuOptions = computed(() => [
         icon: renderIcon(SettingsOutline)
       },
       {
+        label: '玩家訊息模板',
+        key: 'player-message-templates',
+        icon: renderIcon(ListOutline)
+      }
+    ]
+  },
+  {
+    label: t('navigation.chatAndSupport'),
+    key: 'chat-support-group',
+    icon: renderIcon(ChatIcon),
+    children: [
+      {
         label: t('navigation.chatRoomManagement'),
         key: 'chat-management',
         icon: renderIcon(ChatIcon)
+      },
+      {
+        label: t('navigation.chatTicketManagement'),
+        key: 'chat-tickets',
+        icon: renderIcon(ListOutline)
       },
       {
         label: t('navigation.chatKeywordSettings'),
@@ -310,18 +342,13 @@ const menuOptions = computed(() => [
         label: t('navigation.chatTriggerAudit'),
         key: 'chat-audit',
         icon: renderIcon(ReaderOutline)
-      },
-      {
-        label: '玩家訊息模板',
-        key: 'player-message-templates',
-        icon: renderIcon(ListOutline)
       }
     ]
   },
   {
-    label: t('navigation.systemOperations'),
-    key: 'system-operations-group',
-    icon: renderIcon(SettingsOutline),
+    label: t('navigation.contentConfig'),
+    key: 'content-config-group',
+    icon: renderIcon(BuildOutline),
     children: [
       {
         label: t('navigation.operationConfig'),
@@ -342,7 +369,14 @@ const menuOptions = computed(() => [
         label: t('navigation.articleManagement'),
         key: 'article-manager',
         icon: renderIcon(ReaderOutline)
-      },
+      }
+    ]
+  },
+  {
+    label: t('navigation.accessManagement'),
+    key: 'access-management-group',
+    icon: renderIcon(ShieldCheckmarkOutline),
+    children: [
       {
         label: t('navigation.accountManagement'),
         key: 'account-management',
@@ -354,19 +388,26 @@ const menuOptions = computed(() => [
         icon: renderIcon(ShieldCheckmarkOutline)
       },
       {
-        label: t('navigation.operationLog'),
-        key: 'admin-operation-log',
-        icon: renderIcon(ReaderOutline)
-      },
+        label: t('navigation.adminWhitelist'),
+        key: 'admin-whitelist',
+        icon: renderIcon(ShieldOutline)
+      }
+    ]
+  },
+  {
+    label: t('navigation.systemAudit'),
+    key: 'system-audit-group',
+    icon: renderIcon(PulseIcon),
+    children: [
       {
         label: t('navigation.systemStatus'),
         key: 'system-status',
         icon: renderIcon(PulseIcon)
       },
       {
-        label: t('navigation.adminWhitelist'),
-        key: 'admin-whitelist',
-        icon: renderIcon(ShieldOutline)
+        label: t('navigation.operationLog'),
+        key: 'admin-operation-log',
+        icon: renderIcon(ReaderOutline)
       }
     ]
   }

@@ -220,10 +220,18 @@ export const zhTW = {
     chatRoomManagement: '聊天室內容管理',
     chatKeywordSettings: '敏感字庫設定',
     chatTriggerAudit: '觸發紀錄審核',
+    chatTicketManagement: '統一工單管理',
     agentManagement: '代理管理',
     agentList: '代理列表',
     vipSettings: 'VIP等級設定',
-    systemOperations: '系統與運維'
+    systemOperations: '系統與運維',
+    financeOperations: '財務概覽與配置',
+    transactionAsset: '帳務與異動管理',
+    messageCenter: '訊息發送中心',
+    chatAndSupport: '客服與聊天風控',
+    contentConfig: '營運內容設定',
+    accessManagement: '權限與帳號管理',
+    systemAudit: '系統監控與日誌'
   },
   vip: {
     title: 'VIP 等級設定',
@@ -1269,7 +1277,15 @@ export const zhCN = {
     systemMessage: '站内信',
     chatManagement: '聊天室管理',
     chatKeywordSettings: '敏感字库设定',
-    chatTriggerAudit: '触发纪录审核'
+    chatTriggerAudit: '触发纪录审核',
+    chatTicketManagement: '统一工单管理',
+    financeOperations: '财务概览与配置',
+    transactionAsset: '账务与异动管理',
+    messageCenter: '消息发送中心',
+    chatAndSupport: '客服与聊天风控',
+    contentConfig: '运营内容设定',
+    accessManagement: '权限与帐号管理',
+    systemAudit: '系统监控与日志'
   },
   article: {
     category: '文章类别',

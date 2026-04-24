@@ -102,6 +102,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'RISK'], breadcrumb: '聊天室管理' }
       },
       {
+        path: 'chat/tickets',
+        name: 'ChatTicketManagement',
+        component: () => import('@/views/ChatManagement/TicketManagement.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '統一工單管理' }
+      },
+      {
         path: 'chat/templates',
         name: 'PlayerMessageTemplates',
         component: () => import('@/views/ChatManagement/PlayerMessageTemplates.vue'),
