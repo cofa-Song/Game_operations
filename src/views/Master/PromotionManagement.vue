@@ -13,8 +13,26 @@ import {
 import { promotionApi } from '@/api/promotion'
 import type { Promotion, PromotionType, PromotionStatus, DepositTier } from '@/types/promotion'
 import { PROMOTION_TYPE_CONFIG, PROMOTION_STATUS_CONFIG } from '@/types/promotion'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { fmtDate, fmtNum } from '@/utils/formatters'
 
-const message = useMessage()
+const message   = useMessage()
+const authStore = useAuthStore()
+
+// ── Strongly-typed drawer form (replaces Partial<Promotion>) ──
+// NDatePicker with value-format emits string | null, hence the nullable dates.
+type PromotionForm = {
+  name: string
+  type: PromotionType
+  description: string
+  tiers: DepositTier[]
+  reward_silver: number
+  target_vip_level?: number
+  max_claims_per_user: number
+  is_limited: boolean
+  scheduled_start: string | null
+  scheduled_end: string | null
+}
 
 // ── Summary ───────────────────────────────────────────────────
 const allItems = ref<Promotion[]>([])
@@ -68,15 +86,15 @@ const drawerMode  = ref<'create' | 'edit'>('create')
 const saving      = ref(false)
 const submitting  = ref(false)
 
-const emptyForm = (): Partial<Promotion> => ({
+const emptyForm = (): PromotionForm => ({
   name: '', type: 'DEPOSIT', description: '',
   tiers: [{ id: 't1', min_deposit: 100, reward_silver: 500 }],
   reward_silver: 100, target_vip_level: undefined,
   max_claims_per_user: -1,
-  is_limited: false, scheduled_start: undefined, scheduled_end: undefined
+  is_limited: false, scheduled_start: null, scheduled_end: null
 })
 
-const form = reactive<Partial<Promotion>>(emptyForm())
+const form = reactive<PromotionForm>(emptyForm())
 const editId = ref<string | undefined>(undefined)
 
 const isTierType = computed(() =>
@@ -93,7 +111,9 @@ const openCreate = () => {
 const openEdit = (row: Promotion) => {
   Object.assign(form, {
     ...row,
-    tiers: row.tiers ? row.tiers.map(t => ({ ...t })) : [{ id: 't1', min_deposit: 100, reward_silver: 500 }]
+    tiers: row.tiers ? row.tiers.map(t => ({ ...t })) : [{ id: 't1', min_deposit: 100, reward_silver: 500 }],
+    scheduled_start: row.scheduled_start ?? null,
+    scheduled_end:   row.scheduled_end   ?? null
   })
   editId.value = row.id
   drawerMode.value = 'edit'
@@ -108,53 +128,75 @@ const addTier = () => {
 const removeTier = (idx: number) => { form.tiers?.splice(idx, 1) }
 
 const saveDraft = async () => {
-  if (!form.name?.trim()) { message.warning('請填寫活動名稱'); return }
+  if (!form.name.trim()) { message.warning('請填寫活動名稱'); return }
   saving.value = true
-  const res = await promotionApi.savePromotion({ ...form, id: editId.value, status: 'DRAFT', created_by: 'operator' })
-  saving.value = false
-  if (res.code === 0) {
-    message.success('已儲存草稿')
-    showDrawer.value = false
-    await load()
+  try {
+    const res = await promotionApi.savePromotion({
+      ...form,
+      id: editId.value, status: 'DRAFT',
+      scheduled_start: form.scheduled_start ?? undefined,
+      scheduled_end:   form.scheduled_end   ?? undefined,
+      created_by: authStore.user?.name ?? 'operator'
+    })
+    if (res.code === 0) { message.success('已儲存草稿'); showDrawer.value = false; await load() }
+  } catch {
+    message.error('儲存失敗')
+  } finally {
+    saving.value = false
   }
 }
 
 const saveAndSubmit = async () => {
-  if (!form.name?.trim()) { message.warning('請填寫活動名稱'); return }
+  if (!form.name.trim()) { message.warning('請填寫活動名稱'); return }
   saving.value = true
-  const saveRes = await promotionApi.savePromotion({ ...form, id: editId.value, status: 'DRAFT', created_by: 'operator' })
-  if (saveRes.code !== 0) { saving.value = false; message.error('儲存失敗'); return }
-  const submitRes = await promotionApi.submitForReview(saveRes.data!.id)
-  saving.value = false
-  if (submitRes.code === 0) {
-    message.success('已送出審核')
-    showDrawer.value = false
-    await load()
+  try {
+    const saveRes = await promotionApi.savePromotion({
+      ...form,
+      id: editId.value, status: 'DRAFT',
+      scheduled_start: form.scheduled_start ?? undefined,
+      scheduled_end:   form.scheduled_end   ?? undefined,
+      created_by: authStore.user?.name ?? 'operator'
+    })
+    if (saveRes.code !== 0) { message.error('儲存失敗'); return }
+    if (!saveRes.data?.id) { message.error('儲存回傳資料異常'); return }
+    const submitRes = await promotionApi.submitForReview(saveRes.data.id)
+    if (submitRes.code === 0) { message.success('已送出審核'); showDrawer.value = false; await load() }
+  } catch {
+    message.error('操作失敗')
+  } finally {
+    saving.value = false
   }
 }
 
 // Submit existing DRAFT/REJECTED item
 const submitItem = async (row: Promotion) => {
   submitting.value = true
-  const res = await promotionApi.submitForReview(row.id)
-  submitting.value = false
-  if (res.code === 0) { message.success('已送出審核'); await load() }
+  try {
+    const res = await promotionApi.submitForReview(row.id)
+    if (res.code === 0) { message.success('已送出審核'); await load() }
+  } catch {
+    message.error('送審失敗')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // Toggle active/expired
 const handleToggle = async (row: Promotion, active: boolean) => {
-  const res = await promotionApi.toggleStatus(row.id, active)
-  if (res.code === 0) { message.success(active ? '已上線' : '已下架'); await load() }
+  try {
+    const res = await promotionApi.toggleStatus(row.id, active)
+    if (res.code === 0) { message.success(active ? '已上線' : '已下架'); await load() }
+  } catch { message.error('操作失敗') }
 }
 
 const handleDelete = async (row: Promotion) => {
-  const res = await promotionApi.deletePromotion(row.id)
-  if (res.code === 0) { message.success('已刪除'); await load() }
+  try {
+    const res = await promotionApi.deletePromotion(row.id)
+    if (res.code === 0) { message.success('已刪除'); await load() }
+  } catch { message.error('刪除失敗') }
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-const fmtDate = (iso?: string) => iso ? new Date(iso).toLocaleDateString('zh-TW') : '—'
-const fmtNum  = (n: number) => n.toLocaleString()
+// ── Helpers — fmtDate / fmtNum imported from @/utils/formatters ──
 const canEdit = (s: PromotionStatus) => s === 'DRAFT' || s === 'REJECTED'
 
 // ── Table ─────────────────────────────────────────────────────
@@ -338,19 +380,19 @@ const columns = computed<DataTableColumns<Promotion>>(() => [
         <NForm label-placement="top" :label-width="80" size="medium">
 
           <NFormItem label="活動名稱" required>
-            <NInput v-model:value="(form as any).name" placeholder="例：端午節加碼！儲值 500 送 50000" />
+            <NInput v-model:value="form.name" placeholder="例：端午節加碼！儲值 500 送 50000" />
           </NFormItem>
 
           <NFormItem label="優惠類型" required>
             <NSelect
-              v-model:value="(form as any).type"
+              v-model:value="form.type"
               :options="Object.entries(PROMOTION_TYPE_CONFIG).map(([k,v]) => ({ label: v.label, value: k }))"
               placeholder="選擇類型"
             />
           </NFormItem>
 
           <NFormItem label="活動說明">
-            <NInput v-model:value="(form as any).description" type="textarea" :rows="2" placeholder="選填，顯示於活動列表" />
+            <NInput v-model:value="form.description" type="textarea" :rows="2" placeholder="選填，顯示於活動列表" />
           </NFormItem>
 
           <NDivider />
@@ -365,13 +407,13 @@ const columns = computed<DataTableColumns<Promotion>>(() => [
                   <span></span>
                 </div>
                 <div
-                  v-for="(tier, idx) in (form as any).tiers"
+                  v-for="(tier, idx) in form.tiers"
                   :key="tier.id"
                   class="grid grid-cols-[1fr_1fr_36px] gap-2 items-center"
                 >
                   <NInputNumber v-model:value="tier.min_deposit"  :min="1" placeholder="金幣" />
                   <NInputNumber v-model:value="tier.reward_silver" :min="1" placeholder="銀幣" />
-                  <NButton size="small" quaternary type="error" @click="removeTier(idx as number)" :disabled="(form as any).tiers?.length <= 1">
+                  <NButton size="small" quaternary type="error" @click="removeTier(idx as number)" :disabled="form.tiers?.length <= 1">
                     <NIcon :component="TrashOutline" />
                   </NButton>
                 </div>
@@ -386,10 +428,10 @@ const columns = computed<DataTableColumns<Promotion>>(() => [
           <!-- Flat reward -->
           <template v-else>
             <NFormItem label="獎勵銀幣" required>
-              <NInputNumber v-model:value="(form as any).reward_silver" :min="1" placeholder="銀幣數量" class="w-full" />
+              <NInputNumber v-model:value="form.reward_silver" :min="1" placeholder="銀幣數量" class="w-full" />
             </NFormItem>
-            <NFormItem v-if="(form as any).type === 'VIP_UPGRADE'" label="目標 VIP 等級" required>
-              <NInputNumber v-model:value="(form as any).target_vip_level" :min="1" :max="20" placeholder="等級" class="w-full" />
+            <NFormItem v-if="form.type === 'VIP_UPGRADE'" label="目標 VIP 等級" required>
+              <NInputNumber v-model:value="form.target_vip_level" :min="1" :max="20" placeholder="等級" class="w-full" />
             </NFormItem>
           </template>
 
@@ -398,31 +440,31 @@ const columns = computed<DataTableColumns<Promotion>>(() => [
           <NFormItem label="每人最多領取次數">
             <div class="flex items-center gap-3">
               <NSwitch
-                :value="(form as any).max_claims_per_user !== -1"
-                @update:value="(v: boolean) => { (form as any).max_claims_per_user = v ? 1 : -1 }"
+                :value="form.max_claims_per_user !== -1"
+                @update:value="(v: boolean) => { form.max_claims_per_user = v ? 1 : -1 }"
               />
               <span class="text-sm text-gray-500">
-                {{ (form as any).max_claims_per_user === -1 ? '不限次數' : '限制次數' }}
+                {{ form.max_claims_per_user === -1 ? '不限次數' : '限制次數' }}
               </span>
               <NInputNumber
-                v-if="(form as any).max_claims_per_user !== -1"
-                v-model:value="(form as any).max_claims_per_user"
+                v-if="form.max_claims_per_user !== -1"
+                v-model:value="form.max_claims_per_user"
                 :min="1" style="width:100px"
               />
             </div>
           </NFormItem>
 
           <NFormItem label="時間限定活動">
-            <NSwitch v-model:value="(form as any).is_limited" />
+            <NSwitch v-model:value="form.is_limited" />
             <span class="ml-3 text-sm text-gray-500">
-              {{ (form as any).is_limited ? '指定起訖時間' : '長期有效' }}
+              {{ form.is_limited ? '指定起訖時間' : '長期有效' }}
             </span>
           </NFormItem>
 
-          <template v-if="(form as any).is_limited">
+          <template v-if="form.is_limited">
             <NFormItem label="開始時間">
               <NDatePicker
-                v-model:value="(form as any).scheduled_start"
+                v-model:value="form.scheduled_start"
                 type="datetime"
                 value-format="yyyy-MM-dd'T'HH:mm:ss'Z'"
                 clearable
@@ -431,7 +473,7 @@ const columns = computed<DataTableColumns<Promotion>>(() => [
             </NFormItem>
             <NFormItem label="結束時間">
               <NDatePicker
-                v-model:value="(form as any).scheduled_end"
+                v-model:value="form.scheduled_end"
                 type="datetime"
                 value-format="yyyy-MM-dd'T'HH:mm:ss'Z'"
                 clearable

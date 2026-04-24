@@ -16,8 +16,11 @@ import type {
 import {
   MISSION_STATUS_CONFIG, CONDITION_TYPE_CONFIG, REWARD_TYPE_CONFIG
 } from '@/types/mission'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { fmtDate, fmtNum } from '@/utils/formatters'
 
-const message = useMessage()
+const message   = useMessage()
+const authStore = useAuthStore()
 
 // ── Cost helpers ──────────────────────────────────────────────
 const SILVER_TO_NTD = 10000
@@ -46,13 +49,18 @@ const eventLoading  = ref(false)
 
 const loadAll = async () => {
   dailyLoading.value = eventLoading.value = true
-  const [dr, er] = await Promise.all([
-    missionApi.getMissions({ type: 'DAILY' }),
-    missionApi.getMissions({ type: 'EVENT' })
-  ])
-  if (dr.code === 0) dailyMissions.value = dr.data ?? []
-  if (er.code === 0) eventMissions.value = er.data ?? []
-  dailyLoading.value = eventLoading.value = false
+  try {
+    const [dr, er] = await Promise.all([
+      missionApi.getMissions({ type: 'DAILY' }),
+      missionApi.getMissions({ type: 'EVENT' })
+    ])
+    if (dr.code === 0) dailyMissions.value = dr.data ?? []
+    if (er.code === 0) eventMissions.value = er.data ?? []
+  } catch {
+    message.error('載入任務資料失敗')
+  } finally {
+    dailyLoading.value = eventLoading.value = false
+  }
 }
 
 // ── KPI ───────────────────────────────────────────────────────
@@ -86,13 +94,17 @@ const checkinForm = reactive<{ cycle_days: number; daily_silver: number; milesto
 })
 
 const loadCheckin = async () => {
-  const res = await missionApi.getCheckinConfig()
-  if (res.code === 0 && res.data) {
-    checkinForm.cycle_days   = res.data.cycle_days
-    checkinForm.daily_silver = res.data.daily_silver
-    checkinForm.milestones   = res.data.milestones.map(m => ({ ...m, rewards: m.rewards.map(r => ({ ...r })) }))
-    checkinStatus.value       = res.data.status
-    checkinRejectReason.value = res.data.reject_reason ?? ''
+  try {
+    const res = await missionApi.getCheckinConfig()
+    if (res.code === 0 && res.data) {
+      checkinForm.cycle_days   = res.data.cycle_days
+      checkinForm.daily_silver = res.data.daily_silver
+      checkinForm.milestones   = res.data.milestones.map(m => ({ ...m, rewards: m.rewards.map(r => ({ ...r })) }))
+      checkinStatus.value       = res.data.status
+      checkinRejectReason.value = res.data.reject_reason ?? ''
+    }
+  } catch {
+    message.error('載入簽到設定失敗')
   }
 }
 
@@ -130,16 +142,27 @@ const milestoneExtraCost = (ms: CheckinMilestone) => {
 
 const saveCheckinDraft = async () => {
   checkinSaving.value = true
-  const res = await missionApi.saveCheckinConfig({ ...checkinForm, status: 'DRAFT' })
-  checkinSaving.value = false
-  if (res.code === 0) { message.success('已儲存草稿'); await loadCheckin() }
+  try {
+    const res = await missionApi.saveCheckinConfig({ ...checkinForm, status: 'DRAFT' })
+    if (res.code === 0) { message.success('已儲存草稿'); await loadCheckin() }
+  } catch {
+    message.error('儲存草稿失敗')
+  } finally {
+    checkinSaving.value = false
+  }
 }
 const submitCheckin = async () => {
   checkinSaving.value = true
-  await missionApi.saveCheckinConfig({ ...checkinForm, status: 'DRAFT' })
-  const res = await missionApi.submitCheckinForReview('operator')
-  checkinSaving.value = false
-  if (res.code === 0) { message.success('已送出審核'); await loadCheckin() }
+  try {
+    const saveRes = await missionApi.saveCheckinConfig({ ...checkinForm, status: 'DRAFT' })
+    if (saveRes.code !== 0) { message.error('儲存失敗'); return }
+    const res = await missionApi.submitCheckinForReview(authStore.user?.name ?? 'operator')
+    if (res.code === 0) { message.success('已送出審核'); await loadCheckin() }
+  } catch {
+    message.error('送審失敗')
+  } finally {
+    checkinSaving.value = false
+  }
 }
 
 // ── Drawer (shared DAILY / EVENT) ────────────────────────────
@@ -210,29 +233,59 @@ const drawerCost = computed(() => {
 const saveDraft = async () => {
   if (!dform.name.trim()) { message.warning('請填寫任務名稱'); return }
   saving.value = true
-  const res = await missionApi.saveMission({ id: editId.value, type: drawerType.value, ...dform, created_by: 'operator' })
-  saving.value = false
-  if (res.code === 0) { message.success('已儲存草稿'); showDrawer.value = false; loadAll() }
+  try {
+    const res = await missionApi.saveMission({
+      id: editId.value, type: drawerType.value, ...dform,
+      created_by: authStore.user?.name ?? 'operator'
+    })
+    if (res.code === 0) { message.success('已儲存草稿'); showDrawer.value = false; loadAll() }
+  } catch {
+    message.error('儲存失敗')
+  } finally {
+    saving.value = false
+  }
 }
 const saveAndSubmit = async () => {
   if (!dform.name.trim()) { message.warning('請填寫任務名稱'); return }
   saving.value = true
-  const sr = await missionApi.saveMission({ id: editId.value, type: drawerType.value, ...dform, created_by: 'operator' })
-  if (sr.code !== 0) { saving.value = false; return }
-  const res = await missionApi.submitForReview(sr.data!.id, 'operator')
-  saving.value = false
-  if (res.code === 0) { message.success('已送出審核'); showDrawer.value = false; loadAll() }
+  try {
+    const sr = await missionApi.saveMission({
+      id: editId.value, type: drawerType.value, ...dform,
+      created_by: authStore.user?.name ?? 'operator'
+    })
+    if (sr.code !== 0) return
+    if (!sr.data?.id) { message.error('儲存回傳資料異常'); return }
+    const res = await missionApi.submitForReview(sr.data.id, authStore.user?.name ?? 'operator')
+    if (res.code === 0) { message.success('已送出審核'); showDrawer.value = false; loadAll() }
+  } catch {
+    message.error('操作失敗')
+  } finally {
+    saving.value = false
+  }
 }
 
 // Actions
-const submitItem    = async (r: Mission) => { const res = await missionApi.submitForReview(r.id, 'operator'); if (res.code === 0) { message.success('已送出審核'); loadAll() } }
-const handleToggle  = async (r: Mission, a: boolean) => { const res = await missionApi.toggleStatus(r.id, a); if (res.code === 0) { message.success(a ? '已上線' : '已下架'); loadAll() } }
-const handleDelete  = async (r: Mission) => { const res = await missionApi.deleteMission(r.id); if (res.code === 0) { message.success('已刪除'); loadAll() } }
+const submitItem = async (r: Mission) => {
+  try {
+    const res = await missionApi.submitForReview(r.id, authStore.user?.name ?? 'operator')
+    if (res.code === 0) { message.success('已送出審核'); loadAll() }
+  } catch { message.error('送審失敗') }
+}
+const handleToggle = async (r: Mission, a: boolean) => {
+  try {
+    const res = await missionApi.toggleStatus(r.id, a)
+    if (res.code === 0) { message.success(a ? '已上線' : '已下架'); loadAll() }
+  } catch { message.error('操作失敗') }
+}
+const handleDelete = async (r: Mission) => {
+  try {
+    const res = await missionApi.deleteMission(r.id)
+    if (res.code === 0) { message.success('已刪除'); loadAll() }
+  } catch { message.error('刪除失敗') }
+}
 
-// Helpers
-const fmtDate  = (iso?: string) => iso ? new Date(iso).toLocaleDateString('zh-TW') : '—'
-const fmtNum   = (n: number) => n.toLocaleString()
-const canEdit  = (s: MissionStatus) => s === 'DRAFT' || s === 'REJECTED'
+// Helpers — fmtDate / fmtNum imported from @/utils/formatters
+const canEdit = (s: MissionStatus) => s === 'DRAFT' || s === 'REJECTED'
 
 // ── Column factory ────────────────────────────────────────────
 const makeActionBtns = (row: Mission) => {

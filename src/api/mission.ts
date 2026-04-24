@@ -1,8 +1,8 @@
 import type { Mission, MissionClaimRecord, MissionType, MissionStatus, CheckinConfig } from '@/types/mission'
 import { mockMissions, mockMissionClaimRecords, mockCheckinConfig } from '@/mocks/mission'
 import type { ApiResponse } from '@/types'
+import { delay, resolveApprovalStatus } from './client'
 
-const delay = (ms = 400) => new Promise(r => setTimeout(r, ms))
 let idSeq = mockMissions.length + 1
 
 export interface GetMissionsParams {
@@ -88,12 +88,13 @@ export const missionApi = {
     const item = mockMissions.find(i => i.id === id)
     if (!item) return { code: 404, msg: 'Not found' }
     if (action === 'approve') {
-      item.status = item.is_limited && item.scheduled_start
-        && new Date(item.scheduled_start) > new Date() ? 'SCHEDULED' : 'ACTIVE'
+      item.status = resolveApprovalStatus(item)
     } else {
       item.status = 'REJECTED'
       item.reject_reason = rejectReason
     }
+    // NOTE: reviewed_by should be provided by the real backend from JWT claims,
+    // not hard-coded here. Remove this line when connecting to a real API.
     item.reviewed_by = 'manager'
     item.reviewed_at = new Date().toISOString()
     return { code: 0, msg: 'success' }
