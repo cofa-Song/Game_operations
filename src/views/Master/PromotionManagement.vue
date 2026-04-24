@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, h, reactive } from 'vue'
+import { ref, computed, onMounted, h, reactive, watch } from 'vue'
 import {
   NCard, NDataTable, NButton, NSelect, NTag, NIcon, NSpace,
   NDrawer, NDrawerContent, NForm, NFormItem, NInput, NSwitch,
@@ -94,8 +94,13 @@ const emptyForm = (): PromotionForm => ({
   is_limited: false, scheduled_start: null, scheduled_end: null
 })
 
-const form = reactive<PromotionForm>(emptyForm())
-const editId = ref<string | undefined>(undefined)
+const form    = reactive<PromotionForm>(emptyForm())
+const editId  = ref<string | undefined>(undefined)
+// NDatePicker v-model requires number | null (Unix ms); watch-sync to ISO strings in form
+const startTs = ref<number | null>(null)
+const endTs   = ref<number | null>(null)
+watch(startTs, v => { form.scheduled_start = v ? new Date(v).toISOString() : null })
+watch(endTs,   v => { form.scheduled_end   = v ? new Date(v).toISOString() : null })
 
 const isTierType = computed(() =>
   form.type ? PROMOTION_TYPE_CONFIG[form.type as PromotionType].isTier : false
@@ -104,6 +109,7 @@ const isTierType = computed(() =>
 const openCreate = () => {
   Object.assign(form, emptyForm())
   editId.value = undefined
+  startTs.value = null; endTs.value = null
   drawerMode.value = 'create'
   showDrawer.value = true
 }
@@ -115,6 +121,8 @@ const openEdit = (row: Promotion) => {
     scheduled_start: row.scheduled_start ?? null,
     scheduled_end:   row.scheduled_end   ?? null
   })
+  startTs.value = row.scheduled_start ? new Date(row.scheduled_start).getTime() : null
+  endTs.value   = row.scheduled_end   ? new Date(row.scheduled_end).getTime()   : null
   editId.value = row.id
   drawerMode.value = 'edit'
   showDrawer.value = true
@@ -464,18 +472,16 @@ const columns = computed<DataTableColumns<Promotion>>(() => [
           <template v-if="form.is_limited">
             <NFormItem label="開始時間">
               <NDatePicker
-                v-model:value="form.scheduled_start"
+                v-model:value="startTs"
                 type="datetime"
-                value-format="yyyy-MM-dd'T'HH:mm:ss'Z'"
                 clearable
                 class="w-full"
               />
             </NFormItem>
             <NFormItem label="結束時間">
               <NDatePicker
-                v-model:value="form.scheduled_end"
+                v-model:value="endTs"
                 type="datetime"
-                value-format="yyyy-MM-dd'T'HH:mm:ss'Z'"
                 clearable
                 class="w-full"
               />
