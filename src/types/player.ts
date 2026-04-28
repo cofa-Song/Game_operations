@@ -59,6 +59,8 @@ export interface Player {
     // Permissions
     is_muted: string // 禁言 (NONE, 15M, 1H, 1D, PERMANENT)
     is_gift_disabled: boolean // 禁止贈禮
+    is_deposit_disabled: boolean // 禁止儲值
+    is_play_disabled: boolean // 禁止遊玩
 
     // Computed/Helper fields for UI
     total_assets?: number // Sum of CASH + SAFE
@@ -101,6 +103,8 @@ export interface CreatePlayerRequest {
     vip_level?: number
     is_muted?: string
     is_gift_disabled?: boolean
+    is_deposit_disabled?: boolean
+    is_play_disabled?: boolean
     is_retention_active?: boolean
     referrer_id?: string
     tags: PlayerTag[] // Usually ['TEST'] for admin created
@@ -114,6 +118,8 @@ export interface UpdatePlayerRequest {
     vip_level?: number
     is_muted?: string
     is_gift_disabled?: boolean
+    is_deposit_disabled?: boolean
+    is_play_disabled?: boolean
     gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
     birthday?: string
     email?: string

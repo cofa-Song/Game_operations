@@ -35,6 +35,8 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
         wallets: generateWallets(),
         is_muted: 'NONE',
         is_gift_disabled: false,
+        is_deposit_disabled: false,
+        is_play_disabled: false,
         // Extended Profile
         gender: i % 3 === 0 ? 'MALE' : (i % 3 === 1 ? 'FEMALE' : 'UNKNOWN'),
         birthday: '1990-01-01',

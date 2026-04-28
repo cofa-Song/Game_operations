@@ -121,6 +121,8 @@ export const playerApi = {
             is_retention_active: data.is_retention_active,
             is_muted: data.is_muted || 'NONE',
             is_gift_disabled: data.is_gift_disabled || false,
+            is_deposit_disabled: data.is_deposit_disabled || false,
+            is_play_disabled: data.is_play_disabled || false,
             register_source: 'Admin_Manual',
             register_ip: '127.0.0.1',
             register_at: new Date().toISOString(),

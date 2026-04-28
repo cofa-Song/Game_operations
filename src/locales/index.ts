@@ -109,6 +109,8 @@ export const zhTW = {
       rolloverMonitor: '流水活動監控',
       muteStatus: '禁止發言',
       giftStatus: '禁止贈禮',
+      depositStatus: '禁止儲值',
+      playStatus: '禁止遊玩',
       auditHistory: '異動紀錄',
       assetHistory: '資產變動',
       gameHistory: '對局紀錄',

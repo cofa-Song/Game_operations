@@ -144,6 +144,8 @@ const handleEdit = () => {
     // Handle legacy boolean is_muted values
     editModel.is_muted = player.value.is_muted === true ? 'PERMANENT' : (player.value.is_muted === false ? 'NONE' : player.value.is_muted)
     editModel.is_gift_disabled = player.value.is_gift_disabled
+    editModel.is_deposit_disabled = player.value.is_deposit_disabled
+    editModel.is_play_disabled = player.value.is_play_disabled
     editModel.gender = player.value.gender
     editModel.birthday = player.value.birthday
     editModel.email = player.value.email
@@ -448,6 +450,12 @@ onMounted(() => {
                 <NDescriptionsItem :label="t('player.list.giftStatus')">
                     <NTag :type="player.is_gift_disabled ? 'error' : 'success'">{{ player.is_gift_disabled ? '開啟' : '關閉' }}</NTag>
                 </NDescriptionsItem>
+                <NDescriptionsItem :label="t('player.list.depositStatus')">
+                    <NTag :type="player.is_deposit_disabled ? 'error' : 'success'">{{ player.is_deposit_disabled ? '開啟' : '關閉' }}</NTag>
+                </NDescriptionsItem>
+                <NDescriptionsItem :label="t('player.list.playStatus')">
+                    <NTag :type="player.is_play_disabled ? 'error' : 'success'">{{ player.is_play_disabled ? '開啟' : '關閉' }}</NTag>
+                </NDescriptionsItem>
              </NDescriptions>
         </NCard>
       </NGridItem>
@@ -694,6 +702,12 @@ onMounted(() => {
             </NFormItem>
             <NFormItem :label="t('player.list.giftStatus')">
                 <NSwitch v-model:value="editModel.is_gift_disabled" />
+            </NFormItem>
+            <NFormItem :label="t('player.list.depositStatus')">
+                <NSwitch v-model:value="editModel.is_deposit_disabled" />
+            </NFormItem>
+            <NFormItem :label="t('player.list.playStatus')">
+                <NSwitch v-model:value="editModel.is_play_disabled" />
             </NFormItem>
             <NFormItem :label="t('player.list.retentionCheck')">
                 <NSwitch v-model:value="editModel.is_retention_active" />
