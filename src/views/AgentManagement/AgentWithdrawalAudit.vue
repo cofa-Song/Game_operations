@@ -1,7 +1,13 @@
 <template>
-  <div class="space-y-4">
-    <!-- Search and Filter Card -->
-    <NCard title="提領審核過濾" :bordered="false" size="small" class="premium-glass">
+  <div class="p-6 flex flex-col gap-4">
+    <!-- 搜尋條件區塊 -->
+    <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+      <NCard 
+        title="提領審核過濾" 
+        class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
+        :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+        size="small"
+      >
       <template #header-extra>
         <NSpace align="center">
           <NIcon :component="CheckmarkDoneOutline" class="text-sky-500" size="18" />
@@ -40,6 +46,7 @@
         </div>
       </div>
     </NCard>
+  </div>
 
     <!-- Table Card -->
     <NCard :bordered="false" size="small" class="premium-glass overflow-hidden">
@@ -57,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, h } from 'vue'
 import { 
   NCard, NSpace, NIcon, NDatePicker, NRadioGroup, NRadioButton, 
   NDataTable, NButton, NBadge, NAvatar, NTag, useMessage, useDialog,
@@ -268,8 +275,26 @@ const getStatusConfig = (status: AgentWithdrawalStatus) => {
   }
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
   fetchData()
+  
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.addEventListener('scroll', handleScroll)
+  }
+})
+
+onBeforeUnmount(() => {
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 

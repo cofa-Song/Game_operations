@@ -1,6 +1,5 @@
-```
 <script setup lang="ts">
-import { ref, reactive, onMounted, h, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   NCard, NInput, NSelect, NDatePicker, NButton, NDataTable, NSpace, NTag,
@@ -254,15 +253,40 @@ const genderOptions = [
   { label: t('player.gender.UNKNOWN'), value: 'UNKNOWN' }
 ]
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
   fetchTagOptions()
   fetchData()
+  
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.addEventListener('scroll', handleScroll)
+  }
+})
+
+onBeforeUnmount(() => {
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
 <template>
-  <div class="p-6">
-    <NCard :title="t('navigation.playerManagement')" class="mb-6">
+  <div class="p-6 flex flex-col gap-4">
+    <!-- 搜尋條件區塊 -->
+    <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+      <NCard 
+        :title="t('navigation.playerManagement')" 
+        class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
+        :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+        size="small"
+      >
       <template #header-extra>
         <div class="flex gap-2">
             <NButton secondary @click="showTagDrawer = true">
@@ -341,6 +365,7 @@ onMounted(() => {
         </NCollapseTransition>
       </NForm>
     </NCard>
+  </div>
 
     <NDataTable
         remote

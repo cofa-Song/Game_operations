@@ -1,41 +1,42 @@
 <template>
-    <div class="chat-trigger-audit-container p-4">
-        <n-space vertical size="large">
-            <!-- Header -->
-            <n-card>
-                <n-space justify="space-between" align="center">
-                    <n-text h2 style="margin: 0">
+    <div class="flex flex-col gap-4 min-h-full">
+        <!-- 浮動搜尋區塊 -->
+        <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+            <n-card
+                size="small"
+                class="rounded-xl shadow-sm border-0 transition-all duration-300"
+                :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+            >
+                <div class="flex items-center justify-between mb-3">
+                    <n-text tag="h2" style="margin: 0; font-size: 16px; font-weight: 700;">
                         <n-icon><shield-checkmark-icon /></n-icon>
                         {{ t('chatManagement.triggerAudit.title') }}
                     </n-text>
-                </n-space>
-            </n-card>
+                </div>
 
-            <!-- Search Filter -->
-            <n-card>
                 <n-form inline :label-width="80" label-placement="left" :model="query">
                     <n-grid :cols="24" :x-gap="24">
                         <n-form-item-gi :span="6" :label="t('chatManagement.triggerAudit.columns.playerId')">
-                            <n-input 
-                                v-model:value="query.playerId" 
-                                clearable 
-                                :placeholder="t('chatManagement.triggerAudit.columns.playerId')" 
+                            <n-input
+                                v-model:value="query.playerId"
+                                clearable
+                                :placeholder="t('chatManagement.triggerAudit.columns.playerId')"
                                 @keydown.enter="handleSearch"
                             />
                         </n-form-item-gi>
                         <n-form-item-gi :span="6" :label="t('chatManagement.triggerAudit.columns.status')">
-                            <n-select 
-                                v-model:value="query.status" 
-                                :options="statusOptions" 
-                                clearable 
+                            <n-select
+                                v-model:value="query.status"
+                                :options="statusOptions"
+                                clearable
                                 @update:value="handleSearch"
                             />
                         </n-form-item-gi>
                         <n-form-item-gi :span="6" label="時間">
-                            <n-date-picker 
-                                v-model:formatted-value="query.timeRange" 
-                                type="daterange" 
-                                clearable 
+                            <n-date-picker
+                                v-model:formatted-value="query.timeRange"
+                                type="daterange"
+                                clearable
                                 value-format="yyyy-MM-dd"
                                 @update:value="handleSearch"
                             />
@@ -49,36 +50,36 @@
                     </n-grid>
                 </n-form>
             </n-card>
-
-            <!-- Batch Actions -->
-            <n-card v-if="checkedRowKeys.length > 0">
-                <n-space align="center">
-                    <n-text type="info">已選擇 {{ checkedRowKeys.length }} 筆待處理紀錄</n-text>
-                    <n-popconfirm
-                        @positive-click="handleBatchProcess('BAN')"
-                        :positive-text="t('common.confirm')"
-                        :negative-text="t('common.cancel')"
-                    >
-                        <template #trigger>
-                            <n-button type="error">{{ t('chatManagement.triggerAudit.process.batchBan') }}</n-button>
-                        </template>
-                        {{ t('chatManagement.triggerAudit.process.confirmBatch') }}
-                    </n-popconfirm>
-                    <n-popconfirm
-                        @positive-click="handleBatchProcess('IGNORE')"
-                        :positive-text="t('common.confirm')"
-                        :negative-text="t('common.cancel')"
-                    >
-                        <template #trigger>
-                            <n-button type="success">{{ t('chatManagement.triggerAudit.process.batchIgnore') }}</n-button>
-                        </template>
-                        {{ t('chatManagement.triggerAudit.process.confirmBatch') }}
-                    </n-popconfirm>
-                </n-space>
-            </n-card>
+        </div>
 
             <!-- Data Table -->
-            <n-card>
+            <n-card class="rounded-xl shadow-sm border-0">
+                <div v-if="checkedRowKeys.length > 0" class="mb-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100 flex items-center justify-between">
+                    <n-space align="center">
+                        <n-text type="info" class="font-bold">已選擇 {{ checkedRowKeys.length }} 筆待處理紀錄</n-text>
+                        <n-popconfirm
+                            @positive-click="handleBatchProcess('BAN')"
+                            :positive-text="t('common.confirm')"
+                            :negative-text="t('common.cancel')"
+                        >
+                            <template #trigger>
+                                <n-button type="error" size="small">{{ t('chatManagement.triggerAudit.process.batchBan') }}</n-button>
+                            </template>
+                            {{ t('chatManagement.triggerAudit.process.confirmBatch') }}
+                        </n-popconfirm>
+                        <n-popconfirm
+                            @positive-click="handleBatchProcess('IGNORE')"
+                            :positive-text="t('common.confirm')"
+                            :negative-text="t('common.cancel')"
+                        >
+                            <template #trigger>
+                                <n-button type="success" size="small">{{ t('chatManagement.triggerAudit.process.batchIgnore') }}</n-button>
+                            </template>
+                            {{ t('chatManagement.triggerAudit.process.confirmBatch') }}
+                        </n-popconfirm>
+                    </n-space>
+                    <n-button text type="primary" @click="checkedRowKeys = []">取消選擇</n-button>
+                </div>
                 <n-data-table
                     :columns="columns"
                     :data="tableData"
@@ -92,7 +93,7 @@
                     striped
                 />
             </n-card>
-        </n-space>
+        </div>
 
         <!-- Process Modal -->
         <n-modal
@@ -139,11 +140,10 @@
                 </n-space>
             </n-form>
         </n-modal>
-    </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, h, VNode } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, h, VNode } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { 
     useMessage, 
@@ -388,14 +388,34 @@ const handleBatchProcess = async (action: 'BAN' | 'IGNORE') => {
     }
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+    const target = e.target as HTMLElement
+    isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
     fetchData()
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.addEventListener('scroll', handleScroll)
+    }
+})
+
+onBeforeUnmount(() => {
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.removeEventListener('scroll', handleScroll)
+    }
 })
 
 </script>
 
 <style scoped>
-.chat-trigger-audit-container {
-    height: 100%;
+.premium-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.6) !important;
 }
 </style>

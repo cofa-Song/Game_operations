@@ -613,10 +613,21 @@ const handleResize = () => {
   }
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
   setTimeRangeByGranularity()
   handleSearch()
   window.addEventListener('resize', handleResize)
+  
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.addEventListener('scroll', handleScroll)
+  }
 })
 
 onBeforeUnmount(() => {
@@ -624,13 +635,23 @@ onBeforeUnmount(() => {
   if (chartInstance) {
     chartInstance.dispose()
   }
+  
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
 <template>
   <div class="h-full flex flex-col gap-4">
     <!-- 搜尋條件區塊 -->
-    <NCard class="rounded-xl shadow-sm border-0 premium-card" size="small">
+    <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+      <NCard 
+        class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
+        :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+        size="small"
+      >
       <div class="flex flex-col gap-4">
         <!-- 第一排條件: 基礎搜尋條件 -->
         <NGrid x-gap="16" y-gap="8" cols="1 768:3 1024:8">
@@ -786,6 +807,7 @@ onBeforeUnmount(() => {
         </NCollapseTransition>
       </div>
     </NCard>
+  </div>
 
     <div class="flex flex-col gap-4">
       <!-- 數據圖表 -->

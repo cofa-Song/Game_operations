@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, h, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, h, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns, NCollapseTransition, NImage, NUpload } from 'naive-ui'
 import { SearchOutline, RefreshOutline, CreateOutline, AddOutline, ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
@@ -375,6 +375,12 @@ const fetchData = async () => {
     }
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+    const target = e.target as HTMLElement
+    isSticky.value = target.scrollTop > 20
+}
+
 onMounted(async () => {
     // Default to past week
     const now = new Date()
@@ -388,6 +394,18 @@ onMounted(async () => {
     if (pRes.code === 0) providers.value = pRes.data
     if (tRes.code === 0) gameTypes.value = tRes.data
     fetchData()
+
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.addEventListener('scroll', handleScroll)
+    }
+})
+
+onBeforeUnmount(() => {
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.removeEventListener('scroll', handleScroll)
+    }
 })
 
 // 快速選擇時間
@@ -505,132 +523,146 @@ const handleSubmit = async () => {
     }
 }
 
-
 </script>
 
 <template>
-    <div class="p-6">
-        <NCard :title="t('game.list.title')" class="mb-4">
-            <NForm :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="handleSearch">
-              <div class="flex flex-col gap-4">
-                <!-- 第一排: 基礎搜尋條件 -->
-                <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
-                    <NFormItem :label="t('game.list.gameName')" :show-feedback="false">
-                        <div class="relative">
-                            <NRadioGroup v-model:value="gameSearchType" name="gameSearchType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
-                                <NRadio value="id">ID</NRadio>
-                                <NRadio value="name">名稱</NRadio>
-                            </NRadioGroup>
-                            <NInput v-model:value="gameSearchQuery" :placeholder="gameSearchType === 'id' ? '請輸入遊戲 ID' : '請輸入遊戲名稱'" clearable style="width: 200px" />
-                        </div>
-                    </NFormItem>
-                    <NFormItem :label="t('game.list.vendor')" :show-feedback="false">
-                        <NSelect v-model:value="searchForm.provider_id" :options="providerOptions" :placeholder="t('common.all')" clearable style="width: 160px" />
-                    </NFormItem>
-                    <NFormItem :label="t('common.status')" :show-feedback="false">
-                        <NSelect v-model:value="searchForm.status" :options="statusFilterOptions" :placeholder="t('common.all')" clearable style="width: 120px" />
-                    </NFormItem>
-                    <NFormItem label="快速切換" :show-feedback="false">
-                        <NSpace wrap>
-                            <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
-                            <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
-                            <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
-                            <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
-                            <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
-                            <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
-                        </NSpace>
-                    </NFormItem>
-
-                    <div class="flex gap-2 mb-[2px]">
-                        <NButton type="primary" @click="handleSearch" :loading="loading">
-                            <template #icon><SearchOutline /></template>
-                            {{ t('common.search') }}
-                        </NButton>
-                        <NButton secondary @click="() => { dateRange = null; fetchData() }" :loading="loading">
-                            <template #icon><RefreshOutline /></template>
-                            {{ t('common.all') }}
-                        </NButton>
-                        <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
-                            <template #icon>
-                                <ChevronDownOutline v-if="!showAdvancedSearch" />
-                                <ChevronUpOutline v-else />
+    <div class="flex flex-col gap-4 min-h-full">
+        <!-- 浮動搜尋區塊 -->
+        <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+            <NCard
+                :title="t('game.list.title')"
+                size="small"
+                class="rounded-xl shadow-sm border-0 transition-all duration-300"
+                :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+            >
+                <NForm :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="handleSearch">
+                  <div class="flex flex-col gap-4">
+                    <!-- 第一排: 基礎搜尋條件 -->
+                    <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+                        <NFormItem label-placement="top" :show-feedback="false">
+                            <template #label>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-slate-500 font-bold">{{ t('game.list.gameName') }}</span>
+                                    <NRadioGroup v-model:value="gameSearchType" name="gameSearchType" size="small">
+                                        <NRadio value="id">ID</NRadio>
+                                        <NRadio value="name">名稱</NRadio>
+                                    </NRadioGroup>
+                                </div>
                             </template>
-                            {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+                            <NInput v-model:value="gameSearchQuery" :placeholder="gameSearchType === 'id' ? '請輸入遊戲 ID' : '請輸入遊戲名稱'" clearable style="width: 200px" />
+                        </NFormItem>
+                        <NFormItem :label="t('game.list.vendor')" :show-feedback="false">
+                            <NSelect v-model:value="searchForm.provider_id" :options="providerOptions" :placeholder="t('common.all')" clearable style="width: 160px" />
+                        </NFormItem>
+                        <NFormItem :label="t('common.status')" :show-feedback="false">
+                            <NSelect v-model:value="searchForm.status" :options="statusFilterOptions" :placeholder="t('common.all')" clearable style="width: 120px" />
+                        </NFormItem>
+                        <NFormItem label="快速切換" :show-feedback="false">
+                            <NSpace wrap>
+                                <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
+                                <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
+                                <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
+                                <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
+                                <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
+                                <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
+                            </NSpace>
+                        </NFormItem>
+
+                        <div class="flex gap-2 mb-[2px]">
+                            <NButton type="primary" @click="handleSearch" :loading="loading">
+                                <template #icon><SearchOutline /></template>
+                                {{ t('common.search') }}
+                            </NButton>
+                            <NButton secondary @click="() => { dateRange = null; fetchData() }" :loading="loading">
+                                <template #icon><RefreshOutline /></template>
+                                {{ t('common.all') }}
+                            </NButton>
+                            <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                                <template #icon>
+                                    <ChevronDownOutline v-if="!showAdvancedSearch" />
+                                    <ChevronUpOutline v-else />
+                                </template>
+                                {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+                            </NButton>
+                        </div>
+                    </div>
+
+                    <!-- 進階搜尋條件 (可折疊) -->
+                    <NCollapseTransition :show="showAdvancedSearch">
+                        <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
+                            <NFormItem :label="t('game.list.tag')" :show-feedback="false">
+                                <NSelect v-model:value="searchForm.marketing_tag" :options="tagOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
+                            </NFormItem>
+                            <NFormItem :label="t('game.list.typeTag')" :show-feedback="false">
+                                <NSelect v-model:value="searchForm.type_id" :options="typeOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
+                            </NFormItem>
+                            <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
+                                <NSelect v-model:value="granularity" :options="granularityOptions" />
+                            </NFormItem>
+                            <NFormItem :label="t('game.list.dateRange')" :show-feedback="false" class="w-80">
+                                <NDatePicker
+                                    v-if="granularity === 'hour'"
+                                    v-model:value="dateRange"
+                                    type="datetimerange"
+                                    clearable
+                                    format="yyyy-MM-dd HH:mm"
+                                    class="w-full"
+                                />
+                                <NDatePicker
+                                    v-if="granularity === 'day'"
+                                    v-model:value="dateRange"
+                                    type="daterange"
+                                    clearable
+                                    class="w-full"
+                                />
+                                <NDatePicker
+                                    v-if="granularity === 'month'"
+                                    v-model:value="dateRange"
+                                    type="monthrange"
+                                    clearable
+                                    class="w-full"
+                                />
+                            </NFormItem>
+                        </div>
+                    </NCollapseTransition>
+                  </div>
+                </NForm>
+            </NCard>
+        </div>
+
+        <!-- 資料列表區塊 -->
+        <div class="relative z-10">
+            <NCard class="rounded-xl shadow-sm border-0">
+                <div class="mb-4 flex flex-wrap justify-between items-center gap-4">
+                    <div class="flex gap-2">
+                        <NButton
+                            type="warning"
+                            :disabled="!hasPendingChanges"
+                            @click="showSaveConfirmModal = true"
+                            :loading="loading"
+                        >
+                            <template #icon><CreateOutline /></template>
+                            {{ t('game.list.accessOperation') }}
+                            <span v-if="hasPendingChanges" class="ml-1">({{ Object.keys(pendingChanges).length }})</span>
+                        </NButton>
+                    </div>
+                    <div>
+                        <NButton type="primary" @click="showAddGameModal = true">
+                            <template #icon><AddOutline /></template>
+                            新增遊戲
                         </NButton>
                     </div>
                 </div>
+                <NDataTable
+                    :columns="columns"
+                    :data="games"
+                    :loading="loading"
+                    :pagination="pagination"
+                    :scroll-x="1600"
+                />
+            </NCard>
+        </div>
 
-                <!-- 第二排: 進階搜尋條件 (可折疊) -->
-                <NCollapseTransition :show="showAdvancedSearch">
-                    <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
-                        <NFormItem :label="t('game.list.tag')" :show-feedback="false">
-                            <NSelect v-model:value="searchForm.marketing_tag" :options="tagOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
-                        </NFormItem>
-                        <NFormItem :label="t('game.list.typeTag')" :show-feedback="false">
-                            <NSelect v-model:value="searchForm.type_id" :options="typeOptions" :placeholder="t('common.all')" clearable style="width: 140px" />
-                        </NFormItem>
-                        <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
-                            <NSelect v-model:value="granularity" :options="granularityOptions" class="bg-white/50" />
-                        </NFormItem>
-                        <NFormItem :label="t('game.list.dateRange')" :show-feedback="false" class="w-80">
-                            <NDatePicker 
-                            v-if="granularity === 'hour'"
-                            v-model:value="dateRange" 
-                            type="datetimerange" 
-                            clearable 
-                            format="yyyy-MM-dd HH:mm"
-                            class="w-full bg-white/50"
-                            />
-                            <NDatePicker 
-                            v-if="granularity === 'day'"
-                            v-model:value="dateRange" 
-                            type="daterange" 
-                            clearable 
-                            class="w-full bg-white/50"
-                            />
-                            <NDatePicker 
-                            v-if="granularity === 'month'"
-                            v-model:value="dateRange" 
-                            type="monthrange" 
-                            clearable 
-                            class="w-full bg-white/50"
-                            />
-                        </NFormItem>
-                    </div>
-                </NCollapseTransition>
-              </div>
-            </NForm>
-        </NCard>
-
-        <NCard>
-            <div class="mb-4 flex flex-wrap justify-between items-center gap-4">
-                <div class="flex gap-2">
-                    <NButton 
-                        type="warning" 
-                        :disabled="!hasPendingChanges" 
-                        @click="showSaveConfirmModal = true"
-                        :loading="loading"
-                    >
-                        <template #icon><CreateOutline /></template>
-                        {{ t('game.list.accessOperation') }}
-                        <span v-if="hasPendingChanges" class="ml-1">({{ Object.keys(pendingChanges).length }})</span>
-                    </NButton>
-                </div>
-                <div>
-                    <NButton type="primary" @click="showAddGameModal = true">
-                        <template #icon><AddOutline /></template>
-                        新增遊戲
-                    </NButton>
-                </div>
-            </div>
-            <NDataTable
-                :columns="columns"
-                :data="games"
-                :loading="loading"
-                :pagination="pagination"
-                :scroll-x="1600"
-            />
-        </NCard>
 
         <!-- Edit Modal -->
         <NModal v-model:show="showEditModal" preset="card" :title="t('game.list.editTitle')" style="width: 500px">
@@ -782,3 +814,12 @@ const handleSubmit = async () => {
         />
     </div>
 </template>
+
+<style scoped>
+.premium-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.6) !important;
+}
+</style>

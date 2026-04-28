@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick, h } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { 
-  NGrid, NGridItem, NDataTable, NButton, NSpace, NTag, 
+  NGrid, NGridItem, NDataTable, NButton, NSpace, NTag, NCard,
   NForm, NFormItem, NInput, NInputNumber, NSelect, NDatePicker, NModal, 
   NScrollbar, NIcon, useMessage, 
   DataTableColumns 
@@ -295,20 +295,43 @@ const openLogs = async (id: string) => {
   logLoading.value = false;
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
   handleSearch()
   window.addEventListener('resize', () => { channelChart?.resize(); statusChart?.resize(); trendChart?.resize(); })
+  
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.addEventListener('scroll', handleScroll)
+  }
+})
+
+onBeforeUnmount(() => {
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
 <template>
-  <div class="premium-container p-6 min-h-full">
+  <div class="premium-container p-6 min-h-full flex flex-col gap-8">
     <!-- 背景修飾（亮色模式調整） -->
     <div class="tech-glow glow-1"></div>
 
-    <div class="content-wrapper space-y-8 relative z-10">
-      <!-- 搜尋區塊 (移至最上方) -->
-      <NCard :title="t('finance.paymentChannel.title')" class="mb-6">
+    <!-- 搜尋區塊 (移至最上方) -->
+    <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+      <NCard 
+        :title="t('finance.paymentChannel.title')" 
+        class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
+        :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+        size="small"
+      >
         <NForm inline :model="searchForm" label-placement="left" class="flex-wrap gap-4 mt-4" label-width="auto">
           <NFormItem label="建立時間">
             <NDatePicker v-model:value="searchForm.timeRange" type="daterange" clearable style="width: 280px" />
@@ -330,6 +353,9 @@ onMounted(() => {
           </NFormItem>
         </NForm>
       </NCard>
+    </div>
+
+    <div class="content-wrapper space-y-8 relative z-10 flex-1">
 
       <!-- 1. 科技亮色統計層 -->
       <NGrid :x-gap="20" :y-gap="20" :cols="4">
@@ -498,7 +524,7 @@ onMounted(() => {
   background-color: #f8fafc; /* Slate 50 */
   color: #1e293b;
   position: relative;
-  overflow: hidden;
+  /* overflow: hidden; */ /* Removed to allow sticky children */
 }
 
 .tech-card {

@@ -1,73 +1,74 @@
 <template>
-  <main class="flex-1 p-4 md:p-6 overflow-y-auto animate-fade-in-up">
-    <div class="max-w-[1400px] mx-auto space-y-6">
-      <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ t('navigation.chatTicketManagement') }}</h1>
-          <p class="text-sm text-slate-500 mt-1">統一監控全站客服工單分配狀態及處理進度</p>
+  <main class="flex-1 p-4 md:p-6 animate-fade-in-up">
+    <div class="max-w-[1400px] mx-auto flex flex-col gap-4">
+
+      <!-- Page Title (normal flow, scrolls away naturally) -->
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ t('navigation.chatTicketManagement') }}</h1>
+        <p class="text-sm text-slate-500 mt-1">統一監控全站客服工單分配狀態及處理進度</p>
+      </div>
+
+      <!-- Sticky Toolbar -->
+      <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-1': isSticky }">
+        <div
+          class="rounded-2xl border transition-all duration-300"
+          :class="isSticky
+            ? 'sticky-glass shadow-xl mx-2 border-slate-200/60 px-5 py-3'
+            : 'bg-white dark:bg-gray-800 shadow-sm border-slate-200 dark:border-gray-700 px-6 py-4'"
+        >
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div class="w-full sm:w-64">
+                <n-input v-model:value="searchQuery" placeholder="搜尋工單號 / 玩家 ID / 客服 ID" clearable>
+                  <template #prefix>
+                    <div class="i-heroicons-magnifying-glass-20-solid relative top-[1px]" />
+                  </template>
+                </n-input>
+              </div>
+              <div class="w-full sm:w-40">
+                <n-select v-model:value="searchStatus" :options="statusOptions" placeholder="所有狀態" clearable />
+              </div>
+              <div class="w-full sm:w-48">
+                <n-select v-model:value="searchCategory" :options="categoryOptions" placeholder="問題分類" clearable />
+              </div>
+              <div class="relative group">
+                <n-date-picker
+                  v-model:value="dateRange"
+                  type="daterange"
+                  clearable
+                  placeholder="建單日期範圍"
+                  class="w-full sm:w-64"
+                />
+              </div>
+              <n-button type="primary" secondary @click="fetchData">
+                <template #icon><div class="i-heroicons-magnifying-glass-20-solid" /></template>
+                搜尋
+              </n-button>
+            </div>
+            <div class="flex gap-2">
+              <n-button secondary type="primary">
+                <template #icon><div class="i-heroicons-arrow-down-tray-20-solid" /></template>
+                匯出報表
+              </n-button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Main Content Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 flex flex-col min-h-[600px] premium-glass">
-        <!-- Toolbar -->
-        <div class="px-6 py-5 border-b border-slate-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-gray-800/50">
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-             <div class="w-full sm:w-64">
-              <n-input v-model:value="searchQuery" placeholder="搜尋工單號 / 玩家 ID / 客服 ID" clearable>
-                <template #prefix>
-                  <div class="i-heroicons-magnifying-glass-20-solid relative top-[1px]" />
-                </template>
-              </n-input>
-            </div>
-            
-            <div class="w-full sm:w-40">
-              <n-select v-model:value="searchStatus" :options="statusOptions" placeholder="所有狀態" clearable />
-            </div>
-            
-            <div class="w-full sm:w-48">
-              <n-select v-model:value="searchCategory" :options="categoryOptions" placeholder="問題分類" clearable />
-            </div>
-
-            <div class="relative group">
-              <n-date-picker 
-                v-model:value="dateRange" 
-                type="daterange" 
-                clearable 
-                placeholder="建單日期範圍" 
-                class="w-full sm:w-64"
-              />
-            </div>
-            
-            <n-button type="primary" secondary @click="fetchData">
-              <template #icon><div class="i-heroicons-magnifying-glass-20-solid" /></template>
-              搜尋
-            </n-button>
-          </div>
-          
-           <div class="flex gap-2">
-            <n-button secondary type="primary">
-              <template #icon><div class="i-heroicons-arrow-down-tray-20-solid" /></template>
-              匯出報表
-            </n-button>
-          </div>
-        </div>
-
-        <div class="flex-1 overflow-x-auto p-4">
-          <n-data-table
-            :columns="columns"
-            :data="filteredTickets"
-            :loading="loading"
-            :pagination="pagination"
-            :bordered="false"
-            :single-line="false"
-            class="min-w-[1000px]"
-          />
-        </div>
+      <!-- Data Table Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 overflow-x-auto p-4">
+        <n-data-table
+          :columns="columns"
+          :data="filteredTickets"
+          :loading="loading"
+          :pagination="pagination"
+          :bordered="false"
+          :single-line="false"
+          class="min-w-[1000px]"
+        />
       </div>
     </div>
-    
+
     <!-- 強制轉派彈窗 -->
     <n-modal
       v-model:show="showAssignModal"
@@ -103,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
+import { ref, computed, h, onMounted, onBeforeUnmount } from 'vue'
 import { NInput, NButton, NTag, NSelect, NDatePicker, NModal, NForm, NFormItem, NDataTable, useMessage, useDialog, DataTableColumns, NDropdown, NIcon } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 
@@ -371,8 +372,25 @@ const columns = computed<DataTableColumns<AdminTicket>>(() => [
   }
 ])
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
   fetchData()
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.addEventListener('scroll', handleScroll)
+  }
+})
+
+onBeforeUnmount(() => {
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
@@ -383,5 +401,10 @@ onMounted(() => {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   box-shadow: var(--card-shadow);
+}
+.sticky-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 </style>

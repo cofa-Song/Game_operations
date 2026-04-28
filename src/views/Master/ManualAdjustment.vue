@@ -1,126 +1,137 @@
 <template>
-    <div class="manual-adjustment-container">
-        <n-card title="人工存提 (Manual Adjustment)" size="large">
-            <n-grid x-gap="24" :cols="1">
-                <!-- 1. Player Search -->
-                <n-gi>
-                    <n-form-item label="玩家 ID (Player ID)" required>
-                        <n-input-group>
-                            <n-input v-model:value="searchId" placeholder="輸入玩家 ID" @keydown.enter="handleSearch" />
-                            <n-button type="primary" @click="handleSearch" :loading="searching">
-                                鎖定對象
-                            </n-button>
-                        </n-input-group>
-                    </n-form-item>
-                </n-gi>
-            
-                <!-- Player Info Display -->
-                <n-gi v-if="player">
-                    <n-alert type="info" title="當前鎖定玩家" class="mb-4">
-                        <template #icon>
-                            <n-icon>
-                                <person-icon />
-                            </n-icon>
-                        </template>
-                        <div class="player-info-grid">
-                            <div class="info-item">
-                                <span class="label">ID:</span>
-                                <span class="value">{{ player.id }}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">帳號:</span>
-                                <span class="value">{{ player.username }}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">暱稱:</span>
-                                <span class="value">{{ player.display_name }}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="label">標籤:</span>
-                                <n-tag v-for="tag in player.tags" :key="tag" size="small" type="warning" class="mr-1">
-                                    {{ tag }}
-                                </n-tag>
-                            </div>
+    <div class="manual-adjustment-container flex flex-col gap-6">
+        <!-- 頂部浮動搜尋區塊 -->
+        <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+            <NCard 
+                title="人工存提 (Manual Adjustment)" 
+                size="small"
+                class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
+                :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+            >
+                <template #header-extra>
+                    <div class="flex items-center gap-2">
+                        <n-tag v-if="player" type="success" size="small" round>
+                            <template #icon><n-icon :component="PersonIcon" /></template>
+                            已鎖定: {{ player.username }}
+                        </n-tag>
+                    </div>
+                </template>
+                <n-form-item :show-label="false" :show-feedback="false">
+                    <n-input-group>
+                        <n-input v-model:value="searchId" placeholder="輸入玩家 ID" @keydown.enter="handleSearch" class="tech-input-light" />
+                        <n-button type="primary" @click="handleSearch" :loading="searching">
+                            鎖定對象
+                        </n-button>
+                    </n-input-group>
+                </n-form-item>
+            </NCard>
+        </div>
+
+        <div class="flex flex-col gap-6 relative z-10">
+            <!-- 玩家資訊展示 -->
+            <n-card v-if="player" class="rounded-xl shadow-sm border-0 premium-card">
+                <n-alert type="info" title="當前鎖定玩家" class="mb-4">
+                    <template #icon>
+                        <n-icon>
+                            <person-icon />
+                        </n-icon>
+                    </template>
+                    <div class="player-info-grid">
+                        <div class="info-item">
+                            <span class="label">ID:</span>
+                            <span class="value">{{ player.id }}</span>
                         </div>
-                        <n-divider />
-                        <div class="wallet-info">
-                            <n-statistic label="Cash 餘額" :value="cashBalance">
-                                <template #prefix>$</template>
-                            </n-statistic>
-                            <n-statistic label="Bonus 餘額" :value="bonusBalance" class="ml-8">
-                                <template #prefix>$</template>
-                            </n-statistic>
+                        <div class="info-item">
+                            <span class="label">帳號:</span>
+                            <span class="value">{{ player.username }}</span>
                         </div>
-                    </n-alert>
-                </n-gi>
+                        <div class="info-item">
+                            <span class="label">暱稱:</span>
+                            <span class="value">{{ player.display_name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">標籤:</span>
+                            <n-tag v-for="tag in player.tags" :key="tag" size="small" type="warning" class="mr-1">
+                                {{ tag }}
+                            </n-tag>
+                        </div>
+                    </div>
+                    <n-divider />
+                    <div class="wallet-info">
+                        <n-statistic label="Cash 餘額" :value="cashBalance">
+                            <template #prefix>$</template>
+                        </n-statistic>
+                        <n-statistic label="Bonus 餘額" :value="bonusBalance" class="ml-8">
+                            <template #prefix>$</template>
+                        </n-statistic>
+                    </div>
+                </n-alert>
 
                 <!-- 2. Operation Form -->
-                <n-gi v-if="player">
-                    <n-form ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="120" require-mark-placement="right-hanging">
-                        
-                        <n-form-item label="操作類型" path="type">
-                            <n-radio-group v-model:value="formModel.type" name="type">
-                                <n-space>
-                                    <n-radio value="DEPOSIT">人工存款 (加點)</n-radio>
-                                    <n-radio value="WITHDRAW">人工提款 (扣點)</n-radio>
-                                </n-space>
-                            </n-radio-group>
-                        </n-form-item>
+                <n-form ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="120" require-mark-placement="right-hanging">
+                    
+                    <n-form-item label="操作類型" path="type">
+                        <n-radio-group v-model:value="formModel.type" name="type">
+                            <n-space>
+                                <n-radio value="DEPOSIT">人工存款 (加點)</n-radio>
+                                <n-radio value="WITHDRAW">人工提款 (扣點)</n-radio>
+                            </n-space>
+                        </n-radio-group>
+                    </n-form-item>
 
-                        <n-form-item label="目標錢包" path="walletType">
-                            <n-select v-model:value="formModel.walletType" :options="walletOptions" />
-                        </n-form-item>
+                    <n-form-item label="目標錢包" path="walletType">
+                        <n-select v-model:value="formModel.walletType" :options="walletOptions" />
+                    </n-form-item>
 
-                        <n-form-item label="調整金額" path="amount">
-                            <n-input-number v-model:value="formModel.amount" :min="1" :precision="2" placeholder="輸入金額" style="width: 100%">
-                                <template #prefix>$</template>
-                            </n-input-number>
-                        </n-form-item>
+                    <n-form-item label="調整金額" path="amount">
+                        <n-input-number v-model:value="formModel.amount" :min="1" :precision="2" placeholder="輸入金額" style="width: 100%">
+                            <template #prefix>$</template>
+                        </n-input-number>
+                    </n-form-item>
 
-                        <n-form-item label="調整原因" path="reason">
-                            <n-select v-model:value="formModel.reason" :options="reasonOptions" placeholder="請選擇原因" />
-                        </n-form-item>
+                    <n-form-item label="調整原因" path="reason">
+                        <n-select v-model:value="formModel.reason" :options="reasonOptions" placeholder="請選擇原因" />
+                    </n-form-item>
 
-                        <n-form-item label="詳細備註" path="note">
-                            <n-input v-model:value="formModel.note" type="textarea" placeholder="請輸入詳細說明 (至少 5 字)" />
-                        </n-form-item>
+                    <n-form-item label="詳細備註" path="note">
+                        <n-input v-model:value="formModel.note" type="textarea" placeholder="請輸入詳細說明 (至少 5 字)" />
+                    </n-form-item>
 
-                        <!-- Dynamic Fields -->
-                        <n-form-item label="相關憑證" path="evidence" v-if="formModel.reason === 'OFFLINE_DEPOSIT'">
-                            <n-upload
-                                list-type="image-card"
-                                :max="1"
-                                accept="image/png, image/jpeg"
-                                @change="handleUploadChange"
-                                :default-file-list="fileList"
-                            >
-                                <div>上傳圖片</div>
-                            </n-upload>
-                        </n-form-item>
+                    <!-- Dynamic Fields -->
+                    <n-form-item label="相關憑證" path="evidence" v-if="formModel.reason === 'OFFLINE_DEPOSIT'">
+                        <n-upload
+                            list-type="image-card"
+                            :max="1"
+                            accept="image/png, image/jpeg"
+                            @change="handleUploadChange"
+                            :default-file-list="fileList"
+                        >
+                            <div>上傳圖片</div>
+                        </n-upload>
+                    </n-form-item>
 
-                        <n-form-item label="計入流水" path="isRollover" v-if="formModel.walletType === 'BONUS' && formModel.type === 'DEPOSIT'">
-                            <n-switch v-model:value="formModel.isRollover" />
-                        </n-form-item>
+                    <n-form-item label="計入流水" path="isRollover" v-if="formModel.walletType === 'BONUS' && formModel.type === 'DEPOSIT'">
+                        <n-switch v-model:value="formModel.isRollover" />
+                    </n-form-item>
 
-                        <n-form-item label="流水倍率" path="rolloverMultiplier" v-if="formModel.isRollover && formModel.walletType === 'BONUS' && formModel.type === 'DEPOSIT'">
-                            <n-input-number v-model:value="formModel.rolloverMultiplier" :min="0" :step="1" placeholder="倍率" />
-                        </n-form-item>
+                    <n-form-item label="流水倍率" path="rolloverMultiplier" v-if="formModel.isRollover && formModel.walletType === 'BONUS' && formModel.type === 'DEPOSIT'">
+                        <n-input-number v-model:value="formModel.rolloverMultiplier" :min="0" :step="1" placeholder="倍率" />
+                    </n-form-item>
 
-                        <n-form-item>
-                            <n-button type="primary" @click="handleSubmit" :loading="submitting" size="large" block>
-                                提交申請
-                            </n-button>
-                        </n-form-item>
+                    <n-form-item>
+                        <n-button type="primary" @click="handleSubmit" :loading="submitting" size="large" block>
+                            提交申請
+                        </n-button>
+                    </n-form-item>
 
-                    </n-form>
-                </n-gi>
-            </n-grid>
-        </n-card>
+                </n-form>
+            </n-card>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useMessage, FormInst, FormRules, NCard, NGrid, NGi, NFormItem, NInputGroup, NInput, NButton, NAlert, NIcon, NTag, NDivider, NStatistic, NForm, NRadioGroup, NSpace, NRadio, NSelect, NInputNumber, NUpload, NSwitch } from 'naive-ui'
 import { PersonOutline as PersonIcon } from '@vicons/ionicons5'
 import { playerApi } from '@/api/player'
@@ -129,6 +140,26 @@ import type { Player } from '@/types/player'
 import type { UploadFileInfo } from 'naive-ui'
 
 const message = useMessage()
+
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
+onMounted(() => {
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.addEventListener('scroll', handleScroll)
+  }
+})
+
+onBeforeUnmount(() => {
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.removeEventListener('scroll', handleScroll)
+  }
+})
 
 // Search State
 const searchId = ref('')
@@ -283,7 +314,8 @@ const handleSubmit = async () => {
 
 <style scoped>
 .manual-adjustment-container {
-    padding: 24px;
+    /* padding: 24px; */ /* Removed to support edge-to-edge sticky */
+    min-height: 100%;
 }
 .player-info-grid {
     display: grid;

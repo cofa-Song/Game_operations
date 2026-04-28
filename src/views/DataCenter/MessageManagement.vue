@@ -1,46 +1,47 @@
 <template>
-    <div class="message-management-container p-4">
-        <n-space vertical size="large">
-            <!-- Header & Actions -->
-            <n-card>
-                <n-space justify="space-between" align="center">
-                    <n-text h2 style="margin: 0">
+    <div class="flex flex-col gap-4 min-h-full">
+        <!-- Header & Actions -->
+        <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+            <n-card
+                size="small"
+                class="rounded-xl shadow-sm border-0 transition-all duration-300"
+                :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+            >
+                <div class="flex items-center justify-between gap-4 flex-wrap">
+                    <n-text tag="h2" style="margin: 0; font-size: 16px; font-weight: 700;">
                         <n-icon><mail-icon /></n-icon>
                         {{ t('systemMessage.title') }}
                     </n-text>
-                    <n-button type="primary" @click="handleCreate" size="large">
+                    <n-button type="primary" @click="handleCreate" size="medium">
                         <template #icon><n-icon><create-icon /></n-icon></template>
                         {{ t('systemMessage.createMessage') }}
                     </n-button>
-                </n-space>
-            </n-card>
-
-            <!-- Search Filter -->
-            <n-card>
-                <n-form inline :label-width="80" label-placement="left" :model="query">
+                </div>
+                <!-- Search Filter -->
+                <n-form inline :label-width="80" label-placement="left" :model="query" class="mt-3">
                     <n-grid :cols="24" :x-gap="24">
                         <n-form-item-gi :span="6" :label="t('systemMessage.filters.sendTime')">
-                            <n-date-picker 
-                                v-model:formatted-value="dateRange" 
-                                type="daterange" 
-                                clearable 
+                            <n-date-picker
+                                v-model:formatted-value="dateRange"
+                                type="daterange"
+                                clearable
                                 value-format="yyyy-MM-dd"
                                 @update:value="handleSearch"
                             />
                         </n-form-item-gi>
                         <n-form-item-gi :span="5" :label="t('systemMessage.filters.type')">
-                            <n-select 
-                                v-model:value="query.type" 
-                                :options="typeOptions" 
-                                clearable 
+                            <n-select
+                                v-model:value="query.type"
+                                :options="typeOptions"
+                                clearable
                                 @update:value="handleSearch"
                             />
                         </n-form-item-gi>
                         <n-form-item-gi :span="7" :label="t('systemMessage.filters.titleKeyword')">
-                            <n-input 
-                                v-model:value="query.keyword" 
-                                clearable 
-                                placeholder="請輸入標題關鍵字" 
+                            <n-input
+                                v-model:value="query.keyword"
+                                clearable
+                                placeholder="請輸入標題關鍵字"
                                 @keydown.enter="handleSearch"
                             />
                         </n-form-item-gi>
@@ -53,9 +54,11 @@
                     </n-grid>
                 </n-form>
             </n-card>
+        </div>
 
-            <!-- Data Table -->
-            <n-card>
+        <!-- Data Table -->
+        <div class="relative z-10">
+            <n-card class="rounded-xl shadow-sm border-0">
                 <n-data-table
                     :columns="columns"
                     :data="tableData"
@@ -67,7 +70,7 @@
                     striped
                 />
             </n-card>
-        </n-space>
+        </div>
 
         <!-- Create / Edit Modal -->
         <n-modal
@@ -213,7 +216,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { 
     useMessage, 
@@ -635,20 +638,40 @@ const getTargetLabel = (row: MessageRecord) => {
     return label
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+    const target = e.target as HTMLElement
+    isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
     fetchData()
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.addEventListener('scroll', handleScroll)
+    }
+})
+
+onBeforeUnmount(() => {
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.removeEventListener('scroll', handleScroll)
+    }
 })
 
 </script>
 
 <style scoped>
-.message-management-container {
-    height: 100%;
-}
 .preview-content {
     min-height: 200px;
     max-height: 400px;
     overflow-y: auto;
     padding: 12px;
+}
+.premium-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.6) !important;
 }
 </style>

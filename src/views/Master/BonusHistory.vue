@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, h } from 'vue'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NTimeline, NTimelineItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NDatePicker } from 'naive-ui'
 import { SearchOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import { bonusHistoryApi } from '@/api/bonus'
@@ -172,14 +172,39 @@ const showDetailModal = (log: BonusHistoryLog) => {
   showDetail.value = true
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
   fetchData()
+  
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.addEventListener('scroll', handleScroll)
+  }
+})
+
+onBeforeUnmount(() => {
+  const container = document.getElementById('main-scroll-container')
+  if (container) {
+    container.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
 <template>
-  <div class="p-6">
-    <NCard title="獎勵卡歷史紀錄">
+  <div class="p-6 flex flex-col gap-4">
+    <!-- 搜尋條件區塊 -->
+    <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+      <NCard 
+        title="獎勵卡歷史紀錄" 
+        class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
+        :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+        size="small"
+      >
       <NForm inline :model="searchForm" label-placement="left" class="flex-wrap gap-4 mb-4">
         <NFormItem label="Card ID">
           <NInput v-model:value="searchForm.card_id" placeholder="精確搜尋" clearable style="width: 200px" />
@@ -211,6 +236,14 @@ onMounted(() => {
           </NButton>
         </NFormItem>
       </NForm>
+    </NCard>
+  </div>
+
+  <NCard class="rounded-xl shadow-sm border-0 premium-card overflow-hidden" content-class="p-0">
+    <div class="p-4 border-b border-gray-100 dark:border-gray-800 font-bold text-gray-700 dark:text-gray-200">
+      紀錄列表
+    </div>
+    <div class="p-4">
 
       <NDataTable
         :columns="columns"
@@ -219,7 +252,8 @@ onMounted(() => {
         :pagination="pagination"
         :scroll-x="1600"
       />
-    </NCard>
+    </div>
+  </NCard>
 
     <!-- Detail Modal -->
     <NModal

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed, h } from 'vue'
+import { ref, onMounted, onBeforeUnmount, reactive, computed, h } from 'vue'
 import { 
     NCard, NDataTable, NTag, NButton, NModal, NForm, NFormItem, 
     NSelect, NInputNumber, NInput, useMessage, DataTableColumns,
@@ -205,6 +205,12 @@ const handleSubmit = async () => {
     }
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+    const target = e.target as HTMLElement
+    isSticky.value = target.scrollTop > 20
+}
+
 onMounted(async () => {
     // Fetch all providers once for the filter dropdown
     const res = await providerApi.getProviders()
@@ -212,65 +218,88 @@ onMounted(async () => {
         allProviders.value = res.data
     }
     fetchData()
+
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.addEventListener('scroll', handleScroll)
+    }
+})
+
+onBeforeUnmount(() => {
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.removeEventListener('scroll', handleScroll)
+    }
 })
 </script>
 
 <template>
-    <div class="p-6">
-        <NCard :title="t('game.provider.title')" class="mb-4">
-            <NForm inline :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="fetchData">
-                <NGrid :cols="24" :x-gap="12">
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.provider.vendorCode')">
-                            <NSelect v-model:value="searchForm.code" :options="vendorOptions" :placeholder="t('common.all')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.provider.platformType')">
-                            <NSelect v-model:value="searchForm.type" :options="typeOptions" :placeholder="t('common.all')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('common.status')">
-                            <NSelect v-model:value="searchForm.status" :options="statusOptions" :placeholder="t('common.all')" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="6">
-                        <NFormItem :label="t('game.provider.date')">
-                            <NDatePicker v-model:value="dateRange" type="datetimerange" clearable />
-                        </NFormItem>
-                    </NGridItem>
-                    <NGridItem :span="24">
-                        <div class="flex justify-end gap-2">
-                            <NButton secondary @click="handleReset">
-                                {{ t('common.all') }}
-                            </NButton>
-                            <NButton type="primary" @click="fetchData" :loading="loading">
-                                <template #icon><SearchOutline /></template>
-                                {{ t('common.search') }}
-                            </NButton>
-                        </div>
-                    </NGridItem>
-                </NGrid>
-            </NForm>
-        </NCard>
+    <div class="flex flex-col gap-4 min-h-full">
+        <!-- 浮動搜尋區塊 -->
+        <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+            <NCard
+                :title="t('game.provider.title')"
+                size="small"
+                class="rounded-xl shadow-sm border-0 transition-all duration-300"
+                :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+            >
+                <NForm inline :model="searchForm" label-placement="left" label-width="auto" @keypress.enter="fetchData">
+                    <NGrid :cols="24" :x-gap="12">
+                        <NGridItem :span="6">
+                            <NFormItem :label="t('game.provider.vendorCode')">
+                                <NSelect v-model:value="searchForm.code" :options="vendorOptions" :placeholder="t('common.all')" clearable />
+                            </NFormItem>
+                        </NGridItem>
+                        <NGridItem :span="6">
+                            <NFormItem :label="t('game.provider.platformType')">
+                                <NSelect v-model:value="searchForm.type" :options="typeOptions" :placeholder="t('common.all')" clearable />
+                            </NFormItem>
+                        </NGridItem>
+                        <NGridItem :span="6">
+                            <NFormItem :label="t('common.status')">
+                                <NSelect v-model:value="searchForm.status" :options="statusOptions" :placeholder="t('common.all')" clearable />
+                            </NFormItem>
+                        </NGridItem>
+                        <NGridItem :span="6">
+                            <NFormItem :label="t('game.provider.date')">
+                                <NDatePicker v-model:value="dateRange" type="datetimerange" clearable />
+                            </NFormItem>
+                        </NGridItem>
+                        <NGridItem :span="24">
+                            <div class="flex justify-end gap-2">
+                                <NButton secondary @click="handleReset">
+                                    {{ t('common.reset') || t('common.all') }}
+                                </NButton>
+                                <NButton type="primary" @click="fetchData" :loading="loading">
+                                    <template #icon><SearchOutline /></template>
+                                    {{ t('common.search') }}
+                                </NButton>
+                            </div>
+                        </NGridItem>
+                    </NGrid>
+                </NForm>
+            </NCard>
+        </div>
 
-        <NCard>
-            <template #header-extra>
-                <NButton secondary circle @click="fetchData" :loading="loading">
-                    <template #icon><RefreshOutline /></template>
-                </NButton>
-            </template>
+        <!-- 資料列表區塊 -->
+        <div class="px-0 relative z-10">
+            <NCard class="rounded-xl shadow-sm border-0">
+                <template #header-extra>
+                    <NButton secondary circle @click="fetchData" :loading="loading">
+                        <template #icon><RefreshOutline /></template>
+                    </NButton>
+                </template>
 
-            <NDataTable
-                :columns="columns"
-                :data="providers"
-                :loading="loading"
-                :pagination="false"
-                :bordered="false"
-                :scroll-x="1200"
-            />
-        </NCard>
+                <NDataTable
+                    :columns="columns"
+                    :data="providers"
+                    :loading="loading"
+                    :pagination="false"
+                    :bordered="false"
+                    :scroll-x="1200"
+                />
+            </NCard>
+        </div>
 
         <!-- Edit Modal -->
         <NModal v-model:show="showEditModal" preset="card" :title="t('game.provider.editStatus')" style="width: 500px">
@@ -300,3 +329,12 @@ onMounted(async () => {
         </NModal>
     </div>
 </template>
+
+<style scoped>
+.premium-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.6) !important;
+}
+</style>

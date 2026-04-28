@@ -1,110 +1,128 @@
 <template>
-  <div class="p-6">
-    <NCard title="資產與流水變動日誌">
-      <NForm :model="searchForm" label-placement="left" class="mb-4 flex flex-col gap-4">
-        <!-- 基礎搜尋條件 -->
-        <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
-          <NFormItem label="玩家" :show-feedback="false">
-            <div class="relative">
-              <NRadioGroup v-model:value="searchForm.searchType" name="searchType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
-                <NRadio value="id">ID</NRadio>
-                <NRadio value="account">帳號</NRadio>
-              </NRadioGroup>
+  <div class="p-6 flex flex-col gap-4">
+    <!-- 搜尋條件區塊 -->
+    <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+      <NCard 
+        title="資產與流水變動日誌" 
+        class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
+        :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+        size="small"
+      >
+        <NForm :model="searchForm" label-placement="left" class="flex flex-col gap-4">
+          <!-- 基礎搜尋條件 -->
+          <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+            <NFormItem label-placement="top" :show-feedback="false">
+              <template #label>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500 font-bold">玩家</span>
+                  <NRadioGroup v-model:value="searchForm.searchType" name="searchType" size="small">
+                    <NRadio value="id">ID</NRadio>
+                    <NRadio value="account">帳號</NRadio>
+                  </NRadioGroup>
+                </div>
+              </template>
               <NInput 
                 v-model:value="searchForm.player_id" 
                 :placeholder="searchForm.searchType === 'id' ? '請輸入玩家 ID' : '請輸入玩家帳號'" 
                 clearable 
                 style="width: 200px"
+                class="tech-input-light"
               />
-            </div>
-          </NFormItem>
-          <NFormItem label="變動類型" :show-feedback="false">
-             <NSelect 
-               v-model:value="searchForm.change_type" 
-               :options="typeOptions" 
-               placeholder="全部" 
-               clearable 
-               style="width: 150px"
-             />
-          </NFormItem>
-          <NFormItem label="快速切換" :show-feedback="false">
-            <NSpace wrap>
-              <NButton size="small" @click="handleQuickSelect('today')">本日</NButton>
-              <NButton size="small" @click="handleQuickSelect('yesterday')">昨日</NButton>
-              <NButton size="small" @click="handleQuickSelect('thisWeek')">本週</NButton>
-              <NButton size="small" @click="handleQuickSelect('lastWeek')">上週</NButton>
-              <NButton size="small" @click="handleQuickSelect('thisMonth')">本月</NButton>
-              <NButton size="small" @click="handleQuickSelect('lastMonth')">上個月</NButton>
-            </NSpace>
-          </NFormItem>
-          <NFormItem label="幣別" :show-feedback="false">
-             <NSelect 
-               v-model:value="searchForm.currency" 
-               :options="currencyOptions" 
-               placeholder="全部" 
-               clearable 
-               style="width: 120px"
-             />
-          </NFormItem>
+            </NFormItem>
+            <NFormItem label="變動類型" :show-feedback="false">
+               <NSelect 
+                 v-model:value="searchForm.change_type" 
+                 :options="typeOptions" 
+                 placeholder="全部" 
+                 clearable 
+                 style="width: 150px"
+                 class="tech-select-light"
+               />
+            </NFormItem>
+            <NFormItem label="快速切換" :show-feedback="false">
+              <NSpace wrap>
+                <NButton size="small" @click="handleQuickSelect('today')">本日</NButton>
+                <NButton size="small" @click="handleQuickSelect('yesterday')">昨日</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisWeek')">本週</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastWeek')">上週</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisMonth')">本月</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastMonth')">上個月</NButton>
+              </NSpace>
+            </NFormItem>
+            <NFormItem label="幣別" :show-feedback="false">
+               <NSelect 
+                 v-model:value="searchForm.currency" 
+                 :options="currencyOptions" 
+                 placeholder="全部" 
+                 clearable 
+                 style="width: 120px"
+                 class="tech-select-light"
+               />
+            </NFormItem>
 
-          <div class="flex gap-2 mb-[2px]">
-            <NButton type="primary" @click="handleSearch">查詢</NButton>
-            <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
-                <template #icon>
-                    <NIcon>
-                        <ChevronDownOutline v-if="!showAdvancedSearch" />
-                        <ChevronUpOutline v-else />
-                    </NIcon>
-                </template>
-                {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
-            </NButton>
+            <div class="flex gap-2 mb-[2px]">
+              <NButton type="primary" @click="handleSearch">查詢</NButton>
+              <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                  <template #icon>
+                      <NIcon>
+                          <ChevronDownOutline v-if="!showAdvancedSearch" />
+                          <ChevronUpOutline v-else />
+                      </NIcon>
+                  </template>
+                  {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+              </NButton>
+            </div>
           </div>
-        </div>
 
-        <!-- 進階搜尋條件 (可折疊) -->
-        <NCollapseTransition :show="showAdvancedSearch">
-            <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
-                <NFormItem label="數據粒度" :show-feedback="false" style="width: 140px">
-                    <NSelect 
-                        v-model:value="searchForm.granularity"
-                        :options="granularityOptions"
-                        class="bg-white/50"
-                    />
-                </NFormItem>
+          <!-- 進階搜尋條件 (可折疊) -->
+          <NCollapseTransition :show="showAdvancedSearch">
+              <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
+                  <NFormItem label="數據粒度" :show-feedback="false" style="width: 140px">
+                      <NSelect 
+                          v-model:value="searchForm.granularity"
+                          :options="granularityOptions"
+                          class="tech-select-light"
+                      />
+                  </NFormItem>
 
-                <NFormItem label="時間區間" :show-feedback="false" class="w-80">
-                    <NDatePicker 
-                        v-if="searchForm.granularity === 'hour'"
-                        v-model:value="searchForm.timeRange" 
-                        type="datetimerange" 
-                        clearable 
-                        format="yyyy-MM-dd HH:mm"
-                        class="w-full bg-white/50"
-                    />
-                    <NDatePicker 
-                        v-if="searchForm.granularity === 'day'"
-                        v-model:value="searchForm.timeRange" 
-                        type="daterange" 
-                        clearable 
-                        class="w-full bg-white/50"
-                    />
-                    <NDatePicker 
-                        v-if="searchForm.granularity === 'month'"
-                        v-model:value="searchForm.timeRange" 
-                        type="monthrange" 
-                        clearable 
-                        class="w-full bg-white/50"
-                    />
-                </NFormItem>
-            </div>
-        </NCollapseTransition>
-      </NForm>
+                  <NFormItem label="時間區間" :show-feedback="false" class="w-80">
+                      <NDatePicker 
+                          v-if="searchForm.granularity === 'hour'"
+                          v-model:value="searchForm.timeRange" 
+                          type="datetimerange" 
+                          clearable 
+                          format="yyyy-MM-dd HH:mm"
+                          class="w-full tech-input-light"
+                      />
+                      <NDatePicker 
+                          v-if="searchForm.granularity === 'day'"
+                          v-model:value="searchForm.timeRange" 
+                          type="daterange" 
+                          clearable 
+                          class="w-full tech-input-light"
+                      />
+                      <NDatePicker 
+                          v-if="searchForm.granularity === 'month'"
+                          v-model:value="searchForm.timeRange" 
+                          type="monthrange" 
+                          clearable 
+                          class="w-full tech-input-light"
+                      />
+                  </NFormItem>
+              </div>
+          </NCollapseTransition>
+        </NForm>
+      </NCard>
+    </div>
 
+    <!-- 列表區塊 -->
+    <NCard class="rounded-xl shadow-sm border-0 premium-card overflow-hidden" content-class="p-0">
       <NDataTable
         :columns="columns"
         :data="logs"
         :loading="loading"
         :pagination="pagination"
+        :bordered="false"
         @update:page="handlePageChange"
       />
     </NCard>
@@ -112,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h, watch } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, h, watch } from 'vue'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage, NCollapseTransition, NIcon } from 'naive-ui'
 import { ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import { logApi } from '@/api/log'
@@ -318,8 +336,26 @@ const handlePageChange = (page: number) => {
     fetchData()
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+  const target = e.target as HTMLElement
+  isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
     setTimeRangeByGranularity()
     fetchData()
+    
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+    }
+})
+
+onBeforeUnmount(() => {
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+      container.removeEventListener('scroll', handleScroll)
+    }
 })
 </script>

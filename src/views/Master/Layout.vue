@@ -555,7 +555,7 @@ const handleLogout = () => {
 
       <NLayoutContent class="p-4 h-[calc(100vh-112px)] overflow-hidden">
         <!-- 內容容器 -->
-        <div class="h-full overflow-y-auto pr-2 animate-fade-in-up">
+        <div id="main-scroll-container" class="h-full overflow-y-auto pr-2 animate-fade-in-up">
           <RouterView />
         </div>
       </NLayoutContent>
