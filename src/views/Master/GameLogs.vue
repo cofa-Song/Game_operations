@@ -1,114 +1,129 @@
 <template>
-  <div class="p-6">
-    <NCard :title="t('gameLogs.title')">
-      <!-- Advanced Filters -->
-      <NForm :model="searchForm" label-placement="left" class="mb-4 flex flex-col gap-4">
-        <!-- 基礎搜尋條件 -->
-        <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
-          <NFormItem :label="t('gameLogs.playerId')" :show-feedback="false">
-            <div class="relative">
-              <NRadioGroup v-model:value="searchForm.searchType" name="searchType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
-                <NRadio value="id">{{ t('gameLogs.searchType.id') }}</NRadio>
-                <NRadio value="account">{{ t('gameLogs.searchType.account') }}</NRadio>
-              </NRadioGroup>
+  <div class="flex flex-col gap-4 min-h-full">
+    <!-- 浮動搜尋區塊 -->
+    <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
+      <n-card
+        size="small"
+        class="rounded-xl shadow-sm border-0 transition-all duration-300"
+        :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
+      >
+        <div class="flex items-center justify-between mb-6">
+          <n-text tag="h2" style="margin: 0; font-size: 16px; font-weight: 700;">
+            {{ t('gameLogs.title') }}
+          </n-text>
+        </div>
+
+        <NForm :model="searchForm" label-placement="left" class="flex flex-col gap-4">
+          <!-- 基礎搜尋條件 -->
+          <div class="flex flex-wrap items-end gap-x-6 gap-y-4">
+            <NFormItem :show-feedback="false" label-placement="top">
+              <template #label>
+                <NRadioGroup v-model:value="searchForm.searchType" name="searchType" size="small">
+                  <NRadio value="id">{{ t('gameLogs.searchType.id') }}</NRadio>
+                  <NRadio value="account">{{ t('gameLogs.searchType.account') }}</NRadio>
+                </NRadioGroup>
+              </template>
               <NInput 
                 v-model:value="searchForm.player_id" 
                 :placeholder="searchForm.searchType === 'id' ? '請輸入玩家 ID' : '請輸入玩家帳號'" 
                 clearable 
                 style="width: 200px"
               />
+            </NFormItem>
+            
+            <NFormItem :label="t('gameLogs.gameName')" :show-feedback="false">
+                 <NInput v-model:value="searchForm.game_name" :placeholder="t('gameLogs.gameNamePlaceholder')" clearable style="width: 150px" />
+            </NFormItem>
+  
+            <NFormItem label="快速切換" :show-feedback="false">
+              <NSpace wrap>
+                <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
+                <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
+              </NSpace>
+            </NFormItem>
+  
+            <NFormItem label="幣別" :show-feedback="false">
+                <NSelect 
+                  v-model:value="searchForm.currency" 
+                  :options="currencyOptions" 
+                  placeholder="全部" 
+                  style="width: 120px"
+                />
+            </NFormItem>
+  
+            <div class="flex gap-2 mb-[2px]">
+              <NButton type="primary" @click="handleSearch" :loading="loading">{{ t('gameLogs.search') }}</NButton>
+              <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
+                  <template #icon>
+                      <NIcon>
+                          <ChevronDownOutline v-if="!showAdvancedSearch" />
+                          <ChevronUpOutline v-else />
+                      </NIcon>
+                  </template>
+                  {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
+              </NButton>
             </div>
-          </NFormItem>
-          
-          <NFormItem :label="t('gameLogs.gameName')" :show-feedback="false">
-               <NInput v-model:value="searchForm.game_name" :placeholder="t('gameLogs.gameNamePlaceholder')" clearable style="width: 150px" />
-          </NFormItem>
-
-          <NFormItem label="快速切換" :show-feedback="false">
-            <NSpace wrap>
-              <NButton size="small" @click="handleQuickSelect('today')">{{ t('operationReport.quickButtons.today') }}</NButton>
-              <NButton size="small" @click="handleQuickSelect('yesterday')">{{ t('operationReport.quickButtons.yesterday') }}</NButton>
-              <NButton size="small" @click="handleQuickSelect('thisWeek')">{{ t('operationReport.quickButtons.thisWeek') }}</NButton>
-              <NButton size="small" @click="handleQuickSelect('lastWeek')">{{ t('operationReport.quickButtons.lastWeek') }}</NButton>
-              <NButton size="small" @click="handleQuickSelect('thisMonth')">{{ t('operationReport.quickButtons.thisMonth') }}</NButton>
-              <NButton size="small" @click="handleQuickSelect('lastMonth')">{{ t('operationReport.quickButtons.lastMonth') }}</NButton>
-            </NSpace>
-          </NFormItem>
-
-          <NFormItem label="幣別" :show-feedback="false">
-              <NSelect 
-                v-model:value="searchForm.currency" 
-                :options="currencyOptions" 
-                placeholder="全部" 
-                style="width: 120px"
-              />
-          </NFormItem>
-
-          <div class="flex gap-2 mb-[2px]">
-            <NButton type="primary" @click="handleSearch" :loading="loading">{{ t('gameLogs.search') }}</NButton>
-            <NButton text icon-placement="right" @click="showAdvancedSearch = !showAdvancedSearch" class="ml-2">
-                <template #icon>
-                    <NIcon>
-                        <ChevronDownOutline v-if="!showAdvancedSearch" />
-                        <ChevronUpOutline v-else />
-                    </NIcon>
-                </template>
-                {{ showAdvancedSearch ? '收起搜尋' : '進階搜尋' }}
-            </NButton>
           </div>
-        </div>
+  
+          <!-- 進階搜尋條件 (可折疊) -->
+          <NCollapseTransition :show="showAdvancedSearch">
+              <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
+                  <NFormItem :label="t('gameLogs.provider')" :show-feedback="false">
+                      <NSelect 
+                          v-model:value="searchForm.provider" 
+                          :options="providerOptions" 
+                          :placeholder="t('gameLogs.providerAll')" 
+                          clearable 
+                          style="width: 140px"
+                      />
+                  </NFormItem>
+                  <NFormItem :label="t('gameLogs.roundId')" :show-feedback="false">
+                      <NInput v-model:value="searchForm.round_id" :placeholder="t('gameLogs.roundIdPlaceholder')" clearable style="width: 220px" />
+                  </NFormItem>
+                  <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
+                      <NSelect 
+                          v-model:value="searchForm.granularity"
+                          :options="granularityOptions"
+                          class="bg-white/50"
+                      />
+                  </NFormItem>
+                  <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false" class="w-80">
+                      <NDatePicker 
+                          v-if="searchForm.granularity === 'hour'"
+                          v-model:value="searchForm.timeRange" 
+                          type="datetimerange" 
+                          clearable 
+                          format="yyyy-MM-dd HH:mm"
+                          class="w-full bg-white/50"
+                      />
+                      <NDatePicker 
+                          v-if="searchForm.granularity === 'day'"
+                          v-model:value="searchForm.timeRange" 
+                          type="daterange" 
+                          clearable 
+                          class="w-full bg-white/50"
+                      />
+                      <NDatePicker 
+                          v-if="searchForm.granularity === 'month'"
+                          v-model:value="searchForm.timeRange" 
+                          type="monthrange" 
+                          clearable 
+                          class="w-full bg-white/50"
+                      />
+                  </NFormItem>
+              </div>
+          </NCollapseTransition>
+        </NForm>
+      </n-card>
+    </div>
 
-        <!-- 進階搜尋條件 (可折疊) -->
-        <NCollapseTransition :show="showAdvancedSearch">
-            <div class="pt-4 border-t border-dashed flex flex-wrap items-end gap-x-6 gap-y-4">
-                <NFormItem :label="t('gameLogs.provider')" :show-feedback="false">
-                    <NSelect 
-                        v-model:value="searchForm.provider" 
-                        :options="providerOptions" 
-                        :placeholder="t('gameLogs.providerAll')" 
-                        clearable 
-                        style="width: 140px"
-                    />
-                </NFormItem>
-                <NFormItem :label="t('gameLogs.roundId')" :show-feedback="false">
-                    <NInput v-model:value="searchForm.round_id" :placeholder="t('gameLogs.roundIdPlaceholder')" clearable style="width: 220px" />
-                </NFormItem>
-                <NFormItem :label="t('operationReport.granularity')" :show-feedback="false" style="width: 140px">
-                    <NSelect 
-                        v-model:value="searchForm.granularity"
-                        :options="granularityOptions"
-                        class="bg-white/50"
-                    />
-                </NFormItem>
-                <NFormItem :label="t('operationReport.timeRange')" :show-feedback="false" class="w-80">
-                    <NDatePicker 
-                        v-if="searchForm.granularity === 'hour'"
-                        v-model:value="searchForm.timeRange" 
-                        type="datetimerange" 
-                        clearable 
-                        format="yyyy-MM-dd HH:mm"
-                        class="w-full bg-white/50"
-                    />
-                    <NDatePicker 
-                        v-if="searchForm.granularity === 'day'"
-                        v-model:value="searchForm.timeRange" 
-                        type="daterange" 
-                        clearable 
-                        class="w-full bg-white/50"
-                    />
-                    <NDatePicker 
-                        v-if="searchForm.granularity === 'month'"
-                        v-model:value="searchForm.timeRange" 
-                        type="monthrange" 
-                        clearable 
-                        class="w-full bg-white/50"
-                    />
-                </NFormItem>
-            </div>
-        </NCollapseTransition>
-      </NForm>
-
-      <div v-if="searchForm.currency === 'all'" class="mb-4 bg-gray-50 p-4 rounded-lg flex justify-around border border-gray-100">
+    <!-- 主要內容區 -->
+    <div class="flex flex-col gap-4">
+      <div v-if="searchForm.currency === 'all'" class="bg-white rounded-xl shadow-sm border-0 p-4 flex justify-around">
         <div class="text-center">
             <div class="text-xs text-gray-500 mb-1">轉折總投注 (Gold Unit)</div>
             <div class="text-lg font-bold text-blue-600">{{ formatNumber(gameSummary.bet) }}</div>
@@ -125,14 +140,16 @@
         </div>
       </div>
 
-      <NDataTable
-        :columns="columns"
-        :data="logs"
-        :loading="loading"
-        :pagination="pagination"
-        @update:page="handlePageChange"
-      />
-    </NCard>
+      <NCard class="rounded-xl shadow-sm border-0">
+        <NDataTable
+          :columns="columns"
+          :data="logs"
+          :loading="loading"
+          :pagination="pagination"
+          @update:page="handlePageChange"
+        />
+      </NCard>
+    </div>
 
     <!-- Detail Modal -->
     <NModal
@@ -156,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h, computed, watch } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, h, computed, watch } from 'vue'
 import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NDivider, NSpace, NDatePicker, NRadioGroup, NRadio, useMessage, NCollapseTransition, NIcon } from 'naive-ui'
 import { ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
 import { useI18n } from 'vue-i18n'
@@ -448,8 +465,33 @@ const handlePageChange = (page: number) => {
     fetchData()
 }
 
+const isSticky = ref(false)
+const handleScroll = (e: Event) => {
+    const target = e.target as HTMLElement
+    isSticky.value = target.scrollTop > 20
+}
+
 onMounted(() => {
     setTimeRangeByGranularity()
     fetchData()
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.addEventListener('scroll', handleScroll)
+    }
+})
+
+onBeforeUnmount(() => {
+    const container = document.getElementById('main-scroll-container')
+    if (container) {
+        container.removeEventListener('scroll', handleScroll)
+    }
 })
 </script>
+<style scoped>
+.premium-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.6) !important;
+}
+</style>
