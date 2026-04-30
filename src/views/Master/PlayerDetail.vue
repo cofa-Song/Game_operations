@@ -6,7 +6,7 @@ import {
   NCard, NTabs, NTabPane, NGrid, NGridItem, NDescriptions, NDescriptionsItem,
   NTag, NButton, NSpace, NAvatar, NStatistic, NList, NListItem, NThing,
   NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage,
-  NProgress, NDivider, NDatePicker, NInputNumber, NDataTable
+  NProgress, NDivider, NDatePicker, NInputNumber, NDataTable, NPagination
 } from 'naive-ui'
 import { 
   WalletOutline, AlertCircleOutline, SearchOutline
@@ -30,7 +30,52 @@ const player = ref<Player | null>(null)
 // History Tabs Data
 const assetLogs = ref<AssetLog[]>([])
 const gameLogs = ref<GameLog[]>([])
-const auditHistory = ref<PlayerAuditLog[]>([])
+const auditLogs = ref<PlayerAuditLog[]>([])
+
+// Pagination States
+const auditPagination = reactive({
+    page: 1,
+    pageSize: 10,
+    itemCount: 0,
+    onChange: (page: number) => {
+        auditPagination.page = page
+        fetchHistory()
+    }
+})
+
+const assetPagination = reactive({
+    page: 1,
+    pageSize: 10,
+    itemCount: 0,
+    showSizePicker: true,
+    pageSizes: [10, 20, 50],
+    onChange: (page: number) => {
+        assetPagination.page = page
+        fetchHistory()
+    },
+    onUpdatePageSize: (pageSize: number) => {
+        assetPagination.pageSize = pageSize
+        assetPagination.page = 1
+        fetchHistory()
+    }
+})
+
+const gamePagination = reactive({
+    page: 1,
+    pageSize: 10,
+    itemCount: 0,
+    showSizePicker: true,
+    pageSizes: [10, 20, 50],
+    onChange: (page: number) => {
+        gamePagination.page = page
+        fetchHistory()
+    },
+    onUpdatePageSize: (pageSize: number) => {
+        gamePagination.pageSize = pageSize
+        gamePagination.page = 1
+        fetchHistory()
+    }
+})
 
 // History Filters
 const auditFilter = reactive({
@@ -51,9 +96,6 @@ const gameFilter = reactive({
 
 const historyLoading = ref(false)
 const currentTab = ref('wallet')
-// ... existing refs ...
-
-const auditLogs = ref<PlayerAuditLog[]>([])
 const loading = ref(false)
 
 // Edit State
@@ -265,14 +307,35 @@ const fetchHistory = async () => {
     try {
         if (currentTab.value === 'asset') {
             const currency = assetFilter.currency === 'all' ? undefined : assetFilter.currency
-            const res = await logApi.getLogs({ player_id: playerId, currency: currency || undefined, change_type: assetFilter.changeType || undefined, page: 1, page_size: 10 })
-            if (res.code === 0) assetLogs.value = res.data.list
+            const res = await logApi.getLogs({ 
+                player_id: playerId, 
+                currency: currency || undefined, 
+                change_type: assetFilter.changeType || undefined, 
+                page: assetPagination.page, 
+                page_size: assetPagination.pageSize 
+            })
+            if (res.code === 0 && res.data) {
+                assetLogs.value = res.data.list
+                assetPagination.itemCount = res.data.total
+            }
         } else if (currentTab.value === 'game') {
-            const res = await gameApi.getLogs({ player_id: playerId, currency: gameFilter.currency === 'all' ? undefined : gameFilter.currency, game_name: gameFilter.gameName || undefined, page: 1, page_size: 10 })
-            if (res.code === 0) gameLogs.value = res.data.list
+            const res = await gameApi.getLogs({ 
+                player_id: playerId, 
+                currency: gameFilter.currency === 'all' ? undefined : gameFilter.currency, 
+                game_name: gameFilter.gameName || undefined, 
+                page: gamePagination.page, 
+                page_size: gamePagination.pageSize 
+            })
+            if (res.code === 0 && res.data) {
+                gameLogs.value = res.data.list
+                gamePagination.itemCount = res.data.total
+            }
         } else if (currentTab.value === 'audit') {
-            const res = await playerApi.getAuditLogs(playerId)
-            if (res.code === 0) auditLogs.value = res.data
+            const res = await playerApi.getAuditLogs(playerId, auditPagination.page, auditPagination.pageSize)
+            if (res.code === 0 && res.data) {
+                auditLogs.value = res.data.items
+                auditPagination.itemCount = res.data.total
+            }
         }
     } catch (e) {
         console.error('Fetch history failed', e)
@@ -285,7 +348,10 @@ watch(currentTab, () => {
     fetchHistory()
 })
 
-watch([assetFilter, gameFilter], () => {
+watch([assetFilter, gameFilter, auditFilter], () => {
+    auditPagination.page = 1
+    assetPagination.page = 1
+    gamePagination.page = 1
     fetchHistory()
 }, { deep: true })
 
@@ -597,6 +663,14 @@ onMounted(() => {
                         </NThing>
                     </NListItem>
                 </NList>
+                <div class="mt-4 flex justify-end">
+                    <NPagination 
+                        v-model:page="auditPagination.page" 
+                        :item-count="auditPagination.itemCount" 
+                        :page-size="auditPagination.pageSize"
+                        @update:page="auditPagination.onChange"
+                    />
+                </div>
             </NTabPane>
 
             <NTabPane name="asset" :tab="t('player.list.assetHistory')">
@@ -623,7 +697,14 @@ onMounted(() => {
                          {{ t('player.list.advancedSearch') }}
                     </NButton>
                 </div>
-                <NDataTable :columns="assetColumns" :data="assetLogs" :loading="historyLoading" size="small" />
+                <NDataTable 
+                    remote
+                    :columns="assetColumns" 
+                    :data="assetLogs" 
+                    :loading="historyLoading" 
+                    :pagination="assetPagination"
+                    size="small" 
+                />
             </NTabPane>
 
             <NTabPane name="game" :tab="t('player.list.gameHistory')">
@@ -666,7 +747,14 @@ onMounted(() => {
                         </div>
                     </div>
                 </div>
-                <NDataTable :columns="gameColumns" :data="gameLogs" :loading="historyLoading" size="small" />
+                <NDataTable 
+                    remote
+                    :columns="gameColumns" 
+                    :data="gameLogs" 
+                    :loading="historyLoading" 
+                    :pagination="gamePagination"
+                    size="small" 
+                />
             </NTabPane>
           </NTabs>
         </NCard>

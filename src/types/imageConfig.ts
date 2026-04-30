@@ -1,6 +1,10 @@
 export enum ImageType {
     BANNER = 'BANNER',
-    POPUP = 'POPUP'
+    LOBBY_BACKGROUND = 'LOBBY_BACKGROUND',
+    EVENT_THUMBNAIL = 'EVENT_THUMBNAIL',
+    POPUP = 'POPUP',
+    SPLASH = 'SPLASH',
+    DEPOSIT_PROMO = 'DEPOSIT_PROMO'
 }
 
 export enum PopupFrequency {
@@ -12,6 +16,7 @@ export enum PopupFrequency {
 export interface ImageConfig {
     id: string;
     type: ImageType;
+    platform: 'APP' | 'WEB';
     title: string;
 
     // Image
@@ -39,6 +44,7 @@ export interface ImageConfig {
 
 export interface CreateImageConfigData {
     type: ImageType;
+    platform: 'APP' | 'WEB';
     title: string;
     imageUrl: string;
     jumpUrl: string;

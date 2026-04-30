@@ -180,9 +180,24 @@ export const playerApi = {
         return { code: 0, msg: 'success' }
     },
 
-    async getAuditLogs(playerId: string): Promise<ApiResponse<PlayerAuditLog[]>> {
+    async getAuditLogs(playerId: string, page: number = 1, pageSize: number = 10): Promise<ApiResponse<PaginatedResponse<PlayerAuditLog>>> {
         await delay(SIMULATE_DELAY)
-        const logs = mockAuditLogs.filter(l => l.player_id === playerId)
-        return { code: 0, msg: 'success', data: logs }
+        const allLogs = mockAuditLogs.filter(l => l.player_id === playerId)
+        
+        const total = allLogs.length
+        const start = (page - 1) * pageSize
+        const end = start + pageSize
+        const items = allLogs.slice(start, end)
+
+        return { 
+            code: 0, 
+            msg: 'success', 
+            data: {
+                items,
+                total,
+                page,
+                pageSize
+            } 
+        }
     }
 }
