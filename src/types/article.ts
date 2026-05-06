@@ -1,9 +1,9 @@
-export type ArticleCategory = 'PROMOTION' | 'SYSTEM' | 'ENCYCLOPEDIA' | 'SEO' | 'TERMS'
+export type ArticleModel = 1 | 2 | 3
 
 export interface Article {
     id: string
-    category: ArticleCategory
-    title: string
+    category: string // Leaf category value from the cascader
+    title?: string // Optional for Model 1 & 2, Required for Model 3
     language: string
     cover_url?: string
     content: string // HTML content
@@ -11,8 +11,9 @@ export interface Article {
     last_modified_by: string
     publish_start: string
     publish_end?: string
-    status_test: boolean
-    status_live: boolean
+    event_start_time?: string // For Model 3
+    event_end_time?: string // For Model 3
+    is_published: boolean
     seo: {
         meta_title?: string
         meta_description?: string
@@ -20,7 +21,7 @@ export interface Article {
 }
 
 export interface ArticleQuery {
-    categories?: ArticleCategory[]
+    categories?: string[] // Optional filter by category leaf value
     start_time?: string
     end_time?: string
     page: number

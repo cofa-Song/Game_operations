@@ -23,11 +23,13 @@
         <n-card embedded :bordered="false" size="small">
           <n-form inline :model="searchParams" label-placement="left">
             <n-form-item :label="t('article.category')">
-              <n-select
+              <n-cascader
                 v-model:value="searchParams.categories"
                 multiple
                 clearable
-                :options="categoryOptions"
+                expand-trigger="hover"
+                :options="categoryTree"
+                check-strategy="child"
                 placeholder="篩選類別"
                 style="width: 260px"
               />
@@ -66,7 +68,7 @@
         <n-form
           ref="formRef"
           :model="formModel"
-          :rules="rules"
+          :rules="dynamicRules"
           label-placement="top"
         >
           <n-grid :cols="2" :x-gap="20">
@@ -77,16 +79,24 @@
             </n-gi>
             <n-gi>
               <n-form-item label="文章類別" path="category">
-                <n-select v-model:value="formModel.category" :options="categoryOptions" />
+                <n-cascader 
+                  v-model:value="formModel.category" 
+                  :options="categoryTree" 
+                  expand-trigger="hover"
+                  check-strategy="child"
+                />
               </n-form-item>
             </n-gi>
           </n-grid>
 
-          <n-form-item label="文章標題" path="title">
+          <n-form-item label="文章標題" path="title" v-if="currentModel >= 1">
             <n-input v-model:value="formModel.title" placeholder="建議 30 字內" count-text-style="true" maxlength="50" show-count />
+            <template #label>
+              文章標題 <span v-if="currentModel === 3" class="text-red-500">*</span>
+            </template>
           </n-form-item>
 
-          <n-form-item label="封面縮圖" path="cover_url">
+          <n-form-item label="封面縮圖" path="cover_url" v-if="currentModel >= 2">
             <n-upload
               action="#"
               list-type="image-card"
@@ -96,6 +106,9 @@
             >
               點擊上傳
             </n-upload>
+            <template #label>
+              封面縮圖 <span class="text-red-500">*</span>
+            </template>
           </n-form-item>
 
           <n-tabs type="line" animated>
@@ -104,20 +117,9 @@
                 <TinymceEditor v-model="formModel.content" placeholder="請輸入文章內容" :height="500" />
               </n-form-item>
             </n-tab-pane>
-            <n-tab-pane name="seo" tab="SEO 優化">
-               <n-form-item label="Meta Title" path="seo.meta_title">
-                <n-input v-model:value="formModel.seo.meta_title" :placeholder="formModel.title || '留空則取用標題'" />
-              </n-form-item>
-              <n-form-item label="Meta Description" path="seo.meta_description">
-                <n-input
-                  v-model:value="formModel.seo.meta_description"
-                  type="textarea"
-                  placeholder="建議 150 字內"
-                  :rows="3"
-                />
-              </n-form-item>
-            </n-tab-pane>
-            <n-tab-pane name="publish" tab="發佈設定">
+
+            <n-tab-pane name="publish" tab="發佈與活動設定">
+               <div class="font-bold mb-2">上架顯示時間</div>
                <n-grid :cols="2" :x-gap="20">
                     <n-gi>
                         <n-form-item label="發佈開始時間" path="publish_start">
@@ -130,6 +132,36 @@
                         </n-form-item>
                     </n-gi>
                </n-grid>
+
+               <div v-if="currentModel === 3" class="mt-4">
+                 <div class="font-bold mb-2 text-blue-600">活動實際時間 (Model 3)</div>
+                 <n-grid :cols="2" :x-gap="20">
+                      <n-gi>
+                          <n-form-item label="活動開始時間" path="event_start_time">
+                              <n-date-picker v-model:value="eventStartTimestamp" type="datetime" />
+                          </n-form-item>
+                      </n-gi>
+                      <n-gi>
+                          <n-form-item label="活動結束時間" path="event_end_time">
+                              <n-date-picker v-model:value="eventEndTimestamp" type="datetime" />
+                          </n-form-item>
+                      </n-gi>
+                 </n-grid>
+               </div>
+            </n-tab-pane>
+
+            <n-tab-pane name="seo" tab="SEO 優化">
+               <n-form-item label="Meta Title" path="seo.meta_title">
+                <n-input v-model:value="formModel.seo.meta_title" :placeholder="formModel.title || '留空則取用標題'" />
+              </n-form-item>
+              <n-form-item label="Meta Description" path="seo.meta_description">
+                <n-input
+                  v-model:value="formModel.seo.meta_description"
+                  type="textarea"
+                  placeholder="建議 150 字內"
+                  :rows="3"
+                />
+              </n-form-item>
             </n-tab-pane>
           </n-tabs>
         </n-form>
@@ -146,17 +178,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, h } from 'vue'
+import { ref, reactive, onMounted, computed, h, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { 
   NCard, NSpace, NForm, NFormItem, NSelect, NButton, NIcon, NDataTable, NTag,
   NDrawer, NDrawerContent, NInput, NGrid, NGi, NTabs, NTabPane, NDatePicker,
-  NSwitch, NAvatar, NUpload, useMessage, useDialog 
+  NSwitch, NAvatar, NUpload, NCascader, useMessage, useDialog 
 } from 'naive-ui'
-import type { UploadFileInfo } from 'naive-ui'
+import type { UploadFileInfo, CascaderOption, FormRules } from 'naive-ui'
 import { CreateOutline, TrashOutline } from '@vicons/ionicons5'
 import { articleApi } from '@/api/article'
-import { Article, ArticleCategory } from '@/types/article'
+import { Article } from '@/types/article'
 import TinymceEditor from '@/components/TinymceEditor.vue'
 import type { DataTableColumns } from 'naive-ui'
 
@@ -164,21 +196,99 @@ const { t } = useI18n()
 const message = useMessage()
 const dialog = useDialog()
 
-// Search
+// === Category Tree Definition ===
+const categoryTree: CascaderOption[] = [
+  {
+    label: '新手教學',
+    value: 'GUIDE',
+    children: [
+      {
+        label: '遊戲介紹',
+        value: 'GAME_INTRO',
+        children: [
+          { label: '最新遊戲', value: 'NEW_GAMES', model: 2 },
+          { label: '轉輪遊戲', value: 'SLOTS', model: 2 },
+          { label: '魚機遊戲', value: 'FISH', model: 2 },
+          { label: '柏青遊戲', value: 'PACHINKO', model: 2 },
+          { label: '棋牌遊戲', value: 'CARD', model: 2 },
+        ]
+      },
+      {
+        label: 'App 特色引導',
+        value: 'APP_FEATURES',
+        children: [
+          { label: '保留機台規則', value: 'MACHINE_RULES', model: 1 },
+          { label: '社群互動', value: 'SOCIAL', model: 1 },
+        ]
+      },
+      {
+        label: '下載安裝教學',
+        value: 'DOWNLOAD_INSTALL',
+        children: [
+          { label: '桌面捷徑', value: 'SHORTCUT', model: 1 },
+          { label: 'ios安裝教學', value: 'IOS', model: 1 },
+          { label: 'Android安裝教學', value: 'ANDROID', model: 1 },
+        ]
+      }
+    ]
+  },
+  {
+    label: '儲值專區',
+    value: 'DEPOSIT',
+    children: [
+      { label: '儲值教學', value: 'DEPOSIT_GUIDE', model: 1 }
+    ]
+  },
+  {
+    label: '熱門活動',
+    value: 'HOT_EVENTS',
+    children: [
+      {
+        label: '活動列表',
+        value: 'EVENT_LIST',
+        children: [
+          { label: '進行中', value: 'ONGOING', model: 3 },
+          { label: '即將開始', value: 'UPCOMING', model: 3 },
+          { label: '已結束', value: 'ENDED', model: 3 },
+        ]
+      },
+      { label: '獲獎名單', value: 'WINNER_LIST', model: 3 }
+    ]
+  },
+  {
+    label: '客服中心',
+    value: 'CUSTOMER_SERVICE',
+    children: [
+      { label: '常見問題', value: 'FAQ', model: 1 },
+      { label: '聯絡客服', value: 'CONTACT', model: 1 }
+    ]
+  }
+]
+
+// Helper to flatten categories for lookup
+const flatCategories: Record<string, { label: string, model: number, path: string[] }> = {}
+const buildFlat = (nodes: CascaderOption[], currentPath: string[] = []) => {
+    nodes.forEach(node => {
+        const path = [...currentPath, node.label as string]
+        if (!node.children) {
+            flatCategories[node.value as string] = { label: node.label as string, model: node.model as number, path }
+        } else {
+            buildFlat(node.children, path)
+        }
+    })
+}
+buildFlat(categoryTree)
+
+const getCategoryPath = (value: string) => flatCategories[value]?.path.join(' > ') || value
+const getCategoryModel = (value: string) => flatCategories[value]?.model || 1
+
+// === Search ===
 const searchParams = reactive({
-  categories: [] as ArticleCategory[],
+  categories: [] as string[],
   start_time: undefined as string | undefined,
   end_time: undefined as string | undefined
 })
 const timeRange = ref<[number, number] | null>(null)
-
-const categoryOptions = [
-  { label: '優惠活動', value: 'PROMOTION' },
-  { label: '系統公告', value: 'SYSTEM' },
-  { label: '遊戲百科', value: 'ENCYCLOPEDIA' },
-  { label: 'SEO 專欄', value: 'SEO' },
-  { label: '服務條款', value: 'TERMS' }
-]
 
 const languageOptions = [
   { label: '繁體中文 (zh-TW)', value: 'zh-TW' },
@@ -207,27 +317,24 @@ const pagination = reactive({
   pageSizes: [10, 20, 50]
 })
 
-const pendingChanges = ref<{ id: string, site: 'test' | 'live', status: boolean }[]>([])
-
 const columns: DataTableColumns<Article> = [
   { title: '文章類別', key: 'category', render: (row) => {
-    const cat = categoryOptions.find(o => o.value === row.category)
-    return h(NTag, { type: 'info', size: 'small' }, { default: () => cat?.label || row.category })
+    return h(NTag, { type: 'info', size: 'small' }, { default: () => getCategoryPath(row.category) })
   }},
-  { title: '文章標題', key: 'title', ellipsis: { tooltip: true }, width: 200 },
-  { title: '封面', key: 'cover_url', render: (row) => h(NAvatar, { src: row.cover_url, size: 'small', fallbackSrc: 'https://placehold.co/40x30' }) },
+  { title: '文章標題', key: 'title', ellipsis: { tooltip: true }, width: 200, render: (row) => row.title || '-' },
+  { title: '封面', key: 'cover_url', render: (row) => {
+      const model = getCategoryModel(row.category)
+      if (model === 1) return '-'
+      return h(NAvatar, { src: row.cover_url, size: 'small', fallbackSrc: 'https://placehold.co/40x30' })
+  }},
   { title: '發佈區間', key: 'publish_start', render: (row) => h('div', { style: 'font-size: 12px' }, [
     h('div', `起: ${formatDate(row.publish_start)}`),
     h('div', `止: ${row.publish_end ? formatDate(row.publish_end) : '永久上架'}`)
   ])},
   { title: '操作人', key: 'last_modified_by' },
-  { title: '狀態 (測試)', key: 'status_test', render: (row) => h(NSwitch, { 
-    value: row.status_test, 
-    onUpdateValue: (v: boolean) => recordChange(row.id, 'test', v) 
-  }) },
-  { title: '狀態 (正式)', key: 'status_live', render: (row) => h(NSwitch, { 
-    value: row.status_live, 
-    onUpdateValue: (v: boolean) => recordChange(row.id, 'live', v) 
+  { title: '上架', key: 'is_published', render: (row) => h(NSwitch, { 
+    value: row.is_published, 
+    onUpdateValue: (v: boolean) => recordChange(row.id, v) 
   }) },
   {
     title: '操作',
@@ -286,12 +393,15 @@ const formRef = ref<any>(null)
 
 const formModel = reactive({
   title: '',
-  category: 'PROMOTION' as ArticleCategory,
+  category: 'NEW_GAMES',
   language: 'zh-TW',
   cover_url: '',
   content: '',
   publish_start: '',
   publish_end: '',
+  event_start_time: '',
+  event_end_time: '',
+  is_published: false,
   seo: {
     meta_title: '',
     meta_description: ''
@@ -300,12 +410,30 @@ const formModel = reactive({
 
 const publishStartTimestamp = ref<number>(Date.now())
 const publishEndTimestamp = ref<number | null>(null)
+const eventStartTimestamp = ref<number | null>(null)
+const eventEndTimestamp = ref<number | null>(null)
 
-const rules = {
-  title: { required: true, message: '請輸入標題', trigger: 'blur' },
-  category: { required: true, message: '請選擇類別', trigger: 'change' },
-  language: { required: true, message: '請選擇語系', trigger: 'change' }
-}
+const currentModel = computed(() => getCategoryModel(formModel.category))
+
+const dynamicRules = computed<FormRules>(() => {
+    const baseRules: FormRules = {
+        category: { required: true, message: '請選擇類別', trigger: 'change' },
+        language: { required: true, message: '請選擇語系', trigger: 'change' },
+        content: { required: true, message: '請填寫內容', trigger: 'blur' }
+    }
+
+    if (currentModel.value >= 2) {
+        baseRules.cover_url = { required: true, message: '請上傳封面圖片' }
+    }
+    
+    if (currentModel.value === 3) {
+        baseRules.title = { required: true, message: '請填寫活動標題', trigger: 'blur' }
+        // For date pickers, we handle validation manually before save or bind them properly.
+        // We'll validate them in handleSave for simplicity since they are bound to separate refs.
+    }
+
+    return baseRules
+})
 
 const fileList = computed(() => {
   if (!formModel.cover_url) return []
@@ -320,7 +448,6 @@ const fileList = computed(() => {
 const handleUploadChange = (data: { fileList: UploadFileInfo[] }) => {
   if (data.fileList.length > 0) {
     const file = data.fileList[0]
-    // 模擬上傳成功並設置 URL
     if (file.file) {
       formModel.cover_url = URL.createObjectURL(file.file)
     } else if (file.url) {
@@ -336,36 +463,70 @@ const openDrawer = async (id?: string) => {
   if (id) {
     const res = await articleApi.get(id)
     if (res.code === 0 && res.data) {
-       Object.assign(formModel, JSON.parse(JSON.stringify(res.data)))
+       Object.assign(formModel, {
+           title: res.data.title || '',
+           category: res.data.category,
+           language: res.data.language,
+           cover_url: res.data.cover_url || '',
+           content: res.data.content,
+           is_published: res.data.is_published,
+           seo: res.data.seo || { meta_title: '', meta_description: '' }
+       })
        publishStartTimestamp.value = new Date(res.data.publish_start).getTime()
        publishEndTimestamp.value = res.data.publish_end ? new Date(res.data.publish_end).getTime() : null
+       eventStartTimestamp.value = res.data.event_start_time ? new Date(res.data.event_start_time).getTime() : null
+       eventEndTimestamp.value = res.data.event_end_time ? new Date(res.data.event_end_time).getTime() : null
     }
   } else {
     Object.assign(formModel, {
       title: '',
-      category: 'PROMOTION',
+      category: 'NEW_GAMES',
       language: 'zh-TW',
       cover_url: '',
       content: '',
-      publish_start: new Date().toISOString(),
-      publish_end: '',
+      is_published: false,
       seo: { meta_title: '', meta_description: '' }
     })
     publishStartTimestamp.value = Date.now()
     publishEndTimestamp.value = null
+    eventStartTimestamp.value = null
+    eventEndTimestamp.value = null
   }
   showDrawer.value = true
 }
 
 const handleSave = async () => {
   formRef.value?.validate(async (errors: any) => {
+    if (currentModel.value === 3) {
+        if (!eventStartTimestamp.value || !eventEndTimestamp.value) {
+            message.error('Model 3 文章必須填寫活動開始與結束時間')
+            return
+        }
+    }
+
     if (!errors) {
       saving.value = true
       try {
         formModel.publish_start = new Date(publishStartTimestamp.value).toISOString()
         formModel.publish_end = publishEndTimestamp.value ? new Date(publishEndTimestamp.value).toISOString() : ''
         
+        if (currentModel.value === 3) {
+            formModel.event_start_time = new Date(eventStartTimestamp.value!).toISOString()
+            formModel.event_end_time = new Date(eventEndTimestamp.value!).toISOString()
+        }
+
         const payload = { ...formModel, id: editingId.value || undefined }
+        
+        // Clean up unneeded fields
+        if (currentModel.value === 1) {
+            delete payload.cover_url
+            delete payload.event_start_time
+            delete payload.event_end_time
+        } else if (currentModel.value === 2) {
+            delete payload.event_start_time
+            delete payload.event_end_time
+        }
+
         const res = await articleApi.save(payload)
         if (res.code === 0) {
           message.success('文章已儲存並發佈')
@@ -393,19 +554,19 @@ const handleDelete = (id: string) => {
   })
 }
 
-const recordChange = (id: string, site: 'test' | 'live', status: boolean) => {
-    // Immediate UI update for responsiveness in mock
+const pendingChanges = ref<{ id: string, status: boolean }[]>([])
+
+const recordChange = (id: string, status: boolean) => {
     const idx = articles.value.findIndex(a => a.id === id)
     if (idx !== -1) {
-        if (site === 'test') articles.value[idx].status_test = status
-        else articles.value[idx].status_live = status
+        articles.value[idx].is_published = status
     }
 
-    const existing = pendingChanges.value.findIndex(c => c.id === id && c.site === site)
+    const existing = pendingChanges.value.findIndex(c => c.id === id)
     if (existing !== -1) {
         pendingChanges.value.splice(existing, 1)
     } else {
-        pendingChanges.value.push({ id, site, status })
+        pendingChanges.value.push({ id, status })
     }
 }
 
@@ -413,7 +574,7 @@ const handleBatchSave = async () => {
     loading.value = true
     try {
         for (const change of pendingChanges.value) {
-            await articleApi.toggleStatus(change.id, change.site, change.status)
+            await articleApi.toggleStatus(change.id, change.status)
         }
         message.success('變更已套用')
         pendingChanges.value = []

@@ -62,8 +62,7 @@ export const articleApi = {
             id: `ART${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
             last_modified_at: new Date().toISOString(),
             last_modified_by: 'admin',
-            status_test: article.status_test ?? false,
-            status_live: article.status_live ?? false,
+            is_published: article.is_published ?? false,
             seo: article.seo || {}
         } as Article
         mockArticles.unshift(newArticle)
@@ -79,12 +78,11 @@ export const articleApi = {
         return { code: 0, msg: 'success' }
     },
 
-    async toggleStatus(id: string, site: 'test' | 'live', status: boolean): Promise<ApiResponse<void>> {
+    async toggleStatus(id: string, status: boolean): Promise<ApiResponse<void>> {
         await delay(200)
         const index = mockArticles.findIndex(a => a.id === id)
         if (index !== -1) {
-            if (site === 'test') mockArticles[index].status_test = status
-            else mockArticles[index].status_live = status
+            mockArticles[index].is_published = status
         }
         return { code: 0, msg: 'success' }
     }
