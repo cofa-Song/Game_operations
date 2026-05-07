@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/useAuthStore'
 import Login from '@/views/Login.vue'
 
@@ -244,6 +244,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
       },
       {
+        path: 'seo-writer',
+        name: 'SEOWriter',
+        component: () => import('@/views/Master/SEOWriter.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: 'SEO 寫手工具' }
+      },
+      {
         path: 'manual-adjustment',
         name: 'ManualAdjustment',
         component: () => import('@/views/Master/ManualAdjustment.vue'),
@@ -315,7 +321,7 @@ const routes: RouteRecordRaw[] = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes
 })
 

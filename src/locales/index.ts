@@ -202,6 +202,7 @@ export const zhTW = {
     operationConfig: '營運參數配置',
     guildManagement: '公會設定',
     articleManagement: '文章管理',
+    seoWriter: 'SEO 寫手工具',
     dataCenter: '數據中心',
     operationReport: '營運報表',
     gameStats: '遊戲統計',
@@ -307,6 +308,27 @@ export const zhTW = {
   article: {
     category: '文章類別',
     timeRange: '時間區間'
+  },
+  seoWriter: {
+    title: 'SEO 內容助手',
+    focusKeyword: '核心關鍵字',
+    focusKeywordTip: '輸入此文章想要瞄準的搜尋關鍵字',
+    seoScore: 'SEO 評分',
+    searchPreview: 'Google 搜尋結果預覽',
+    metaTitle: 'SEO 標題 (Meta Title)',
+    metaDesc: 'SEO 描述 (Meta Description)',
+    charCount: '字數統計',
+    optimalLength: '建議長度',
+    checklist: 'SEO 優化清單',
+    keywordInTitle: '標題中包含關鍵字',
+    keywordInDesc: '描述中包含關鍵字',
+    descOptimalLength: '描述長度適中',
+    titleOptimalLength: '標題長度適中',
+    slug: '自定義網頁 Slug (URL)',
+    saveDraft: '儲存草稿',
+    publishArticle: '立即發佈',
+    analysis: '內容分析',
+    readability: '易讀性'
   },
   announcement: {
     title: '公告系統',
@@ -1263,6 +1285,7 @@ export const zhCN = {
     operationConfig: '营运参数配置',
     guildManagement: '公会设定',
     articleManagement: '文章管理',
+    seoWriter: 'SEO 写手工具',
     dataCenter: '数据中心',
     operationReport: '运营报表',
     reportManagement: '报表管理',
@@ -1292,6 +1315,27 @@ export const zhCN = {
   article: {
     category: '文章类别',
     timeRange: '時間区间'
+  },
+  seoWriter: {
+    title: 'SEO 内容助手',
+    focusKeyword: '核心关键字',
+    focusKeywordTip: '输入此文章想要瞄准的搜索关键字',
+    seoScore: 'SEO 评分',
+    searchPreview: 'Google 搜索结果预览',
+    metaTitle: 'SEO 标题 (Meta Title)',
+    metaDesc: 'SEO 描述 (Meta Description)',
+    charCount: '字数统计',
+    optimalLength: '建议长度',
+    checklist: 'SEO 优化清单',
+    keywordInTitle: '标题中包含关键字',
+    keywordInDesc: '描述中包含关键字',
+    descOptimalLength: '描述长度适中',
+    titleOptimalLength: '标题长度适中',
+    slug: '自定义网页 Slug (URL)',
+    saveDraft: '储存草稿',
+    publishArticle: '立即发布',
+    analysis: '内容分析',
+    readability: '易读性'
   },
   announcement: {
     title: '公告系统',
@@ -2082,6 +2126,7 @@ export const en = {
     operationConfig: 'Operation Config',
     guildManagement: 'Guild Settings',
     articleManagement: 'Article Management',
+    seoWriter: 'SEO Writer Tool',
     dataCenter: 'Data Center',
     operationReport: 'Operation Report',
     reportManagement: 'Report Management',
@@ -2136,6 +2181,27 @@ export const en = {
   article: {
     category: 'Category',
     timeRange: 'Time Range'
+  },
+  seoWriter: {
+    title: 'SEO Content Assistant',
+    focusKeyword: 'Focus Keyword',
+    focusKeywordTip: 'Enter the keyword you want to target for this article',
+    seoScore: 'SEO Score',
+    searchPreview: 'Google Search Preview',
+    metaTitle: 'Meta Title',
+    metaDesc: 'Meta Description',
+    charCount: 'Char Count',
+    optimalLength: 'Optimal Length',
+    checklist: 'SEO Checklist',
+    keywordInTitle: 'Keyword in Title',
+    keywordInDesc: 'Keyword in Meta Description',
+    descOptimalLength: 'Meta Description length',
+    titleOptimalLength: 'Meta Title length',
+    slug: 'Custom URL Slug',
+    saveDraft: 'Save Draft',
+    publishArticle: 'Publish Now',
+    analysis: 'Analysis',
+    readability: 'Readability'
   },
   announcement: {
     title: 'Announcement System',

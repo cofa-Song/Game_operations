@@ -125,6 +125,7 @@ const menuKeyToRoute: Record<string, string> = {
   'commodity-config': '/admin/commodity-config',
   'guild-management': '/admin/guilds',
   'article-manager': '/admin/articles',
+  'seo-writer': '/admin/seo-writer',
   'agent-list': '/admin/agent-list',
   'agent-withdrawal-audit': '/admin/agent-withdrawal-audit',
   'vip-settings': '/admin/vip-settings',
@@ -268,6 +269,11 @@ const menuOptions = computed(() => [
         icon: renderIcon(WalletOutline)
       }
     ]
+  },
+  {
+    label: t('navigation.seoWriter'),
+    key: 'seo-writer',
+    icon: renderIcon(BuildOutline)
   },
   {
     label: t('navigation.gameManagement'),

@@ -17,6 +17,8 @@ export interface Article {
     seo: {
         meta_title?: string
         meta_description?: string
+        focus_keyword?: string
+        slug?: string
     }
 }
 

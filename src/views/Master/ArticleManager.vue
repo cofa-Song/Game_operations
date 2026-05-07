@@ -27,7 +27,7 @@
                 v-model:value="searchParams.categories"
                 multiple
                 clearable
-                expand-trigger="hover"
+                expand-trigger="click"
                 :options="categoryTree"
                 check-strategy="child"
                 placeholder="篩選類別"
@@ -73,18 +73,21 @@
         >
           <n-grid :cols="2" :x-gap="20">
             <n-gi>
-              <n-form-item label="文章語系" path="language">
-                <n-select v-model:value="formModel.language" :options="languageOptions" />
-              </n-form-item>
-            </n-gi>
-            <n-gi>
               <n-form-item label="文章類別" path="category">
                 <n-cascader 
                   v-model:value="formModel.category" 
                   :options="categoryTree" 
-                  expand-trigger="hover"
+                  expand-trigger="click"
                   check-strategy="child"
+                  filterable
+                  clearable
+                  placeholder="請選擇文章類別"
                 />
+              </n-form-item>
+            </n-gi>
+            <n-gi>
+              <n-form-item label="文章語系" path="language">
+                <n-select v-model:value="formModel.language" :options="languageOptions" />
               </n-form-item>
             </n-gi>
           </n-grid>
@@ -393,7 +396,7 @@ const formRef = ref<any>(null)
 
 const formModel = reactive({
   title: '',
-  category: 'NEW_GAMES',
+  category: '',
   language: 'zh-TW',
   cover_url: '',
   content: '',
@@ -480,7 +483,7 @@ const openDrawer = async (id?: string) => {
   } else {
     Object.assign(formModel, {
       title: '',
-      category: 'NEW_GAMES',
+      category: '',
       language: 'zh-TW',
       cover_url: '',
       content: '',
