@@ -279,6 +279,8 @@ const editingId = ref<string | null>(null)
 const isNewCategory = ref(false)
 const today = new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
 
+const DRAFT_KEY = 'seo_writer_local_draft'
+
 // === List Logic ===
 const loading = ref(false)
 const articles = ref<Article[]>([])
@@ -395,6 +397,7 @@ const handleAddNew = () => {
   resetForm()
   isNewCategory.value = false
   currentView.value = 'editor'
+  checkLocalDraft()
 }
 
 const handleEdit = async (id: string) => {
@@ -548,6 +551,7 @@ const handleSave = async () => {
     })
     if (res.code === 0) {
       message.success(editingId.value ? '文章已更新' : '文章已發佈並優化 SEO')
+      localStorage.removeItem(DRAFT_KEY) // Clear draft on success
       currentView.value = 'list'
       allKnownArticles.value = [] // Reset to re-fetch dynamic categories
       fetchData()
@@ -558,7 +562,34 @@ const handleSave = async () => {
 }
 
 const handleSaveDraft = () => {
-  message.info('草稿已儲存到本地')
+  const draftData = {
+    formModel,
+    isNewCategory: isNewCategory.value,
+    timestamp: new Date().getTime()
+  }
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData))
+  message.success('草稿已儲存到瀏覽器本地')
+}
+
+const checkLocalDraft = () => {
+  const saved = localStorage.getItem(DRAFT_KEY)
+  if (saved) {
+    const draft = JSON.parse(saved)
+    dialog.info({
+      title: '發現未發佈的草稿',
+      content: `系統發現您在 ${new Date(draft.timestamp).toLocaleString()} 有一份未完成的草稿，是否恢復？`,
+      positiveText: '恢復草稿',
+      negativeText: '放棄並刪除',
+      onPositiveClick: () => {
+        Object.assign(formModel, draft.formModel)
+        isNewCategory.value = draft.isNewCategory
+        message.success('已恢復草稿內容')
+      },
+      onNegativeClick: () => {
+        localStorage.removeItem(DRAFT_KEY)
+      }
+    })
+  }
 }
 
 onMounted(() => {
