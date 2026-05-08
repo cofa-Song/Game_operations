@@ -195,7 +195,7 @@ export const zhTW = {
     vipLevel: 'VIP等級',
     rtp: 'RTP',
     inviteCode: '邀請碼',
-    referrerId: '推薦人ID',
+    promoCode: '推廣碼',
     affiliation: '所屬',
     frontendSetting: '前台設定',
     announcement: '公告系統',

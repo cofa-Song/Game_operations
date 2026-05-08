@@ -33,7 +33,7 @@ export interface Player {
     status: PlayerStatus
     tags: PlayerTag[]
     vip_level: number
-    referrer_id?: string // 推薦人
+    promo_code?: string // 推廣碼
     agent_name?: string // 代理帳號 (所屬)
     invite_code?: string // 邀請碼
     rtp?: number // RPT (Return To Player)
@@ -69,13 +69,13 @@ export interface Player {
 export interface PlayerSearchParams {
     search_type?: 'id' | 'username' | 'phone'
     q?: string // ID / Phone / Username
-    affiliation_type?: 'invite_code' | 'referrer_id'
+    affiliation_type?: 'invite_code' | 'promo_code'
     affiliation_query?: string
     status?: PlayerStatus
     tags?: PlayerTag[]
     register_date_start?: string
     register_date_end?: string
-    referrer?: string
+    promo_code?: string
     register_ip?: string
     page: number
     page_size: number
@@ -106,7 +106,7 @@ export interface CreatePlayerRequest {
     is_deposit_disabled?: boolean
     is_play_disabled?: boolean
     is_retention_active?: boolean
-    referrer_id?: string
+    promo_code?: string
     tags: PlayerTag[] // Usually ['TEST'] for admin created
 }
 

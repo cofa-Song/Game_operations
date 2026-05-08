@@ -22,7 +22,7 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
         status: statuses[i % 6] as any,
         tags: i % 10 === 0 ? ['TEST', 'VIP'] : ['NORMAL'],
         vip_level: Math.floor(Math.random() * 5),
-        referrer_id: i % 5 === 1 ? `A${20000 + i}` : undefined,
+        promo_code: i % 5 === 1 ? `A${20000 + i}` : undefined,
         agent_name: i % 5 === 1 ? `agent_${20000 + i}` : undefined, // Mock agent name for affiliated players
         invite_code: i % 5 === 1 ? `INV${20000 + i}` : undefined, // Mock invite code
         rtp: parseFloat((Math.random() * 40 + 70).toFixed(2)), // Random RTP between 80.00 and 120.00

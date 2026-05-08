@@ -210,7 +210,7 @@ const createModel = reactive({
   is_muted: false,
   is_gift_disabled: false,
   is_retention_active: false,
-  referrer_id: ''
+  promo_code: ''
 })
 
 const handleCreate = async () => {
@@ -232,7 +232,7 @@ const handleCreate = async () => {
       is_muted: createModel.is_muted,
       is_gift_disabled: createModel.is_gift_disabled,
       is_retention_active: createModel.is_retention_active,
-      referrer_id: createModel.referrer_id,
+      promo_code: createModel.promo_code,
       tags: createModel.tags
     })
         if(res.code === 0) {
@@ -317,7 +317,7 @@ onBeforeUnmount(() => {
                 <div class="relative">
                     <NRadioGroup v-model:value="searchForm.affiliation_type" name="affiliationType" size="small" class="absolute -top-7 left-0 whitespace-nowrap">
                         <NRadio value="invite_code">{{ t('navigation.inviteCode') }}</NRadio>
-                        <NRadio value="referrer_id">{{ t('navigation.referrerId') }}</NRadio>
+                        <NRadio value="promo_code">{{ t('navigation.promoCode') }}</NRadio>
                     </NRadioGroup>
                     <NInput v-model:value="searchForm.affiliation_query" :placeholder="t('common.inputPlaceholder')" style="width: 180px" />
                 </div>
@@ -423,8 +423,8 @@ onBeforeUnmount(() => {
               <NSwitch v-model:value="createModel.is_retention_active" />
             </NFormItem>
 
-            <NFormItem label="推薦人 ID">
-              <NInput v-model:value="createModel.referrer_id" placeholder="Referrer ID" />
+            <NFormItem :label="t('navigation.promoCode')">
+              <NInput v-model:value="createModel.promo_code" placeholder="Promo Code" />
             </NFormItem>
 
             <NFormItem :label="t('player.list.tags')">

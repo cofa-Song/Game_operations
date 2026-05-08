@@ -55,8 +55,8 @@ export const playerApi = {
             const aq = params.affiliation_query.toLowerCase()
             if (params.affiliation_type === 'invite_code') {
                 filtered = filtered.filter(p => p.invite_code?.toLowerCase().includes(aq))
-            } else if (params.affiliation_type === 'referrer_id') {
-                filtered = filtered.filter(p => p.referrer_id?.toLowerCase().includes(aq))
+            } else if (params.affiliation_type === 'promo_code') {
+                filtered = filtered.filter(p => p.promo_code?.toLowerCase().includes(aq))
             }
         }
 
@@ -114,7 +114,7 @@ export const playerApi = {
             status: 'ACTIVE',
             tags: data.tags || [],
             vip_level: data.vip_level || 0,
-            referrer_id: data.referrer_id,
+            promo_code: data.promo_code,
             gender: data.gender,
             birthday: data.birthday,
             email: data.email,
