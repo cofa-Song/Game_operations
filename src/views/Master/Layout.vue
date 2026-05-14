@@ -104,6 +104,7 @@ const menuKeyToRoute: Record<string, string> = {
   'thirdparty-keys': '/admin/thirdparty-keys',
   'app-versions': '/admin/app-versions',
   'admin-whitelist': '/admin/admin-whitelist',
+  'frontend-blacklist': '/admin/frontend-blacklist',
   'operation-config': '/admin/operation-config',
   'announcement-manager': '/admin/announcements',
   'image-config': '/admin/image-config',
@@ -397,6 +398,11 @@ const menuOptions = computed(() => [
         label: t('navigation.adminWhitelist'),
         key: 'admin-whitelist',
         icon: renderIcon(ShieldOutline)
+      },
+      {
+        label: t('navigation.frontendBlacklist'),
+        key: 'frontend-blacklist',
+        icon: renderIcon(ShieldOutline)
       }
     ]
   },
@@ -561,7 +567,7 @@ const handleLogout = () => {
 
       <NLayoutContent class="p-4 h-[calc(100vh-112px)] overflow-hidden">
         <!-- 內容容器 -->
-        <div id="main-scroll-container" class="h-full overflow-y-auto pr-2 animate-fade-in-up">
+        <div id="main-scroll-container" class="h-full overflow-y-auto overflow-x-hidden pr-2 animate-fade-in-up">
           <RouterView />
         </div>
       </NLayoutContent>

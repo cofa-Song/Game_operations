@@ -91,7 +91,7 @@ const columns: DataTableColumns<PaymentChannel> = [
   {
     title: t('finance.paymentChannel.name'),
     key: 'name',
-    width: 220,
+    minWidth: 200,
     render: (row) => h('div', { class: 'flex items-center gap-3' }, [
       h(NImage, { width: 32, height: 32, src: row.icon, previewDisabled: true, class: 'rounded shadow-sm' }),
       h('div', [
@@ -103,7 +103,7 @@ const columns: DataTableColumns<PaymentChannel> = [
   {
     title: t('finance.paymentChannel.limitRange'),
     key: 'limitRange',
-    width: 180,
+    minWidth: 160,
     render: (row) => h('div', { class: 'text-[12px] font-mono' }, [
       h('span', { class: 'text-slate-500' }, `$${row.minLimit.toLocaleString()}`),
       h('span', { class: 'mx-1 text-slate-300' }, '~'),
@@ -113,7 +113,7 @@ const columns: DataTableColumns<PaymentChannel> = [
   {
     title: `${t('finance.paymentChannel.dailyAccomplished')} / ${t('finance.paymentChannel.dailyLimit')}`,
     key: 'limit',
-    width: 200,
+    minWidth: 200,
     render: (row) => {
       const percentage = row.dailyLimit > 0 ? (row.dailyAccomplished / row.dailyLimit) * 100 : 0
       const status = percentage > 95 ? 'error' : percentage > 80 ? 'warning' : 'success'
@@ -137,7 +137,7 @@ const columns: DataTableColumns<PaymentChannel> = [
   {
     title: t('finance.paymentChannel.vipLevel'),
     key: 'vip',
-    width: 120,
+    minWidth: 120,
     render: (row) => h(NTag, { size: 'small', type: 'info', bordered: false }, { 
       default: () => t('finance.paymentChannel.vipLevelShort', { level: row.minVipLevel }) 
     })
@@ -145,7 +145,7 @@ const columns: DataTableColumns<PaymentChannel> = [
   {
     title: t('common.status'),
     key: 'status',
-    width: 120,
+    minWidth: 120,
     render: (row) => {
       const pending = pendingChanges.value[row.id]?.status
       const currentStatus = pending !== undefined ? pending : row.status
@@ -332,7 +332,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="premium-container p-6 min-h-full flex flex-col gap-6">
+  <div class="premium-container p-6 min-h-full flex flex-col gap-6 w-full">
     <div class="tech-glow glow-1"></div>
 
     <!-- 頂部浮動區塊 -->
@@ -408,7 +408,7 @@ onBeforeUnmount(() => {
           :bordered="false"
           :pagination="false"
           class="tech-table-light"
-          :scroll-x="1200"
+          :scroll-x="1000"
         />
       </div>
     </div>

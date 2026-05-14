@@ -214,6 +214,13 @@ const masterRoutes: RouteRecordRaw[] = [
       }
       ,
       {
+        path: 'frontend-blacklist',
+        name: 'FrontendBlacklist',
+        component: () => import('@/views/Master/FrontendBlacklist.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
+      }
+      ,
+      {
         path: 'operation-config',
         name: 'OperationConfig',
         component: () => import('@/views/Master/OperationConfig.vue'),
