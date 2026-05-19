@@ -233,6 +233,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'] }
       },
       {
+        path: 'daily-sign-in',
+        name: 'DailySignIn',
+        component: () => import('@/views/Promotion/DailySignIn.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '每日簽到' }
+      },
+      {
         path: 'image-config',
         name: 'ImageConfig',
         component: () => import('@/views/Master/ImageConfig.vue'),

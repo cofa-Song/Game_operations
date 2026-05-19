@@ -235,7 +235,37 @@ export const zhTW = {
     chatAndSupport: '客服與聊天風控',
     contentConfig: '營運內容設定',
     accessManagement: '權限與帳號管理',
-    systemAudit: '系統監控與日誌'
+    systemAudit: '系統監控與日誌',
+    promotions: '優惠',
+    dailySignIn: '每日簽到'
+  },
+  dailySignIn: {
+    title: '每日簽到獎勵設定',
+    editReward: '編輯獎勵',
+    dayInfo: '第 {day} 天',
+    rewardType: '獎勵類型',
+    rewardAmount: '獎勵數量',
+    saveSettings: '儲存設定',
+    resetSettings: '重置',
+    rewardTypes: {
+      GOLD: '金幣',
+      SILVER: '銀幣',
+      BRONZE: '銅幣',
+      ACTIVITY_BONUS: '活動金(銀幣)'
+    },
+    rolloverRequirement: '流水門檻 (倍)',
+    conversionLimit: '轉換上限',
+    continuousRewards: '連續簽到里程碑',
+    continuousDays: '連續天數',
+    addContinuousReward: '新增里程碑',
+    delete: '刪除',
+    retroactiveSignIn: '補簽到設定',
+    enableRetroactive: '開放補簽到功能',
+    maxRetroactiveTimes: '週期內補簽次數上限',
+    retroactiveCostType: '補簽到扣除幣別',
+    retroactiveCostAmount: '補簽到扣除數量',
+    saveSuccess: '每日簽到設定已儲存',
+    resetConfirm: '確定要重置所有未儲存的設定嗎？'
   },
   vip: {
     title: 'VIP 等級設定',
