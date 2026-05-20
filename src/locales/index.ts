@@ -237,7 +237,8 @@ export const zhTW = {
     accessManagement: '權限與帳號管理',
     systemAudit: '系統監控與日誌',
     promotions: '優惠',
-    dailySignIn: '每日簽到'
+    dailySignIn: '每日簽到',
+    promoCodes: '優惠碼管理'
   },
   dailySignIn: {
     title: '每日簽到獎勵設定',
@@ -266,6 +267,45 @@ export const zhTW = {
     retroactiveCostAmount: '補簽到扣除數量',
     saveSuccess: '每日簽到設定已儲存',
     resetConfirm: '確定要重置所有未儲存的設定嗎？'
+  },
+  promoCode: {
+    title: '優惠碼管理',
+    addPromo: '新增優惠碼',
+    editPromo: '編輯優惠碼',
+    deletePromo: '刪除優惠碼',
+    deleteConfirm: '確定要刪除此優惠碼嗎？此操作無法撤銷。',
+    form: {
+      code: '優惠碼代碼',
+      name: '優惠碼名稱',
+      hasExpiry: '有效日期',
+      hasMaxRedemptions: '次數限制',
+      rewardType: '獎勵類型',
+      rewardAmount: '獎勵數量',
+      timeRange: '有效日期區間',
+      maxRedemptions: '總次數限制',
+      usedRedemptions: '已使用次數',
+      status: '狀態',
+      codePlaceholder: '請輸入優惠碼（例如 WELCOME888）',
+      namePlaceholder: '請輸入說明名稱',
+      maxRedemptionsPlaceholder: '請輸入可兌換總次數限制'
+    },
+    tags: {
+      hasExpiry: '有期限',
+      noExpiry: '永久有效',
+      hasMaxRedemptions: '次數限制',
+      noLimit: '無次數限制',
+      permanent: '常駐'
+    },
+    statusText: {
+      ACTIVE: '啟用',
+      INACTIVE: '停用'
+    },
+    messages: {
+      createSuccess: '優惠碼建立成功',
+      updateSuccess: '優惠碼更新成功',
+      deleteSuccess: '優惠碼已刪除',
+      statusChangeSuccess: '狀態更新成功'
+    }
   },
   vip: {
     title: 'VIP 等級設定',
@@ -1342,7 +1382,49 @@ export const zhCN = {
     chatAndSupport: '客服与聊天风控',
     contentConfig: '运营内容设定',
     accessManagement: '权限与帐号管理',
-    systemAudit: '系统监控与日志'
+    systemAudit: '系统监控与日志',
+    promotions: '优惠',
+    dailySignIn: '每日签到',
+    promoCodes: '优惠码管理'
+  },
+  promoCode: {
+    title: '优惠码管理',
+    addPromo: '新增优惠码',
+    editPromo: '编辑优惠码',
+    deletePromo: '删除优惠码',
+    deleteConfirm: '确定要删除此优惠码吗？此操作无法撤销。',
+    form: {
+      code: '优惠码代码',
+      name: '优惠码名称',
+      hasExpiry: '有效日期',
+      hasMaxRedemptions: '次数限制',
+      rewardType: '奖励类型',
+      rewardAmount: '奖励数量',
+      timeRange: '有效日期区间',
+      maxRedemptions: '总次数限制',
+      usedRedemptions: '已使用次数',
+      status: '状态',
+      codePlaceholder: '请输入优惠码（例如 WELCOME888）',
+      namePlaceholder: '请输入说明名称',
+      maxRedemptionsPlaceholder: '请输入可兑换总次数限制'
+    },
+    tags: {
+      hasExpiry: '有期限',
+      noExpiry: '永久有效',
+      hasMaxRedemptions: '次数限制',
+      noLimit: '无次数限制',
+      permanent: '常驻'
+    },
+    statusText: {
+      ACTIVE: '启用',
+      INACTIVE: '停用'
+    },
+    messages: {
+      createSuccess: '优惠码建立成功',
+      updateSuccess: '优惠码更新成功',
+      deleteSuccess: '优惠码已删除',
+      statusChangeSuccess: '状态更新成功'
+    }
   },
   article: {
     category: '文章类别',
@@ -2172,7 +2254,49 @@ export const en = {
     commodityConfig: 'Commodity Config',
     imageConfig: 'Image Management',
     systemStatus: 'System Health Status',
-    messageSettings: 'Message Settings'
+    messageSettings: 'Message Settings',
+    promotions: 'Promotions',
+    dailySignIn: 'Daily Sign-In',
+    promoCodes: 'Promo Code Management'
+  },
+  promoCode: {
+    title: 'Promo Code Management',
+    addPromo: 'Add Promo Code',
+    editPromo: 'Edit Promo Code',
+    deletePromo: 'Delete Promo Code',
+    deleteConfirm: 'Are you sure you want to delete this promo code? This action cannot be undone.',
+    form: {
+      code: 'Promo Code',
+      name: 'Promo Name',
+      hasExpiry: 'Has Expiry Date',
+      hasMaxRedemptions: 'Has Redemption Limit',
+      rewardType: 'Reward Type',
+      rewardAmount: 'Reward Amount',
+      timeRange: 'Validity Period',
+      maxRedemptions: 'Total Redemption Limit',
+      usedRedemptions: 'Redeemed Count',
+      status: 'Status',
+      codePlaceholder: 'Enter promo code (e.g. WELCOME888)',
+      namePlaceholder: 'Enter promo name/description',
+      maxRedemptionsPlaceholder: 'Enter maximum redemption limit'
+    },
+    tags: {
+      hasExpiry: 'Time Limited',
+      noExpiry: 'Always Valid',
+      hasMaxRedemptions: 'Qty Limited',
+      noLimit: 'No Limit',
+      permanent: 'Permanent'
+    },
+    statusText: {
+      ACTIVE: 'Active',
+      INACTIVE: 'Inactive'
+    },
+    messages: {
+      createSuccess: 'Promo code created successfully',
+      updateSuccess: 'Promo code updated successfully',
+      deleteSuccess: 'Promo code deleted successfully',
+      statusChangeSuccess: 'Status updated successfully'
+    }
   },
   appVersion: {
     title: 'Version Management',

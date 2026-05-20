@@ -31,7 +31,8 @@ import {
   ChatbubbleEllipsesOutline as ChatIcon,
   SunnyOutline,
   PieChartOutline,
-  CalendarOutline
+  CalendarOutline,
+  TicketOutline
 } from '@vicons/ionicons5'
 import { NBreadcrumb, NBreadcrumbItem, NButton, NAvatar, NDropdown, NTooltip } from 'naive-ui'
 
@@ -132,7 +133,8 @@ const menuKeyToRoute: Record<string, string> = {
   'agent-withdrawal-audit': '/admin/agent-withdrawal-audit',
   'vip-settings': '/admin/vip-settings',
   'vip-stats': '/admin/vip-stats',
-  'daily-sign-in': '/admin/daily-sign-in'
+  'daily-sign-in': '/admin/daily-sign-in',
+  'promo-codes': '/admin/promo-codes'
 }
 
 // 根據當前路由更新選中的菜單項
@@ -390,6 +392,11 @@ const menuOptions = computed(() => [
         label: t('navigation.dailySignIn'),
         key: 'daily-sign-in',
         icon: renderIcon(CalendarOutline)
+      },
+      {
+        label: t('navigation.promoCodes'),
+        key: 'promo-codes',
+        icon: renderIcon(TicketOutline)
       }
     ]
   },

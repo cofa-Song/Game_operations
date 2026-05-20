@@ -239,6 +239,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '每日簽到' }
       },
       {
+        path: 'promo-codes',
+        name: 'PromoCodes',
+        component: () => import('@/views/Promotion/PromoCode.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '優惠碼管理' }
+      },
+      {
         path: 'image-config',
         name: 'ImageConfig',
         component: () => import('@/views/Master/ImageConfig.vue'),
