@@ -117,6 +117,7 @@ export interface PaginatedResponse<T = any> {
   total: number
   page: number
   pageSize: number
+  summary?: any
 }
 
 // Config Types

@@ -133,6 +133,7 @@ const menuKeyToRoute: Record<string, string> = {
   'agent-withdrawal-audit': '/admin/agent-withdrawal-audit',
   'vip-settings': '/admin/vip-settings',
   'vip-stats': '/admin/vip-stats',
+  'agent-report': '/admin/agent-report',
   'daily-sign-in': '/admin/daily-sign-in',
   'promo-codes': '/admin/promo-codes'
 }
@@ -189,6 +190,11 @@ const menuOptions = computed(() => [
         label: t('navigation.vipStats'),
         key: 'vip-stats',
         icon: renderIcon(PieChartOutline)
+      },
+      {
+        label: t('navigation.agentReport'),
+        key: 'agent-report',
+        icon: renderIcon(PeopleCircleOutline)
       }
     ]
   },
