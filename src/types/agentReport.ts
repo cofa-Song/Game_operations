@@ -2,7 +2,7 @@
 // 代理報表 Types
 // ==========================================
 
-export type AgentReportSearchType = 'username' | 'uid' | 'promo_code'
+export type AgentReportSearchType = 'username' | 'uid' | 'promo_code' | 'agentId'
 export type AgentIdentityType = 'MASTER' | 'SUB'
 
 // 主列表 - 代理報表記錄
@@ -12,6 +12,8 @@ export interface AgentReportRecord {
   agentUid: string
   identityType: AgentIdentityType
   agentPath: string               // 代理路徑，e.g. 平台 > A總代 > B子代
+  agentLevel: number              // 代理層級 (1:總代理, 2:一級代理, 3:二級代理...)
+  parentAgentId: string | null    // 直屬上級代理 ID
 
   // 推廣數據
   totalRegistrations: number      // 總註冊人數
@@ -52,7 +54,7 @@ export interface AgentPlayerDetailRecord {
 export interface AgentReportQuery {
   q?: string                          // 搜尋關鍵字
   searchType: AgentReportSearchType   // 搜尋類型
-  masterAgentId?: string              // 總代理體系 (篩選)
+  agentLevel?: number                 // 代理層級篩選
   startTime: number                   // 開始時間戳 (ms)
   endTime: number                     // 結束時間戳 (ms)
   page: number
@@ -73,7 +75,6 @@ export interface AgentPlayerDetailQuery {
 export interface ExportAgentReportParams {
   q?: string
   searchType: AgentReportSearchType
-  masterAgentId?: string
   startTime: number
   endTime: number
 }

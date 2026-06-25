@@ -19,38 +19,71 @@ export const agentReportApi = {
   async getAgentReports(params: AgentReportQuery): Promise<ApiResponse<PaginatedResponse<AgentReportRecord>>> {
     await delay(SIMULATE_DELAY)
 
+    // 預設全站總人數
+    let totalAgentsCount = mockAgentReportRecords.length
     let filtered = [...mockAgentReportRecords]
 
     // 搜尋條件過濾
     if (params.q) {
       const q = params.q.toLowerCase().trim()
+      let matchedAgents: AgentReportRecord[] = []
+      
       switch (params.searchType) {
         case 'username':
-          filtered = filtered.filter(r => r.agentUsername.toLowerCase().includes(q))
+          matchedAgents = filtered.filter(r => r.agentUsername.toLowerCase().includes(q))
           break
         case 'uid':
-          filtered = filtered.filter(r => r.agentUid.toLowerCase().includes(q))
+          matchedAgents = filtered.filter(r => r.agentUid.toLowerCase().includes(q))
           break
         case 'promo_code':
-          // Mock: 用代理ID模擬推廣碼搜尋
-          filtered = filtered.filter(r => r.agentId.toLowerCase().includes(q))
+          // Mock: 模擬推廣碼搜尋
+          matchedAgents = filtered.filter(r => r.agentId.toLowerCase().includes(q))
+          break
+        case 'agentId':
+          matchedAgents = filtered.filter(r => r.agentId.toLowerCase() === q)
           break
       }
-    }
-
-    // 總代理體系過濾
-    if (params.masterAgentId) {
-      filtered = filtered.filter(r =>
-        r.agentId === params.masterAgentId ||
-        r.agentPath.includes(mockAgentReportRecords.find(a => a.agentId === params.masterAgentId)?.agentUsername || '')
-      )
+      
+      // 計算目前搜尋代理底下的所有代理總人數 (含自己與所有下線)
+      if (matchedAgents.length > 0) {
+        const allDescendants = new Set<string>()
+        const getDescendants = (parentId: string) => {
+          const children = mockAgentReportRecords.filter(a => a.parentAgentId === parentId)
+          children.forEach(child => {
+            if (!allDescendants.has(child.agentId)) {
+              allDescendants.add(child.agentId)
+              getDescendants(child.agentId)
+            }
+          })
+        }
+        matchedAgents.forEach(a => getDescendants(a.agentId))
+        totalAgentsCount = matchedAgents.length + allDescendants.size
+      }
+      
+      // 撈取其直屬下一級的子代理
+      const matchedAgentIds = new Set(matchedAgents.map(a => a.agentId))
+      const directChildren = mockAgentReportRecords.filter(r => r.parentAgentId && matchedAgentIds.has(r.parentAgentId))
+      
+      // 合併並去重
+      const combined = [...matchedAgents, ...directChildren]
+      const uniqueIds = new Set()
+      filtered = combined.filter(a => {
+        if (uniqueIds.has(a.agentId)) return false
+        uniqueIds.add(a.agentId)
+        return true
+      })
+    } else {
+      // 代理層級過濾
+      if (params.agentLevel) {
+        filtered = filtered.filter(r => r.agentLevel === params.agentLevel)
+      }
     }
 
     const total = filtered.length
     
     // 計算總計 (基於所有過濾後的資料，而非單頁資料)
     const summary = {
-      totalAgents: filtered.length,
+      totalAgents: totalAgentsCount,
       totalDeposit: filtered.reduce((sum, r) => sum + r.totalDepositAmount, 0),
       totalNGR: filtered.reduce((sum, r) => sum + r.ngr, 0),
       totalCPA: filtered.reduce((sum, r) => sum + r.cpaQualifiedCount, 0)

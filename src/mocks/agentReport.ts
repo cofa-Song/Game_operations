@@ -6,19 +6,64 @@ import type { AgentReportRecord, AgentPlayerDetailRecord } from '@/types/agentRe
 
 const generateAgents = (count: number): AgentReportRecord[] => {
   const agents: AgentReportRecord[] = []
+  let currentMasterId: string | null = null
+  let currentLevel1Id: string | null = null
+  let currentLevel2Id: string | null = null
+
+  let currentMasterUid: string | null = null
+  let currentLevel1Uid: string | null = null
+  let currentLevel2Uid: string | null = null
+
   for (let i = 1; i <= count; i++) {
-    const isMaster = i % 4 === 1 // 每 4 個有一個總代理
-    const masterId = isMaster ? `AGT${i.toString().padStart(3, '0')}` : `AGT${(i - (i % 4) + 1).toString().padStart(3, '0')}`
-    const masterName = isMaster ? `master_agent_${i}` : `master_agent_${i - (i % 4) + 1}`
-    
     const agentId = `AGT${i.toString().padStart(3, '0')}`
-    const agentUsername = isMaster ? masterName : `sub_agent_${i}`
     const agentUid = (10000 + i).toString()
-    const identityType = isMaster ? 'MASTER' : 'SUB'
-    const agentPath = isMaster ? `平台 > ${agentUsername}` : `平台 > ${masterName} > ${agentUsername}`
+    
+    let agentLevel = 1
+    let parentAgentId: string | null = null
+    let parentAgentUid: string | null = null
+    let identityType: 'MASTER' | 'SUB' = 'MASTER'
+    let agentUsername = ''
+    let agentPath = ''
+
+    const rem = i % 4
+    if (rem === 1) {
+      agentLevel = 1
+      parentAgentId = null
+      parentAgentUid = null
+      currentMasterId = agentId
+      currentMasterUid = agentUid
+      identityType = 'MASTER'
+      agentUsername = `master_agent_${i}`
+      agentPath = `平台 > ${agentUsername}`
+    } else if (rem === 2) {
+      agentLevel = 2
+      parentAgentId = currentMasterId
+      parentAgentUid = currentMasterUid
+      currentLevel1Id = agentId
+      currentLevel1Uid = agentUid
+      identityType = 'SUB'
+      agentUsername = `sub_agent_L1_${i}`
+      agentPath = `平台 > master_agent_${i-1} > ${agentUsername}`
+    } else if (rem === 3) {
+      agentLevel = 3
+      parentAgentId = currentLevel1Id
+      parentAgentUid = currentLevel1Uid
+      currentLevel2Id = agentId
+      currentLevel2Uid = agentUid
+      identityType = 'SUB'
+      agentUsername = `sub_agent_L2_${i}`
+      agentPath = `平台 > master_agent_${i-2} > sub_agent_L1_${i-1} > ${agentUsername}`
+    } else {
+      agentLevel = 4
+      parentAgentId = currentLevel2Id
+      parentAgentUid = currentLevel2Uid
+      identityType = 'SUB'
+      agentUsername = `sub_agent_L3_${i}`
+      agentPath = `平台 > master_agent_${i-3} > sub_agent_L1_${i-2} > sub_agent_L2_${i-1} > ${agentUsername}`
+    }
 
     const seed = i * 13
-    const totalDepositAmount = (seed % 100 + 10) * 50000
+    const totalDepositAmount = (seed % 100 + 10) * 5000
     const totalTurnoverAmount = totalDepositAmount * (3 + (seed % 4))
     const totalCommissionCost = Math.floor(totalDepositAmount * 0.03)
     const totalPromoDistributed = Math.floor(totalDepositAmount * 0.02)
@@ -31,9 +76,12 @@ const generateAgents = (count: number): AgentReportRecord[] => {
       agentUid,
       identityType,
       agentPath,
-      totalRegistrations: (seed % 500) + 50,
-      totalFirstDepositors: (seed % 300) + 30,
-      cpaQualifiedCount: (seed % 250) + 20,
+      agentLevel,
+      parentAgentId,
+      parentAgentUid,
+      totalRegistrations: (seed % 50) + 5,
+      totalFirstDepositors: (seed % 30) + 3,
+      cpaQualifiedCount: (seed % 25) + 2,
       totalDepositAmount,
       totalTurnoverAmount,
       totalCommissionCost,
@@ -42,6 +90,27 @@ const generateAgents = (count: number): AgentReportRecord[] => {
       ngr
     })
   }
+
+  // 從下層往上層累加上級代理的數據
+  // Level 4 -> Level 3 -> Level 2 -> Level 1
+  for (let level = 4; level >= 2; level--) {
+    const children = agents.filter(a => a.agentLevel === level)
+    for (const child of children) {
+      const parent = agents.find(a => a.agentId === child.parentAgentId)
+      if (parent) {
+        parent.totalRegistrations += child.totalRegistrations
+        parent.totalFirstDepositors += child.totalFirstDepositors
+        parent.cpaQualifiedCount += child.cpaQualifiedCount
+        parent.totalDepositAmount += child.totalDepositAmount
+        parent.totalTurnoverAmount += child.totalTurnoverAmount
+        parent.totalCommissionCost += child.totalCommissionCost
+        parent.totalPromoDistributed += child.totalPromoDistributed
+        parent.ggr += child.ggr
+        parent.ngr += child.ngr
+      }
+    }
+  }
+
   return agents
 }
 
@@ -63,6 +132,11 @@ const generatePlayerDetails = (agentId: string, count: number): AgentPlayerDetai
     const totalBet = totalDeposit * (2 + (seed % 5))
     const validBet = Math.floor(totalBet * 0.88)
     const payout = Math.floor(totalBet * (0.85 + (seed % 10) / 100))
+    let p2pAmount = 0
+    if (seed % 3 === 0) {
+      p2pAmount = (seed % 20 + 1) * 5000
+      if (seed % 2 === 0) p2pAmount = -p2pAmount
+    }
     return {
       playerId: `UID${10000 + parseInt(agentId.replace(/\D/g, '')) * 100 + i + 1}`,
       playerUsername: `${names[i % names.length]}_${i + 1}`,
@@ -73,7 +147,7 @@ const generatePlayerDetails = (agentId: string, count: number): AgentPlayerDetai
       totalBetAmount: totalBet,
       totalValidBetAmount: validBet,
       totalPayoutAmount: payout,
-      p2pTransactionAmount: (seed % 3 === 0) ? (seed % 20 + 1) * 5000 : 0,
+      p2pTransactionAmount: p2pAmount,
       activityBonusUsed: Math.floor(totalDeposit * 0.08),
       promoReceived: Math.floor(totalDeposit * 0.05)
     }
@@ -87,11 +161,3 @@ mockAgentReportRecords.forEach(agent => {
   mockAgentPlayerDetails[agent.agentId] = generatePlayerDetails(agent.agentId, count)
 })
 
-// 總代理選單選項 (用於下拉篩選)
-export const masterAgentOptions = mockAgentReportRecords
-  .filter(a => a.identityType === 'MASTER')
-  .map(a => ({
-    label: `${a.agentUsername} (UID: ${a.agentUid})`,
-    value: a.agentId
-  }))
-masterAgentOptions.unshift({ label: '全部', value: '' })

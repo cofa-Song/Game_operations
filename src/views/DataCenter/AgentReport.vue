@@ -22,6 +22,7 @@ const { t } = useI18n()
 const searchKeyword = ref('')
 const searchType = ref<AgentReportSearchType>('username')
 const masterAgentFilter = ref('')
+const agentLevelFilter = ref<number | null>(1)
 const timeRange = ref<[number, number] | null>(null)
 const loading = ref(false)
 const exporting = ref(false)
@@ -56,8 +57,13 @@ const searchTypeOptions = [
   { label: '推廣碼', value: 'promo_code' }
 ]
 
-// 總代理篩選選項
-const masterAgentSelectOptions = masterAgentOptions.map(o => ({ label: o.label, value: o.value }))
+// 代理層級選項
+const agentLevelOptions = [
+  { label: '總代理', value: 1 },
+  { label: '一級代理', value: 2 },
+  { label: '二級代理', value: 3 },
+  { label: '三級代理', value: 4 }
+]
 
 // ==========================================
 // 快捷時間選擇 (GMT+8 基準)
@@ -131,6 +137,7 @@ const loadAgentReports = async () => {
       q: searchKeyword.value || undefined,
       searchType: searchType.value,
       masterAgentId: masterAgentFilter.value || undefined,
+      agentLevel: agentLevelFilter.value || undefined,
       startTime: timeRange.value[0],
       endTime: timeRange.value[1],
       page: pagination.page,
@@ -153,6 +160,35 @@ const loadAgentReports = async () => {
 const handleSearch = () => {
   pagination.page = 1
   loadAgentReports()
+}
+
+// 判斷目前查詢的特定代理與「返回上層」邏輯
+const currentQueriedAgent = computed(() => {
+  if (!searchKeyword.value) return null
+  if (searchType.value === 'uid') {
+    return tableData.value.find(a => a.agentUid === searchKeyword.value)
+  }
+  if (searchType.value === 'username') {
+    return tableData.value.find(a => a.agentUsername === searchKeyword.value)
+  }
+  if (searchType.value === 'promo_code' || searchType.value === 'agentId') {
+    return tableData.value.find(a => a.agentId === searchKeyword.value)
+  }
+  return null
+})
+
+const canGoBack = computed(() => {
+  return currentQueriedAgent.value && currentQueriedAgent.value.agentLevel > 1 && currentQueriedAgent.value.parentAgentId
+})
+
+const handleGoBack = () => {
+  const agent = currentQueriedAgent.value
+  if (!agent || !agent.parentAgentUid) return
+  
+  searchType.value = 'uid'
+  searchKeyword.value = agent.parentAgentUid
+  agentLevelFilter.value = agent.agentLevel - 1 // 同步更新 UI 下拉至上層代理層級
+  handleSearch()
 }
 
 // 匯出主報表
@@ -187,8 +223,16 @@ const mainColumns = computed(() => [
     key: 'agentInfo',
     width: 200,
     fixed: 'left' as const,
-    render: (row: AgentReportRecord) => h('div', { class: 'flex flex-col gap-0.5 py-1' }, [
-      h('div', { class: 'font-bold text-slate-800 dark:text-slate-100 text-sm' }, row.agentUsername),
+    render: (row: AgentReportRecord) => h('div', { 
+      class: 'flex flex-col gap-0.5 py-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded px-1 -mx-1 transition-colors',
+      onClick: () => {
+        searchType.value = 'uid'
+        searchKeyword.value = row.agentUid
+        agentLevelFilter.value = row.agentLevel
+        handleSearch()
+      }
+    }, [
+      h('div', { class: 'font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-sky-500' }, row.agentUsername),
       h('div', { class: 'text-xs text-slate-400 font-mono' }, `UID: ${row.agentUid}`)
     ])
   },
@@ -484,9 +528,11 @@ const detailColumns = computed(() => [
     align: 'right' as const,
     render: (row: AgentPlayerDetailRecord) => {
       if (row.p2pTransactionAmount === 0) return h('span', { class: 'text-slate-300' }, '-')
+      const isPositive = row.p2pTransactionAmount > 0
+      const amountStr = formatFullCurrency(Math.abs(row.p2pTransactionAmount))
       return h('span', {
-        class: 'font-mono font-bold text-rose-600 dark:text-rose-400'
-      }, formatFullCurrency(row.p2pTransactionAmount))
+        class: `font-mono font-bold ${isPositive ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`
+      }, `${isPositive ? '+' : '-'}${amountStr}`)
     }
   },
   {
@@ -521,9 +567,23 @@ const detailSummary = computed(() => {
     firstDepositAmount: { value: bold(formatFullCurrency(sum('firstDepositAmount')), 'text-emerald-600'), align: 'right' },
     secondDepositAmount: { value: bold(formatFullCurrency(sum('secondDepositAmount')), 'text-teal-600'), align: 'right' },
     totalDepositAmount: { value: bold(formatFullCurrency(sum('totalDepositAmount')), 'text-blue-600'), align: 'right' },
-    betInfo: { value: bold(formatFullCurrency(sum('totalBetAmount')), 'text-slate-700'), align: 'right' },
+    betInfo: { 
+      value: h('div', { class: 'text-right text-xs' }, [
+        h('div', { class: 'font-mono font-bold text-slate-700 dark:text-slate-200' }, formatFullCurrency(sum('totalBetAmount'))),
+        h('div', { class: 'font-mono text-slate-400' }, `有效: ${formatFullCurrency(sum('totalValidBetAmount'))}`)
+      ]), 
+      align: 'right' 
+    },
     totalPayoutAmount: { value: bold(formatFullCurrency(sum('totalPayoutAmount')), 'text-orange-600'), align: 'right' },
-    p2pTransactionAmount: { value: bold(formatFullCurrency(sum('p2pTransactionAmount')), 'text-rose-600'), align: 'right' },
+    p2pTransactionAmount: { 
+      value: (() => {
+        const p2pSum = sum('p2pTransactionAmount')
+        if (p2pSum === 0) return bold('-', 'text-slate-300')
+        const isPositive = p2pSum > 0
+        return bold(`${isPositive ? '+' : '-'}${formatFullCurrency(Math.abs(p2pSum))}`, isPositive ? 'text-rose-600' : 'text-emerald-600')
+      })(), 
+      align: 'right' 
+    },
     activityBonusUsed: { value: bold(formatFullCurrency(sum('activityBonusUsed')), 'text-violet-600'), align: 'right' },
     promoReceived: { value: bold(formatFullCurrency(sum('promoReceived')), 'text-amber-600'), align: 'right' }
   }
@@ -599,13 +659,11 @@ onBeforeUnmount(() => {
               </div>
             </NFormItem>
 
-            <!-- 總代理體系下拉 -->
-            <NFormItem label="總代理體系" :show-feedback="false" class="w-52">
+            <!-- 代理層級下拉 -->
+            <NFormItem label="代理層級" :show-feedback="false" class="w-32">
               <NSelect
-                v-model:value="masterAgentFilter"
-                :options="masterAgentSelectOptions"
-                clearable
-                placeholder="全部"
+                v-model:value="agentLevelFilter"
+                :options="agentLevelOptions"
               />
             </NFormItem>
 
@@ -738,6 +796,16 @@ onBeforeUnmount(() => {
           <NTag v-if="pagination.itemCount > 0" size="small" type="info" :bordered="false" round>
             {{ pagination.itemCount }} 筆
           </NTag>
+          <NButton
+            v-if="canGoBack"
+            size="small"
+            type="primary"
+            secondary
+            class="ml-2"
+            @click="handleGoBack"
+          >
+            返回上層代理
+          </NButton>
         </div>
         <div class="text-xs text-slate-400 flex items-center gap-1">
           <NIcon size="14"><InformationCircleOutline /></NIcon>
