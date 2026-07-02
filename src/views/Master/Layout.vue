@@ -135,7 +135,8 @@ const menuKeyToRoute: Record<string, string> = {
   'vip-stats': '/admin/vip-stats',
   'agent-report': '/admin/agent-report',
   'daily-sign-in': '/admin/daily-sign-in',
-  'promo-codes': '/admin/promo-codes'
+  'promo-codes': '/admin/promo-codes',
+  'promo-events': '/admin/promo-events'
 }
 
 // 根據當前路由更新選中的菜單項
@@ -398,6 +399,11 @@ const menuOptions = computed(() => [
         label: t('navigation.dailySignIn'),
         key: 'daily-sign-in',
         icon: renderIcon(CalendarOutline)
+      },
+      {
+        label: t('navigation.promoEvents'),
+        key: 'promo-events',
+        icon: renderIcon(GiftOutline)
       },
       {
         label: t('navigation.promoCodes'),

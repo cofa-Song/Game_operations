@@ -240,7 +240,8 @@ export const zhTW = {
     systemAudit: '系統監控與日誌',
     promotions: '優惠',
     dailySignIn: '每日簽到',
-    promoCodes: '優惠碼管理'
+    promoCodes: '優惠碼管理',
+    promoEvents: '優惠活動'
   },
   dailySignIn: {
     title: '每日簽到獎勵設定',
@@ -1388,7 +1389,8 @@ export const zhCN = {
     systemAudit: '系统监控与日志',
     promotions: '优惠',
     dailySignIn: '每日签到',
-    promoCodes: '优惠码管理'
+    promoCodes: '优惠码管理',
+    promoEvents: '优惠活动'
   },
   promoCode: {
     title: '优惠码管理',
@@ -2261,7 +2263,8 @@ export const en = {
     messageSettings: 'Message Settings',
     promotions: 'Promotions',
     dailySignIn: 'Daily Sign-In',
-    promoCodes: 'Promo Code Management'
+    promoCodes: 'Promo Code Management',
+    promoEvents: 'Promotional Events'
   },
   promoCode: {
     title: 'Promo Code Management',
