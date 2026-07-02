@@ -6,15 +6,17 @@ import {
   NCard, NTabs, NTabPane, NGrid, NGridItem, NDescriptions, NDescriptionsItem,
   NTag, NButton, NSpace, NAvatar, NStatistic, NList, NListItem, NThing,
   NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage,
-  NProgress, NDivider, NDatePicker, NInputNumber, NDataTable, NPagination
+  NProgress, NDivider, NDatePicker, NInputNumber, NDataTable, NPagination,
+  NRadioGroup, NRadio, NIcon
 } from 'naive-ui'
 import { 
-  WalletOutline, AlertCircleOutline, SearchOutline
+  WalletOutline, AlertCircleOutline, SearchOutline, SwapHorizontalOutline
 } from '@vicons/ionicons5'
 import { playerApi } from '@/api/player'
+import { agentApi } from '@/api/agent'
 import { logApi } from '@/api/log'
 import { gameApi } from '@/api/game'
-import { Player, PlayerAuditLog, UpdatePlayerRequest, PlayerStatus, WalletType } from '@/types/player'
+import { Player, PlayerAuditLog, UpdatePlayerRequest, PlayerStatus, WalletType, PlayerTransferRecord } from '@/types/player'
 import { AssetLog } from '@/types/log'
 import { GameLog } from '@/types/game'
 import { RolloverEngine } from '@/mocks/engine'
@@ -156,6 +158,131 @@ const assetTypeOptions = [
 const showAbandonModal = ref(false)
 const abandonReason = ref('')
 
+// Player Transfer State
+const showPlayerTransferModal = ref(false)
+const playerTransferForm = reactive({
+    new_agent_id: '',
+    execution_type: 'IMMEDIATE' as 'IMMEDIATE' | 'SCHEDULED',
+    execute_at: undefined as string | undefined,
+    reason: ''
+})
+const playerTransferLoading = ref(false)
+const searchAgentLoading = ref(false)
+const searchResultName = ref('')
+const transferRecords = ref<PlayerTransferRecord[]>([])
+
+const fetchTransferRecords = async () => {
+    try {
+        const res = await playerApi.getPlayerTransferRecords(playerId)
+        if (res.code === 0 && res.data) {
+            transferRecords.value = res.data
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const handleSearchAgent = async () => {
+    if (!playerTransferForm.new_agent_id) {
+        message.warning('請輸入新代理ID')
+        return
+    }
+    searchAgentLoading.value = true
+    searchResultName.value = ''
+    try {
+        // Mock search using getAgents
+        const res = await agentApi.getAgents({ 
+            search_type: 'uid', 
+            q: playerTransferForm.new_agent_id, 
+            page: 1, 
+            page_size: 10 
+        })
+        const target = res.data?.items.find(a => a.uid === playerTransferForm.new_agent_id || a.id === playerTransferForm.new_agent_id || a.username === playerTransferForm.new_agent_id)
+        if (target) {
+            if (target.status !== 'NORMAL') {
+                message.error('轉線失敗：目標新代理目前處於停用狀態。')
+            } else {
+                searchResultName.value = target.username
+                message.success('檢索成功')
+            }
+        } else {
+            message.error('找不到該代理')
+        }
+    } catch (e) {
+        message.error('檢索失敗')
+    } finally {
+        searchAgentLoading.value = false
+    }
+}
+
+const openPlayerTransferModal = () => {
+    playerTransferForm.new_agent_id = ''
+    playerTransferForm.execution_type = 'IMMEDIATE'
+    playerTransferForm.execute_at = undefined
+    playerTransferForm.reason = ''
+    searchResultName.value = ''
+    showPlayerTransferModal.value = true
+}
+
+const cancelTransferRecord = async (recordId: string) => {
+    try {
+        const res = await playerApi.cancelPlayerTransfer(recordId)
+        if (res.code === 0) {
+            message.success('取消預約成功')
+            fetchTransferRecords()
+        } else {
+            message.error(res.msg)
+        }
+    } catch(e) {
+        message.error('操作失敗')
+    }
+}
+
+const submitPlayerTransfer = async () => {
+    if (!playerTransferForm.new_agent_id || !searchResultName.value) {
+        message.warning('請先檢索並確認目標新代理')
+        return
+    }
+    if (!playerTransferForm.reason || playerTransferForm.reason.length < 5 || playerTransferForm.reason.length > 200) {
+        message.warning('異動原因需在 5 到 200 字之間')
+        return
+    }
+    if (playerTransferForm.execution_type === 'SCHEDULED') {
+        if (!playerTransferForm.execute_at) {
+            message.warning('請選擇預約時間')
+            return
+        }
+        const executeTime = new Date(playerTransferForm.execute_at).getTime()
+        if (executeTime < Date.now() + 9 * 60 * 1000) {
+            message.warning('預約時間必須大於當前時間至少 10 分鐘')
+            return
+        }
+    }
+
+    playerTransferLoading.value = true
+    try {
+        const res = await playerApi.transferPlayer(
+            playerId,
+            playerTransferForm.new_agent_id,
+            playerTransferForm.execution_type,
+            playerTransferForm.reason,
+            playerTransferForm.execute_at
+        )
+        if (res.code === 0) {
+            message.success(playerTransferForm.execution_type === 'IMMEDIATE' ? '玩家轉線成功' : '預約轉線已建立')
+            showPlayerTransferModal.value = false
+            fetchData()
+            fetchTransferRecords()
+        } else {
+            message.error(res.msg || '轉線失敗')
+        }
+    } catch (e) {
+        message.error('轉線操作失敗')
+    } finally {
+        playerTransferLoading.value = false
+    }
+}
+
 const fetchData = async () => {
   loading.value = true
   try {
@@ -172,6 +299,9 @@ const fetchData = async () => {
     if (logRes.code === 0 && logRes.data) {
         auditLogs.value = logRes.data
     }
+    
+    // Fetch Transfer Records
+    fetchTransferRecords()
   } catch (err) {
     message.error('載入失敗')
   } finally {
@@ -475,6 +605,10 @@ onMounted(() => {
             <NSpace>
                 <NButton size="small" type="primary" @click="handleEdit">{{ t('common.editInfo') }}</NButton>
                 <NButton size="small" type="warning" @click="handleStatusChange">{{ t('player.list.statusManagement') }}</NButton>
+                <NButton size="small" type="error" @click="openPlayerTransferModal">
+                    <template #icon><NIcon><SwapHorizontalOutline /></NIcon></template>
+                    玩家轉線
+                </NButton>
             </NSpace>
           </template>
           <div class="flex flex-col items-center mb-6">
@@ -492,7 +626,10 @@ onMounted(() => {
             <NDescriptionsItem label="帳號">{{ player.username }}</NDescriptionsItem>
             <NDescriptionsItem label="手機號碼">{{ player.phone || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="VIP 等級">LV.{{ player.vip_level }}</NDescriptionsItem>
-            <NDescriptionsItem label="歸屬代理">{{ player.agent_name || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem label="歸屬代理">
+                <span v-if="player.agent_name">{{ player.agent_name }} <NTag size="tiny" :bordered="false">ID: {{ player.agent_id }}</NTag></span>
+                <span v-else>-</span>
+            </NDescriptionsItem>
             <NDescriptionsItem :label="t('navigation.promoCode')">{{ player.promo_code || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="自身邀請碼">{{ player.invite_code || '-' }}</NDescriptionsItem>
             <NDescriptionsItem label="註冊來源">{{ player.register_source }}</NDescriptionsItem>
@@ -529,7 +666,7 @@ onMounted(() => {
       <!-- Right Column: Details Tabs -->
       <NGridItem span="2">
         <NCard content-style="padding: 0;">
-          <NTabs v-model:value="currentTab" type="line" size="large" :tabs-padding="20" pane-style="padding: 20px;">
+          <NTabs v-model:value="currentTab" type="line" animated>
             <NTabPane name="wallet" :tab="t('player.list.walletMonitor')">
               <NGrid cols="2" :x-gap="12" :y-gap="12">
                  <NGridItem>
@@ -756,6 +893,36 @@ onMounted(() => {
                     size="small" 
                 />
             </NTabPane>
+
+            <!-- Transfer Records Tab -->
+            <NTabPane name="transfer" tab="轉線紀錄">
+                <div v-if="transferRecords.length === 0" class="py-10 text-center text-gray-400">
+                    尚無轉線紀錄
+                </div>
+                <NList v-else hoverable>
+                    <NListItem v-for="record in transferRecords" :key="record.id">
+                        <NThing>
+                            <template #header>
+                                <span class="font-bold">轉線排程：{{ record.id }}</span>
+                                <NTag class="ml-2" size="small" :type="record.status === 'SUCCESS' ? 'success' : record.status === 'PENDING' ? 'warning' : record.status === 'CANCELED' ? 'error' : 'default'">
+                                    {{ record.status }}
+                                </NTag>
+                            </template>
+                            <template #header-extra>
+                                <NButton v-if="record.status === 'PENDING'" size="small" type="error" @click="cancelTransferRecord(record.id)">取消預約</NButton>
+                            </template>
+                            <NDescriptions :column="2" size="small" class="mt-2">
+                                <NDescriptionsItem label="原歸屬代理">{{ record.original_agent_name }} ({{ record.original_agent_id }})</NDescriptionsItem>
+                                <NDescriptionsItem label="新歸屬代理">{{ record.new_agent_name }} ({{ record.new_agent_id }})</NDescriptionsItem>
+                                <NDescriptionsItem label="執行類型">{{ record.execution_type === 'IMMEDIATE' ? '立即' : '排程' }}</NDescriptionsItem>
+                                <NDescriptionsItem label="執行時間">{{ record.execute_at.replace('T', ' ').split('.')[0] }}</NDescriptionsItem>
+                                <NDescriptionsItem label="建立時間">{{ record.created_at.replace('T', ' ').split('.')[0] }}</NDescriptionsItem>
+                                <NDescriptionsItem label="異動原因">{{ record.reason }}</NDescriptionsItem>
+                            </NDescriptions>
+                        </NThing>
+                    </NListItem>
+                </NList>
+            </NTabPane>
           </NTabs>
         </NCard>
       </NGridItem>
@@ -843,6 +1010,58 @@ onMounted(() => {
             <div class="flex justify-end gap-2">
                 <NButton @click="showAbandonModal = false">取消</NButton>
                 <NButton type="error" @click="submitAbandonBonus">確認放棄</NButton>
+            </div>
+        </template>
+    </NModal>
+
+    <!-- Player Transfer Modal -->
+    <NModal v-model:show="showPlayerTransferModal" preset="card" title="玩家轉線" style="width: 550px; border-radius: 20px;">
+        <NForm :model="playerTransferForm" label-placement="left" label-width="120">
+            <NDivider title-placement="left">目前歸屬</NDivider>
+            <NFormItem label="當前歸屬代理">
+                <div v-if="player?.agent_name" class="flex items-center gap-2">
+                    <span class="font-bold">{{ player.agent_name }}</span>
+                    <NTag size="small" type="info">ID: {{ player.agent_id }}</NTag>
+                </div>
+                <span v-else class="text-gray-400">尚無歸屬代理</span>
+            </NFormItem>
+
+            <NDivider title-placement="left">轉線設定</NDivider>
+            <NFormItem label="新代理ID" required>
+                <div class="flex-col w-full gap-2">
+                    <div class="flex gap-2 w-full">
+                        <NInput v-model:value="playerTransferForm.new_agent_id" placeholder="請輸入新的代理ID" @keydown.enter.prevent="handleSearchAgent" />
+                        <NButton type="primary" :loading="searchAgentLoading" @click="handleSearchAgent">檢索</NButton>
+                    </div>
+                    <div v-if="searchResultName" class="text-green-600 text-sm mt-1 font-bold">
+                        檢索成功：{{ searchResultName }}
+                    </div>
+                </div>
+            </NFormItem>
+            <NFormItem label="執行類型">
+                <NRadioGroup v-model:value="playerTransferForm.execution_type">
+                    <NRadio value="IMMEDIATE">立即轉線</NRadio>
+                    <NRadio value="SCHEDULED">預定轉線</NRadio>
+                </NRadioGroup>
+            </NFormItem>
+            <NFormItem v-if="playerTransferForm.execution_type === 'SCHEDULED'" label="預定執行時間" required>
+                <NDatePicker
+                    v-model:formatted-value="playerTransferForm.execute_at"
+                    type="datetime"
+                    clearable
+                    value-format="yyyy-MM-dd HH:mm:ss"
+                    style="width: 100%"
+                    placeholder="請選擇未來時間 (至少大於目前 10 分鐘)"
+                />
+            </NFormItem>
+            <NFormItem label="異動原因" required>
+                <NInput v-model:value="playerTransferForm.reason" type="textarea" :rows="3" placeholder="請輸入異動原因 (5-200字)" />
+            </NFormItem>
+        </NForm>
+        <template #footer>
+            <div class="flex justify-end gap-3">
+                <NButton quaternary @click="showPlayerTransferModal = false">取消</NButton>
+                <NButton type="primary" rounded @click="submitPlayerTransfer" :loading="playerTransferLoading" :disabled="!searchResultName">確認轉線</NButton>
             </div>
         </template>
     </NModal>

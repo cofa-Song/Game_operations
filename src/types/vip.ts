@@ -1,8 +1,14 @@
 export interface VIPLevel {
     rank: number // 0-10
     name: string
-    promotion_desc: string // 文字說明
-    retention_desc: string // 文字說明
+    promotion_desc: string // 文字說明 (fallback/default)
+    retention_desc: string // 文字說明 (fallback/default)
+    promotion_desc_zh_tw?: string
+    promotion_desc_zh_cn?: string
+    promotion_desc_en?: string
+    retention_desc_zh_tw?: string
+    retention_desc_zh_cn?: string
+    retention_desc_en?: string
 
     // Promotion Criteria
     promo_deposit: number // 晉升累計儲值

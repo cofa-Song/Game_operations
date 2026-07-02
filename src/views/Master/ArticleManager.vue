@@ -99,6 +99,26 @@
             </template>
           </n-form-item>
 
+          <template v-if="isGameIntro">
+             <n-form-item label="內容簡介" path="summary">
+                 <n-input type="textarea" v-model:value="formModel.summary" placeholder="請輸入遊戲內容簡介" :rows="3" />
+             </n-form-item>
+             <n-grid :cols="2" :x-gap="20">
+                 <n-gi>
+                     <n-form-item label="RTP" path="rtp">
+                         <n-input-number v-model:value="formModel.rtp" placeholder="例如: 96.5" :precision="2" :step="0.1" style="width: 100%">
+                             <template #suffix>%</template>
+                         </n-input-number>
+                     </n-form-item>
+                 </n-gi>
+                 <n-gi>
+                     <n-form-item label="遊戲ID" path="game_id">
+                         <n-input v-model:value="formModel.game_id" placeholder="對接的遊戲ID (如: pg-slot-01)" />
+                     </n-form-item>
+                 </n-gi>
+             </n-grid>
+          </template>
+
           <n-form-item label="封面縮圖" path="cover_url" v-if="currentModel >= 2">
             <n-upload
               action="#"
@@ -186,7 +206,7 @@ import { useI18n } from 'vue-i18n'
 import { 
   NCard, NSpace, NForm, NFormItem, NSelect, NButton, NIcon, NDataTable, NTag,
   NDrawer, NDrawerContent, NInput, NGrid, NGi, NTabs, NTabPane, NDatePicker,
-  NSwitch, NAvatar, NUpload, NCascader, useMessage, useDialog 
+  NSwitch, NAvatar, NUpload, NCascader, NInputNumber, useMessage, useDialog 
 } from 'naive-ui'
 import type { UploadFileInfo, CascaderOption, FormRules } from 'naive-ui'
 import { CreateOutline, TrashOutline } from '@vicons/ionicons5'
@@ -404,6 +424,9 @@ const formModel = reactive({
   publish_end: '',
   event_start_time: '',
   event_end_time: '',
+  summary: '',
+  rtp: null as number | null,
+  game_id: '',
   is_published: false,
   seo: {
     meta_title: '',
@@ -417,6 +440,7 @@ const eventStartTimestamp = ref<number | null>(null)
 const eventEndTimestamp = ref<number | null>(null)
 
 const currentModel = computed(() => getCategoryModel(formModel.category))
+const isGameIntro = computed(() => ['NEW_GAMES', 'SLOTS', 'FISH', 'PACHINKO', 'CARD'].includes(formModel.category))
 
 const dynamicRules = computed<FormRules>(() => {
     const baseRules: FormRules = {
@@ -472,6 +496,9 @@ const openDrawer = async (id?: string) => {
            language: res.data.language,
            cover_url: res.data.cover_url || '',
            content: res.data.content,
+           summary: res.data.summary || '',
+           rtp: res.data.rtp || null,
+           game_id: res.data.game_id || '',
            is_published: res.data.is_published,
            seo: res.data.seo || { meta_title: '', meta_description: '' }
        })
@@ -487,6 +514,9 @@ const openDrawer = async (id?: string) => {
       language: 'zh-TW',
       cover_url: '',
       content: '',
+      summary: '',
+      rtp: null,
+      game_id: '',
       is_published: false,
       seo: { meta_title: '', meta_description: '' }
     })

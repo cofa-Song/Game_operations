@@ -7,7 +7,7 @@ import {
 } from 'naive-ui'
 import { 
   SearchOutline, CreateOutline, CashOutline, InformationCircleOutline,
-  PeopleOutline, AddOutline
+  PeopleOutline, AddOutline, SwapHorizontalOutline
 } from '@vicons/ionicons5'
 import { agentApi } from '@/api/agent'
 import { Agent, AgentSearchParams, AgentStatus, AgentIdentity } from '@/types/agent'
@@ -35,6 +35,11 @@ const identityOptions = computed(() => [
   { label: t('agent.identity.MASTER'), value: 'MASTER' },
   { label: t('agent.identity.SUB'), value: 'SUB' },
   { label: t('agent.identity.ASSISTANT'), value: 'ASSISTANT' }
+])
+
+const editIdentityOptions = computed(() => [
+  { label: t('agent.identity.MASTER'), value: 'MASTER' },
+  { label: t('agent.identity.SUB'), value: 'SUB' }
 ])
 
 const statusOptions = computed(() => [
@@ -74,7 +79,12 @@ const columns = computed<DataTableColumns<Agent>>(() => [
     width: 120,
     render(row) {
       return h('div', [
-        h('div', { class: 'font-bold' }, row.username),
+        h('div', { class: 'font-bold flex items-center gap-2' }, [
+          row.username,
+          (!row.cpa_enabled && !row.deposit_commission_enabled && row.identity !== 'ADMIN') 
+            ? h(NTag, { type: 'error', size: 'small', round: true }, { default: () => '無佣金 (M-04)' }) 
+            : null
+        ]),
         h('div', { class: 'text-xs text-gray-400' }, `UID: ${row.uid}`)
       ])
     }
@@ -96,24 +106,25 @@ const columns = computed<DataTableColumns<Agent>>(() => [
   { title: t('agent.list.promoCode'), key: 'promo_code', width: 100 },
   { title: t('agent.list.path'), key: 'path', minWidth: 200 },
   { 
-    title: t('agent.list.cpaMatrix'), 
-    key: 'cpa', 
+    title: 'CPA 單價', 
+    key: 'cpa_price', 
     width: 100,
     align: 'center',
     render(row) {
       if (row.identity === 'ADMIN') return '-'
-      return h(NButton, { 
-        circle: true, 
-        quaternary: true, 
-        onClick: () => showCPAModal(row) 
-      }, { icon: () => h(NIcon, null, { default: () => h(InformationCircleOutline) }) })
+      if (!row.cpa_enabled) return h(NTag, { type: 'default', size: 'small', bordered: false }, { default: () => 'OFF' })
+      return `$ ${row.cpa_price}`
     }
   },
   { 
     title: t('agent.list.commissionRate'), 
     key: 'deposit_commission_rate', 
     width: 120,
-    render: (row) => row.identity === 'ADMIN' ? '-' : `${row.deposit_commission_rate}%`
+    render: (row) => {
+      if (row.identity === 'ADMIN') return '-'
+      if (!row.deposit_commission_enabled) return h(NTag, { type: 'default', size: 'small', bordered: false }, { default: () => 'OFF' })
+      return `${row.deposit_commission_rate}%`
+    }
   },
   { 
     title: t('agent.list.commissionWallet'), 
@@ -152,7 +163,7 @@ const columns = computed<DataTableColumns<Agent>>(() => [
   {
     title: t('agent.list.actions'),
     key: 'actions',
-    width: 180,
+    width: 260,
     fixed: 'right',
     render(row) {
       const actions = [
@@ -164,6 +175,9 @@ const columns = computed<DataTableColumns<Agent>>(() => [
         actions.push(
           h(NButton, { size: 'small', quaternary: true, type: 'warning', onClick: () => showPromoModal(row) }, { 
             default: () => [h(NIcon, { style: { marginRight: '4px' } }, { default: () => h(CashOutline) }), t('agent.list.promoMoney')] 
+          }),
+          h(NButton, { size: 'small', quaternary: true, type: 'error', onClick: () => openTransferModal(row) }, {
+            default: () => [h(NIcon, { style: { marginRight: '4px' } }, { default: () => h(SwapHorizontalOutline) }), '轉線']
           })
         )
       }
@@ -192,21 +206,20 @@ const fetchData = async () => {
 // Modal States
 const showEdit = ref(false)
 const showCreate = ref(false)
-const showCPA = ref(false)
 const showPromo = ref(false)
+const showTransfer = ref(false)
 const activeAgent = ref<Agent | null>(null)
+const transferTarget = ref<Agent | null>(null)
 
 // Forms
-const defaultCpaMatrix = () => [
-    { level: 1, member_count: 0, price: 0 },
-    { level: 2, member_count: 0, price: 0 },
-    { level: 3, member_count: 0, price: 0 }
-]
-
 const editForm = reactive({
   password: '',
+  identity: 'MASTER' as AgentIdentity,
+  parent_id: '',
   two_fa_enabled: false,
-  cpa_price_matrix: defaultCpaMatrix(),
+  cpa_enabled: true,
+  cpa_price: 0,
+  deposit_commission_enabled: true,
   deposit_commission_rate: 0,
   data_binding_threshold: { phone: false },
   deposit_threshold: 0,
@@ -222,11 +235,14 @@ const editForm = reactive({
 
 const createForm = reactive({
     username: '',
+    parent_id: '',
     promo_code: '',
     identity: 'SUB' as AgentIdentity,
     password: '',
     two_fa_enabled: false,
-    cpa_price_matrix: defaultCpaMatrix(),
+    cpa_enabled: true,
+    cpa_price: 0,
+    deposit_commission_enabled: true,
     deposit_commission_rate: 0,
     data_binding_threshold: { phone: false },
     deposit_threshold: 0,
@@ -240,19 +256,111 @@ const createForm = reactive({
 })
 
 // Handlers
-const showCPAModal = (agent: Agent) => {
-  activeAgent.value = agent
-  showCPA.value = true
+
+const transferForm = reactive<import('@/types/agent').TransferAgentParams>({
+    agent_id: '',
+    new_parent_id: '',
+    execution_type: 'IMMEDIATE',
+    execute_at: undefined,
+    reason: ''
+})
+const newParentInfo = ref<Agent | null>(null)
+const newParentKeyword = ref('')
+const verifyLoading = ref(false)
+const submitLoading = ref(false)
+
+const openTransferModal = (agent: Agent) => {
+    transferTarget.value = agent
+    transferForm.agent_id = agent.id
+    transferForm.new_parent_id = ''
+    transferForm.execution_type = 'IMMEDIATE'
+    transferForm.execute_at = undefined
+    transferForm.reason = ''
+    newParentKeyword.value = ''
+    newParentInfo.value = null
+    showTransfer.value = true
+}
+
+const handleVerifyNewParent = async () => {
+    if (!newParentKeyword.value) {
+        message.warning('請輸入新上級 UID 或帳號')
+        return
+    }
+    verifyLoading.value = true
+    try {
+        const res = await agentApi.searchAgent(newParentKeyword.value)
+        if (res.code === 0 && res.data) {
+            newParentInfo.value = res.data
+            transferForm.new_parent_id = res.data.id
+            message.success('檢索成功')
+        } else {
+            message.error(res.msg || '找不到代理')
+            newParentInfo.value = null
+        }
+    } catch (e) {
+         message.error('檢索失敗')
+         newParentInfo.value = null
+    } finally {
+        verifyLoading.value = false
+    }
+}
+
+const handleSubmitTransfer = async () => {
+    if (!transferForm.new_parent_id) {
+        message.warning('請先檢索並確認新上級')
+        return
+    }
+    if (transferForm.execution_type === 'SCHEDULED' && !transferForm.execute_at) {
+        message.warning('請選擇預約時間')
+        return
+    }
+    if (transferForm.execution_type === 'SCHEDULED' && transferForm.execute_at) {
+        const executeTime = new Date(transferForm.execute_at).getTime()
+        if (executeTime < Date.now() + 9 * 60 * 1000) {
+            message.warning('預約時間必須大於當前時間至少 10 分鐘')
+            return
+        }
+    }
+    if (!transferForm.reason || transferForm.reason.length < 5 || transferForm.reason.length > 200) {
+        message.warning('備註原因需在 5 到 200 字之間')
+        return
+    }
+    
+    if (newParentInfo.value && transferTarget.value) {
+        if (newParentInfo.value.cpa_price < transferTarget.value.cpa_price) {
+             message.error('風控阻斷：新上級的 CPA 單價不可低於目標代理的 CPA 單價！')
+             return
+        }
+    }
+
+    submitLoading.value = true
+    try {
+        const res = await agentApi.submitTransfer(transferForm)
+        if (res.code === 0) {
+            message.success(transferForm.execution_type === 'IMMEDIATE' ? '轉線成功' : '預約排程已建立')
+            showTransfer.value = false
+            fetchData()
+        } else {
+            message.error(res.msg || '轉線失敗')
+        }
+    } catch (e) {
+        message.error('轉線失敗')
+    } finally {
+        submitLoading.value = false
+    }
 }
 
 const openCreateModal = () => {
     Object.assign(createForm, {
         username: '',
+        parent_id: '',
         promo_code: '',
         identity: 'SUB',
         password: '',
         two_fa_enabled: false,
-        cpa_price_matrix: defaultCpaMatrix(),
+        cpa_enabled: true,
+        cpa_price: 0,
+        deposit_commission_enabled: true,
         deposit_commission_rate: 0,
         data_binding_threshold: { phone: false },
         deposit_threshold: 0,
@@ -271,10 +379,12 @@ const showEditModal = (agent: Agent) => {
   activeAgent.value = agent
   Object.assign(editForm, {
     password: '',
+    identity: agent.identity,
+    parent_id: '',
     two_fa_enabled: agent.two_fa_enabled,
-    cpa_price_matrix: agent.cpa_price_matrix && agent.cpa_price_matrix.length === 3 
-        ? JSON.parse(JSON.stringify(agent.cpa_price_matrix)) 
-        : defaultCpaMatrix(),
+    cpa_enabled: agent.cpa_enabled,
+    cpa_price: agent.cpa_price,
+    deposit_commission_enabled: agent.deposit_commission_enabled,
     deposit_commission_rate: agent.deposit_commission_rate,
     data_binding_threshold: { ...agent.data_binding_threshold },
     deposit_threshold: agent.deposit_threshold,
@@ -291,6 +401,10 @@ const showEditModal = (agent: Agent) => {
 }
 
 const handleUpdate = async () => {
+  if (editForm.identity === 'SUB' && activeAgent.value?.identity === 'MASTER' && !editForm.parent_id) {
+    message.warning('轉變為子代理必須輸入所屬上級ID')
+    return
+  }
   if (!editForm.change_reason) {
     message.warning(t('agent.edit.reasonPlaceholder'))
     return
@@ -312,6 +426,10 @@ const handleUpdate = async () => {
 const handleCreate = async () => {
     if (!createForm.username || !createForm.password) {
         message.warning('請填寫帳號與密碼')
+        return
+    }
+    if (['SUB', 'ASSISTANT'].includes(createForm.identity) && !createForm.parent_id) {
+        message.warning('請輸入所屬上級ID')
         return
     }
     try {
@@ -471,6 +589,11 @@ onBeforeUnmount(() => {
                              <NInput v-model:value="createForm.promo_code" placeholder="請輸入推廣碼 (選填)" />
                         </NFormItem>
                     </NGridItem>
+                    <NGridItem v-if="['SUB', 'ASSISTANT'].includes(createForm.identity)">
+                        <NFormItem label="所屬上級ID" required>
+                             <NInput v-model:value="createForm.parent_id" placeholder="請輸入上級代理ID" />
+                        </NFormItem>
+                    </NGridItem>
                     <NGridItem>
                         <NFormItem :label="t('agent.edit.password')" required>
                             <NInput 
@@ -484,24 +607,34 @@ onBeforeUnmount(() => {
                 </NGrid>
 
                 <template v-if="createForm.identity !== 'ADMIN'">
-                    <NDivider title-placement="left">{{ t('agent.edit.cpaMatrix') }}</NDivider>
-                    <NGrid :cols="3" :x-gap="12">
-                        <NGridItem v-for="level in [1, 2, 3]" :key="level">
-                            <NCard size="small" :title="t('agent.edit.cpaLevel', { level })" embedded>
-                                <NFormItem :label="t('agent.edit.cpaMemberCount')" label-placement="top">
-                                    <NInputNumber v-model:value="createForm.cpa_price_matrix[level-1].member_count" :min="0" style="width: 100%" />
-                                </NFormItem>
-                                <NFormItem :label="t('agent.edit.cpaPrice')" label-placement="top">
-                                    <NInputNumber v-model:value="createForm.cpa_price_matrix[level-1].price" :min="0" style="width: 100%" />
-                                </NFormItem>
-                            </NCard>
+                    <NDivider title-placement="left">合作模式設定 (CPA 與儲值抽成)</NDivider>
+                    
+                    <NGrid :cols="2" :x-gap="24">
+                        <NGridItem>
+                            <NFormItem label="CPA 結算開關">
+                                <NSwitch v-model:value="createForm.cpa_enabled" />
+                            </NFormItem>
+                        </NGridItem>
+                        <NGridItem>
+                            <NFormItem label="儲值抽成開關">
+                                <NSwitch v-model:value="createForm.deposit_commission_enabled" />
+                            </NFormItem>
+                        </NGridItem>
+                        
+                        <NGridItem v-if="createForm.cpa_enabled">
+                            <NFormItem label="CPA 單價">
+                                <NInputNumber v-model:value="createForm.cpa_price" :min="0" style="width: 100%" />
+                            </NFormItem>
+                        </NGridItem>
+                        
+                        <NGridItem v-if="createForm.deposit_commission_enabled">
+                            <NFormItem :label="t('agent.edit.commissionRate')">
+                                <NInputNumber v-model:value="createForm.deposit_commission_rate" :min="0" :max="100" style="width: 100%" />
+                            </NFormItem>
                         </NGridItem>
                     </NGrid>
-
-                    <NDivider title-placement="left" class="mt-6">分潤與門檻</NDivider>
-                    <NFormItem :label="t('agent.edit.commissionRate')">
-                        <NInputNumber v-model:value="createForm.deposit_commission_rate" :min="0" :max="100" />
-                    </NFormItem>
+                    
+                    <NDivider title-placement="left" class="mt-6">進階門檻設定</NDivider>
                     
                     <NFormItem :label="t('agent.edit.bindingThreshold')">
                         <NSpace>
@@ -594,7 +727,18 @@ onBeforeUnmount(() => {
                     </NGridItem>
                     <NGridItem>
                         <NFormItem :label="t('agent.list.identity')">
-                            <NTag type="info" :bordered="false">{{ t(`agent.identity.${activeAgent?.identity}`) }}</NTag>
+                            <NSelect v-if="activeAgent?.identity !== 'ADMIN'" v-model:value="editForm.identity" :options="editIdentityOptions" />
+                            <NTag v-else type="info" :bordered="false">{{ t(`agent.identity.${activeAgent?.identity}`) }}</NTag>
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem v-if="editForm.identity === 'SUB' && activeAgent?.identity === 'MASTER'">
+                        <NFormItem label="所屬上級ID" required>
+                             <NInput v-model:value="editForm.parent_id" placeholder="請輸入上級代理ID" />
+                        </NFormItem>
+                    </NGridItem>
+                    <NGridItem v-if="editForm.identity === 'SUB' && activeAgent?.identity === 'SUB'">
+                        <NFormItem label="變更上級ID (選填)">
+                             <NInput v-model:value="editForm.parent_id" placeholder="若要轉移體系請輸入，否則留空" />
                         </NFormItem>
                     </NGridItem>
                     <NGridItem>
@@ -615,24 +759,34 @@ onBeforeUnmount(() => {
                 </NGrid>
 
                 <template v-if="activeAgent?.identity !== 'ADMIN'">
-                    <NDivider title-placement="left">{{ t('agent.edit.cpaMatrix') }}</NDivider>
-                    <NGrid :cols="3" :x-gap="12">
-                        <NGridItem v-for="level in [1, 2, 3]" :key="level">
-                            <NCard size="small" :title="t('agent.edit.cpaLevel', { level })" embedded>
-                                <NFormItem :label="t('agent.edit.cpaMemberCount')" label-placement="top">
-                                    <NInputNumber v-model:value="editForm.cpa_price_matrix[level-1].member_count" :min="0" style="width: 100%" />
-                                </NFormItem>
-                                <NFormItem :label="t('agent.edit.cpaPrice')" label-placement="top">
-                                    <NInputNumber v-model:value="editForm.cpa_price_matrix[level-1].price" :min="0" style="width: 100%" />
-                                </NFormItem>
-                            </NCard>
+                    <NDivider title-placement="left">合作模式設定 (CPA 與儲值抽成)</NDivider>
+                    
+                    <NGrid :cols="2" :x-gap="24">
+                        <NGridItem>
+                            <NFormItem label="CPA 結算開關">
+                                <NSwitch v-model:value="editForm.cpa_enabled" />
+                            </NFormItem>
+                        </NGridItem>
+                        <NGridItem>
+                            <NFormItem label="儲值抽成開關">
+                                <NSwitch v-model:value="editForm.deposit_commission_enabled" />
+                            </NFormItem>
+                        </NGridItem>
+                        
+                        <NGridItem v-if="editForm.cpa_enabled">
+                            <NFormItem label="CPA 單價">
+                                <NInputNumber v-model:value="editForm.cpa_price" :min="0" style="width: 100%" />
+                            </NFormItem>
+                        </NGridItem>
+                        
+                        <NGridItem v-if="editForm.deposit_commission_enabled">
+                            <NFormItem :label="t('agent.edit.commissionRate')">
+                                <NInputNumber v-model:value="editForm.deposit_commission_rate" :min="0" :max="100" style="width: 100%" />
+                            </NFormItem>
                         </NGridItem>
                     </NGrid>
 
-                    <NDivider title-placement="left" class="mt-6">分潤與門檻</NDivider>
-                    <NFormItem :label="t('agent.edit.commissionRate')">
-                        <NInputNumber v-model:value="editForm.deposit_commission_rate" :min="0" :max="100" />
-                    </NFormItem>
+                    <NDivider title-placement="left" class="mt-6">進階門檻設定</NDivider>
                     
                     <NFormItem :label="t('agent.edit.bindingThreshold')">
                         <NSpace>
@@ -712,18 +866,6 @@ onBeforeUnmount(() => {
         </template>
     </NModal>
 
-    <!-- CPA Matrix Modal (Table View) -->
-    <NModal v-model:show="showCPA" preset="card" :title="t('agent.list.cpaMatrix')" style="width: 450px">
-        <NDataTable 
-            :columns="[
-                { title: '級距', key: 'level', render: (row) => `級距 ${row.level}` },
-                { title: '門檻人數', key: 'member_count' },
-                { title: '獲客單價 (CPA)', key: 'price', render: (row) => `$ ${row.price}` }
-            ]" 
-            :data="activeAgent?.cpa_price_matrix || []"
-            :bordered="false"
-        />
-    </NModal>
 
     <!-- Promotion Money Modal -->
     <NModal v-model:show="showPromo" preset="card" :title="t('agent.list.promoMoney')" style="width: 450px">
@@ -742,6 +884,77 @@ onBeforeUnmount(() => {
              <div class="flex justify-end gap-3">
                 <NButton quaternary @click="showPromo = false">{{ t('common.cancel') }}</NButton>
                 <NButton type="primary" @click="handlePromoAdjust">{{ t('common.confirm') }}</NButton>
+            </div>
+        </template>
+    </NModal>
+
+    <!-- Transfer Modal -->
+    <NModal v-model:show="showTransfer" preset="card" title="代理轉線設定" style="width: 650px; border-radius: 20px;">
+        <NForm :model="transferForm" label-placement="left" label-width="120">
+            <NDivider title-placement="left">目標代理資訊</NDivider>
+            <NFormItem label="欲轉線代理">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold">{{ transferTarget?.username }}</span>
+                    <span class="text-xs text-gray-500">(UID: {{ transferTarget?.uid }})</span>
+                    <NTag size="small" type="info">當前 CPA: ${{ transferTarget?.cpa_price }}</NTag>
+                </div>
+            </NFormItem>
+            <NFormItem label="原屬上級路徑">
+                <span class="text-gray-600">{{ transferTarget?.path }}</span>
+            </NFormItem>
+
+            <NDivider title-placement="left">新上級設定</NDivider>
+            <NFormItem label="目標新上級" required>
+                <div class="flex gap-2 w-full">
+                    <NInput v-model:value="newParentKeyword" placeholder="請輸入新上級 UID 或帳號" class="flex-1" />
+                    <NButton type="primary" secondary @click="handleVerifyNewParent" :loading="verifyLoading">
+                        檢索驗證
+                    </NButton>
+                </div>
+            </NFormItem>
+            <div v-if="newParentInfo" class="ml-[120px] mb-6 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                <div class="text-sm text-blue-800 flex flex-col gap-1">
+                    <div><strong>檢索成功：</strong> {{ newParentInfo.username }} (UID: {{ newParentInfo.uid }})</div>
+                    <div><strong>新上級體系：</strong> {{ newParentInfo.path }}</div>
+                    <div class="flex items-center gap-2">
+                        <strong>新上級 CPA 單價：</strong>
+                        <NTag :type="newParentInfo.cpa_price >= (transferTarget?.cpa_price || 0) ? 'success' : 'error'" size="small">
+                            ${{ newParentInfo.cpa_price }}
+                        </NTag>
+                        <span v-if="newParentInfo.cpa_price < (transferTarget?.cpa_price || 0)" class="text-red-500 text-xs font-bold">
+                            (低於當前 CPA，無法轉線)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <NDivider title-placement="left">執行設定</NDivider>
+            <NFormItem label="執行類型">
+                <NRadioGroup v-model:value="transferForm.execution_type">
+                    <NRadio value="IMMEDIATE">立即執行</NRadio>
+                    <NRadio value="SCHEDULED">預約執行</NRadio>
+                </NRadioGroup>
+            </NFormItem>
+            
+            <NFormItem v-if="transferForm.execution_type === 'SCHEDULED'" label="預定執行時間" required>
+                <NDatePicker 
+                    v-model:formatted-value="transferForm.execute_at" 
+                    type="datetime" 
+                    clearable 
+                    value-format="yyyy-MM-dd HH:mm:ss"
+                    style="width: 100%"
+                    placeholder="請選擇未來時間 (至少大於目前 10 分鐘)"
+                />
+            </NFormItem>
+
+            <NFormItem label="備註原因" required>
+                <NInput v-model:value="transferForm.reason" type="textarea" :rows="3" placeholder="請輸入轉線原因 (5-200字)" />
+            </NFormItem>
+        </NForm>
+        <template #footer>
+            <div class="flex justify-end gap-3">
+                <NButton quaternary @click="showTransfer = false">取消</NButton>
+                <NButton type="primary" rounded @click="handleSubmitTransfer" :loading="submitLoading">確認轉線</NButton>
             </div>
         </template>
     </NModal>

@@ -299,6 +299,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '代理提領審核' }
       },
       {
+        path: 'agent-transfer-schedule',
+        name: 'AgentTransferSchedule',
+        component: () => import('@/views/AgentManagement/AgentTransferSchedule.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '預約轉線管理' }
+      },
+      {
         path: 'vip-settings',
         name: 'VIPSettings',
         component: () => import('@/views/VIPManagement/VIPSettings.vue'),

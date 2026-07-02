@@ -34,6 +34,7 @@ export interface Player {
     tags: PlayerTag[]
     vip_level: number
     promo_code?: string // 推廣碼
+    agent_id?: string // 歸屬代理 ID
     agent_name?: string // 代理帳號 (所屬)
     invite_code?: string // 邀請碼
     rtp?: number // RPT (Return To Player)

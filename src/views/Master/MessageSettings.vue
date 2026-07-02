@@ -358,17 +358,6 @@ onMounted(fetchData)
             </div>
           </div>
         </NFormItem>
-        <NFormItem 
-          v-if="currentEvent && ['registrationSuccess', 'maintenanceComplete'].includes(currentEvent.eventName)"
-          :label="t('messageSettings.bonusDistribute')"
-        >
-          <NInputNumber 
-            v-model:value="editModel.bonusAmount" 
-            :min="0"
-            :placeholder="t('messageSettings.bonusPlaceholder')"
-            class="w-full"
-          />
-        </NFormItem>
         <div class="flex justify-end gap-3 mt-6">
           <NButton @click="showEditModal = false">{{ t('common.cancel') }}</NButton>
           <NButton type="primary" :loading="loading" @click="submitEdit">{{ t('common.save') }}</NButton>

@@ -13,6 +13,9 @@ export interface Article {
     publish_end?: string
     event_start_time?: string // For Model 3
     event_end_time?: string // For Model 3
+    summary?: string // 內容簡介
+    rtp?: number // RTP
+    game_id?: string // 遊戲ID
     is_published: boolean
     seo: {
         meta_title?: string

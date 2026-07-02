@@ -23,6 +23,7 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
         tags: i % 10 === 0 ? ['TEST', 'VIP'] : ['NORMAL'],
         vip_level: Math.floor(Math.random() * 5),
         promo_code: i % 5 === 1 ? `A${20000 + i}` : undefined,
+        agent_id: i % 5 === 1 ? `${20000 + i}` : undefined, // Mock agent ID for affiliated players
         agent_name: i % 5 === 1 ? `agent_${20000 + i}` : undefined, // Mock agent name for affiliated players
         invite_code: i % 5 === 1 ? `INV${20000 + i}` : undefined, // Mock invite code
         rtp: parseFloat((Math.random() * 40 + 70).toFixed(2)), // Random RTP between 80.00 and 120.00
@@ -60,13 +61,14 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
     return player
 })
 
-export const mockAuditLogs: PlayerAuditLog[] = Array.from({ length: 20 }).map((_, i) => ({
-    id: `LOG_${i}`,
-    player_id: `P${10000 + (i % 5)}`,
-    operator: 'admin',
-    action: ['UPDATE_STATUS', 'UPDATE_INFO', 'ABANDON_BONUS'][i % 3],
-    old_value: 'ACTIVE',
-    new_value: 'LOCKED',
-    reason: 'Suspicious activity detected',
-    created_at: new Date(Date.now() - Math.random() * 100000000).toISOString()
+export const mockAuditLogs: PlayerAuditLog[] = Array.from({ length: 100 }).map((_, i) => ({
+    id: `log-${i}`,
+    player_id: `P${10000 + (i % 50)}`,
+    operator: i % 3 === 0 ? 'system' : 'admin',
+    action: ['Login', 'Update Profile', 'Change Password', 'KYC Submit'][i % 4],
+    details: `Action detail ${i}`,
+    ip_address: `192.168.1.${i % 255}`,
+    created_at: new Date(Date.now() - Math.random() * 10000000).toISOString()
 }))
+
+export const mockPlayerTransfers: import('@/types/player').PlayerTransferRecord[] = []

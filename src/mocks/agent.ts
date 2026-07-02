@@ -8,11 +8,9 @@ export const mockAgents: Agent[] = [
     identity: 'MASTER',
     promo_code: 'PC888',
     path: '平台 > master_agent_01',
-    cpa_price_matrix: [
-      { level: 1, member_count: 10, price: 10 },
-      { level: 2, member_count: 50, price: 15 },
-      { level: 3, member_count: 100, price: 25 }
-    ],
+    cpa_enabled: true,
+    cpa_price: 25,
+    deposit_commission_enabled: true,
     deposit_commission_rate: 15,
     commission_wallet: 1500.50,
     promo_wallet: 5000,
@@ -39,11 +37,9 @@ export const mockAgents: Agent[] = [
     identity: 'SUB',
     promo_code: 'ALPHA99',
     path: '平台 > master_agent_01 > sub_agent_alpha',
-    cpa_price_matrix: [
-      { level: 1, member_count: 5, price: 8 },
-      { level: 2, member_count: 20, price: 12 },
-      { level: 3, member_count: 50, price: 18 }
-    ],
+    cpa_enabled: true,
+    cpa_price: 18,
+    deposit_commission_enabled: false,
     deposit_commission_rate: 10,
     commission_wallet: 250.75,
     promo_wallet: 1000,
@@ -70,11 +66,9 @@ export const mockAgents: Agent[] = [
     identity: 'ADMIN',
     promo_code: 'ADMXP',
     path: '平台 > admin_ops_01',
-    cpa_price_matrix: [
-      { level: 1, member_count: 0, price: 0 },
-      { level: 2, member_count: 0, price: 0 },
-      { level: 3, member_count: 0, price: 0 }
-    ],
+    cpa_enabled: false,
+    cpa_price: 0,
+    deposit_commission_enabled: true,
     deposit_commission_rate: 20,
     commission_wallet: 12500,
     promo_wallet: 0,

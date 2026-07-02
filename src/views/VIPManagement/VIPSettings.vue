@@ -3,7 +3,7 @@ import { ref, onMounted, reactive, h } from 'vue'
 import { 
     NCard, NDataTable, NButton, NModal, NForm, NFormItem, NInput, 
     NInputNumber, NUpload, NSwitch, NTag, NIcon, useMessage, 
-    DataTableColumns, NGrid, NGridItem, NDivider, NUploadDragger, NText, NSelect, NAvatar
+    DataTableColumns, NGrid, NGridItem, NDivider, NUploadDragger, NText, NSelect, NAvatar, NTabs, NTabPane
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { 
@@ -136,6 +136,12 @@ const editingLevel = reactive<VIPLevel>({
     name: '',
     promotion_desc: '',
     retention_desc: '',
+    promotion_desc_zh_tw: '',
+    promotion_desc_zh_cn: '',
+    promotion_desc_en: '',
+    retention_desc_zh_tw: '',
+    retention_desc_zh_cn: '',
+    retention_desc_en: '',
     promo_deposit: 0,
     promo_turnover: 0,
     bind_data: 'none',
@@ -170,7 +176,15 @@ const bindDataOptions = [
 ]
 
 const handleEdit = (row: VIPLevel) => {
-    Object.assign(editingLevel, JSON.parse(JSON.stringify(row)))
+    Object.assign(editingLevel, {
+        promotion_desc_zh_tw: row.promotion_desc_zh_tw || row.promotion_desc,
+        promotion_desc_zh_cn: row.promotion_desc_zh_cn || '',
+        promotion_desc_en: row.promotion_desc_en || '',
+        retention_desc_zh_tw: row.retention_desc_zh_tw || row.retention_desc,
+        retention_desc_zh_cn: row.retention_desc_zh_cn || '',
+        retention_desc_en: row.retention_desc_en || '',
+        ...JSON.parse(JSON.stringify(row))
+    })
     showEditModal.value = true
 }
 
@@ -269,13 +283,32 @@ onMounted(fetchVIPData)
                         </NGridItem>
                     </NGrid>
 
-                    <NFormItem label="升級條件說明">
-                        <NInput v-model:value="editingLevel.promotion_desc" type="textarea" :placeholder="t('vip.desc')" />
-                    </NFormItem>
-
-                    <NFormItem label="保級條件說明">
-                        <NInput v-model:value="editingLevel.retention_desc" type="textarea" :disabled="editingLevel.is_perpetual" :placeholder="editingLevel.is_perpetual ? '無條件保級，無需特別說明' : '請填寫保級條件說明'" />
-                    </NFormItem>
+                    <NTabs type="line" animated class="mt-4">
+                        <NTabPane name="zh-TW" tab="繁體中文">
+                            <NFormItem label="升級條件說明">
+                                <NInput v-model:value="editingLevel.promotion_desc_zh_tw" type="textarea" :placeholder="t('vip.desc')" />
+                            </NFormItem>
+                            <NFormItem label="保級條件說明">
+                                <NInput v-model:value="editingLevel.retention_desc_zh_tw" type="textarea" :disabled="editingLevel.is_perpetual" :placeholder="editingLevel.is_perpetual ? '無條件保級，無需特別說明' : '請填寫保級條件說明'" />
+                            </NFormItem>
+                        </NTabPane>
+                        <NTabPane name="zh-CN" tab="簡體中文">
+                            <NFormItem label="升級條件說明">
+                                <NInput v-model:value="editingLevel.promotion_desc_zh_cn" type="textarea" :placeholder="t('vip.desc')" />
+                            </NFormItem>
+                            <NFormItem label="保級條件說明">
+                                <NInput v-model:value="editingLevel.retention_desc_zh_cn" type="textarea" :disabled="editingLevel.is_perpetual" :placeholder="editingLevel.is_perpetual ? '無條件保級，無需特別說明' : '請填寫保級條件說明'" />
+                            </NFormItem>
+                        </NTabPane>
+                        <NTabPane name="en" tab="English">
+                            <NFormItem label="升級條件說明">
+                                <NInput v-model:value="editingLevel.promotion_desc_en" type="textarea" :placeholder="t('vip.desc')" />
+                            </NFormItem>
+                            <NFormItem label="保級條件說明">
+                                <NInput v-model:value="editingLevel.retention_desc_en" type="textarea" :disabled="editingLevel.is_perpetual" :placeholder="editingLevel.is_perpetual ? '無條件保級，無需特別說明' : '請填寫保級條件說明'" />
+                            </NFormItem>
+                        </NTabPane>
+                    </NTabs>
 
                     <!-- V1: Hide reward settings to keep them hardcoded -->
                     <!--

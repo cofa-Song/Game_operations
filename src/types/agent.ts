@@ -1,12 +1,6 @@
 export type AgentIdentity = 'ADMIN' | 'MASTER' | 'SUB' | 'ASSISTANT'
 export type AgentStatus = 'NORMAL' | 'LOCKED' | 'FROZEN' | 'DISABLED'
 
-export interface CPAMatrix {
-  level: number // Level 1, 2, 3
-  member_count: number // Number of members required for this level
-  price: number // Price per member at this level
-}
-
 export interface Agent {
   id: string
   uid: string
@@ -14,7 +8,9 @@ export interface Agent {
   identity: AgentIdentity
   promo_code: string
   path: string
-  cpa_price_matrix: CPAMatrix[]
+  cpa_enabled: boolean
+  cpa_price: number
+  deposit_commission_enabled: boolean
   deposit_commission_rate: number
   commission_wallet: number
   promo_wallet: number
@@ -51,11 +47,13 @@ export interface AgentSearchParams {
 export interface UpdateAgentParams extends Partial<Omit<Agent, 'id' | 'uid' | 'username' | 'promo_code' | 'path' | 'created_at'>> {
   id: string
   password?: string
+  parent_id?: string
   change_reason: string
 }
 
 export interface CreateAgentParams extends Omit<Agent, 'id' | 'uid' | 'path' | 'created_at' | 'sub_agent_count' | 'direct_player_count' | 'commission_wallet' | 'promo_wallet'> {
   password: string
+  parent_id?: string
 }
 
 export type AgentWithdrawalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
@@ -77,4 +75,36 @@ export interface AgentWithdrawalSearchParams {
   status?: AgentWithdrawalStatus | 'ALL'
   start_time?: number
   end_time?: number
+}
+
+export type TransferExecutionType = 'IMMEDIATE' | 'SCHEDULED'
+export type TransferScheduleStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELED'
+
+export interface TransferAgentParams {
+  agent_id: string
+  new_parent_id: string
+  execution_type: TransferExecutionType
+  execute_at?: string // ISO string, required if SCHEDULED
+  reason: string
+}
+
+export interface AgentTransferSchedule {
+  id: string
+  agent_id: string
+  agent_name: string
+  agent_uid: string
+  original_parent_id: string
+  original_parent_name: string
+  new_parent_id: string
+  new_parent_name: string
+  execute_at: string
+  reason: string
+  status: TransferScheduleStatus
+  created_at: string
+}
+
+export interface AgentTransferSearchParams {
+  status?: TransferScheduleStatus | 'ALL'
+  page: number
+  page_size: number
 }
