@@ -257,6 +257,24 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '優惠活動' }
       },
       {
+        path: 'promo-campaigns',
+        name: 'PromoCampaigns',
+        component: () => import('@/views/Promotion/PromoCampaign.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '優惠活動管理' }
+      },
+      {
+        path: 'promo-campaigns/wizard',
+        name: 'PromoCampaignWizard',
+        component: () => import('@/views/Promotion/PromoCampaignWizard.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '活動嚮導' }
+      },
+      {
+        path: 'trigger-campaigns',
+        name: 'TriggerCampaigns',
+        component: () => import('@/views/Promotion/TriggerCampaign.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '自動觸發活動管理' }
+      },
+      {
         path: 'image-config',
         name: 'ImageConfig',
         component: () => import('@/views/Master/ImageConfig.vue'),

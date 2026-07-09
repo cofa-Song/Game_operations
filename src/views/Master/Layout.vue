@@ -32,7 +32,8 @@ import {
   SunnyOutline,
   PieChartOutline,
   CalendarOutline,
-  TicketOutline
+  TicketOutline,
+  FlashOutline
 } from '@vicons/ionicons5'
 import { NBreadcrumb, NBreadcrumbItem, NButton, NAvatar, NDropdown, NTooltip } from 'naive-ui'
 
@@ -136,7 +137,9 @@ const menuKeyToRoute: Record<string, string> = {
   'agent-report': '/admin/agent-report',
   'daily-sign-in': '/admin/daily-sign-in',
   'promo-codes': '/admin/promo-codes',
-  'promo-events': '/admin/promo-events'
+  'promo-events': '/admin/promo-events',
+  'promo-campaigns': '/admin/promo-campaigns',
+  'trigger-campaigns': '/admin/trigger-campaigns'
 }
 
 // 根據當前路由更新選中的菜單項
@@ -404,6 +407,16 @@ const menuOptions = computed(() => [
         label: t('navigation.promoEvents'),
         key: 'promo-events',
         icon: renderIcon(GiftOutline)
+      },
+      {
+        label: '優惠活動管理',
+        key: 'promo-campaigns',
+        icon: renderIcon(GiftOutline)
+      },
+      {
+        label: '自動觸發活動管理',
+        key: 'trigger-campaigns',
+        icon: renderIcon(FlashOutline)
       },
       {
         label: t('navigation.promoCodes'),
