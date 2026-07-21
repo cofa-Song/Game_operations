@@ -232,6 +232,38 @@ export class RolloverEngine {
         }
     }
 
+    // 7. Force Approve (Admin)
+    static forceApproveBonus(player: Player, adminReason: string = 'Admin Force Approve'): void {
+        const container = player.rollover_container
+        if (container && container.status === ContainerStatus.ACTIVE) {
+            const bonusWallet = this.getWallet(player, 'BONUS')!
+            const cashWallet = this.getWallet(player, 'CASH')!
+
+            // Transfer Logic (same as normal target reached but manual trigger)
+            const transferAmount = Math.min(bonusWallet.balance, container.cap)
+            const overflow = Math.max(0, bonusWallet.balance - container.cap)
+
+            // 1. Deduct from Bonus (Unlock)
+            bonusWallet.balance = 0
+            this.createLog(player, 'UNLOCK', 'BONUS', -transferAmount, 0, `${adminReason} (${container.active_card_id})`)
+
+            // 2. Add to Cash (Unlock)
+            cashWallet.balance += transferAmount
+            this.createLog(player, 'UNLOCK', 'CASH', transferAmount, 0, `${adminReason} (${container.active_card_id})`)
+
+            // 3. Wipe Overflow if any
+            if (overflow > 0) {
+                this.createLog(player, 'WIPE', 'BONUS', -overflow, 0, `System Cap Wipe (${adminReason})`)
+            }
+
+            console.log(`[Engine] Force Approve: Transferred ${transferAmount}, Burned ${overflow}`)
+
+            // Reset Container
+            this.resetContainer(player)
+            this.tryActivateNext(player)
+        }
+    }
+
     private static resetContainer(player: Player) {
         if (player.rollover_container) {
             player.rollover_container.status = ContainerStatus.IDLE

@@ -57,13 +57,55 @@
                         </div>
                     </div>
                     <n-divider />
-                    <div class="wallet-info">
-                        <n-statistic label="Cash 餘額" :value="cashBalance">
-                            <template #prefix>$</template>
-                        </n-statistic>
-                        <n-statistic label="Bonus 餘額" :value="bonusBalance" class="ml-8">
-                            <template #prefix>$</template>
-                        </n-statistic>
+                    <div class="wallet-grid">
+                        <!-- 儲值錢包 CASH -->
+                        <div class="wallet-group">
+                            <div class="wallet-group-label">💰 儲值錢包</div>
+                            <div class="wallet-items">
+                                <div class="wallet-item">
+                                    <span class="wallet-currency gold">金幣</span>
+                                    <span class="wallet-balance">{{ cashGold.toLocaleString() }}</span>
+                                </div>
+                                <div class="wallet-item">
+                                    <span class="wallet-currency silver">銀幣</span>
+                                    <span class="wallet-balance">{{ cashSilver.toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 活動錢包 BONUS -->
+                        <div class="wallet-group">
+                            <div class="wallet-group-label">🎁 活動錢包</div>
+                            <div class="wallet-items">
+                                <div class="wallet-item">
+                                    <span class="wallet-currency gold">金幣</span>
+                                    <span class="wallet-balance">{{ bonusGold.toLocaleString() }}</span>
+                                </div>
+                                <div class="wallet-item">
+                                    <span class="wallet-currency silver">銀幣</span>
+                                    <span class="wallet-balance">{{ bonusSilver.toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 保險箱 SAFE -->
+                        <div class="wallet-group">
+                            <div class="wallet-group-label">🔒 保險箱</div>
+                            <div class="wallet-items">
+                                <div class="wallet-item">
+                                    <span class="wallet-currency gold">金幣</span>
+                                    <span class="wallet-balance">{{ safeGold.toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 遊戲錢包 GAME -->
+                        <div class="wallet-group">
+                            <div class="wallet-group-label">🎮 遊戲錢包</div>
+                            <div class="wallet-items">
+                                <div class="wallet-item">
+                                    <span class="wallet-currency bronze">銅幣</span>
+                                    <span class="wallet-balance">{{ gameBronze.toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </n-alert>
 
@@ -81,6 +123,15 @@
 
                     <n-form-item label="目標錢包" path="walletType">
                         <n-select v-model:value="formModel.walletType" :options="walletOptions" />
+                    </n-form-item>
+
+                    <n-form-item label="幣別" path="currency">
+                        <n-radio-group v-model:value="formModel.currency" name="currency">
+                            <n-space>
+                                <n-radio value="GOLD">金幣</n-radio>
+                                <n-radio value="SILVER">銀幣</n-radio>
+                            </n-space>
+                        </n-radio-group>
                     </n-form-item>
 
                     <n-form-item label="調整金額" path="amount">
@@ -116,6 +167,19 @@
 
                     <n-form-item label="流水倍率" path="rolloverMultiplier" v-if="formModel.isRollover && formModel.walletType === 'BONUS' && formModel.type === 'DEPOSIT'">
                         <n-input-number v-model:value="formModel.rolloverMultiplier" :min="0" :step="1" placeholder="倍率" />
+                    </n-form-item>
+
+                    <n-form-item label="設定轉換上限" path="hasConversionCap" v-if="formModel.isRollover && formModel.walletType === 'BONUS' && formModel.type === 'DEPOSIT'">
+                        <n-space align="center">
+                            <n-switch v-model:value="formModel.hasConversionCap" />
+                            <n-text depth="3" style="font-size:12px">開啟後，流水達標時轉入儲值錢包的金額將不超過上限</n-text>
+                        </n-space>
+                    </n-form-item>
+
+                    <n-form-item label="轉換上限" path="conversionCap" v-if="formModel.isRollover && formModel.hasConversionCap && formModel.walletType === 'BONUS' && formModel.type === 'DEPOSIT'">
+                        <n-input-number v-model:value="formModel.conversionCap" :min="1" :precision="2" placeholder="最高可轉換金額" style="width: 100%">
+                            <template #prefix>$</template>
+                        </n-input-number>
                     </n-form-item>
 
                     <n-form-item>
@@ -174,12 +238,15 @@ const fileList = ref<UploadFileInfo[]>([])
 const formModel = reactive({
     type: 'DEPOSIT',
     walletType: 'CASH',
+    currency: 'GOLD' as 'GOLD' | 'SILVER',
     amount: null as number | null,
     reason: null as string | null,
     note: '',
     evidence: null as File | null,
     isRollover: false,
-    rolloverMultiplier: 1
+    rolloverMultiplier: 1,
+    hasConversionCap: false,
+    conversionCap: null as number | null
 })
 
 // Options
@@ -190,14 +257,20 @@ const walletOptions = [
 
 const reasonOptions = ADJUSTMENT_REASONS
 
-// Computed
-const cashBalance = computed(() => {
-    return player.value?.wallets.find(w => w.type === 'CASH')?.balance || 0
-})
+// Computed - wallet balances per type+currency
+const getWallet = (type: string, currency: string) =>
+    player.value?.wallets.find(w => w.type === type && w.currency === currency)?.balance ?? 0
 
-const bonusBalance = computed(() => {
-    return player.value?.wallets.find(w => w.type === 'BONUS')?.balance || 0
-})
+const cashGold = computed(() => getWallet('CASH', 'GOLD'))
+const cashSilver = computed(() => getWallet('CASH', 'SILVER'))
+const bonusGold = computed(() => getWallet('BONUS', 'GOLD'))
+const bonusSilver = computed(() => getWallet('BONUS', 'SILVER'))
+const safeGold = computed(() => getWallet('SAFE', 'GOLD'))
+const gameBronze = computed(() => getWallet('GAME', 'BRONZE'))
+
+// Legacy computed (still used by form validation)
+const cashBalance = computed(() => cashGold.value + cashSilver.value)
+const bonusBalance = computed(() => bonusGold.value + bonusSilver.value)
 
 // Validation Rules
 const rules: FormRules = {
@@ -280,12 +353,15 @@ const handleSubmit = async () => {
                     playerId: player.value!.id,
                     type: formModel.type as 'DEPOSIT' | 'WITHDRAW',
                     walletType: formModel.walletType as 'CASH' | 'BONUS',
+                    currency: formModel.currency,
                     amount: formModel.amount!,
                     reason: formModel.reason!,
                     note: formModel.note,
                     evidence: formModel.evidence,
                     isRollover: formModel.isRollover,
-                    rolloverMultiplier: formModel.rolloverMultiplier
+                    rolloverMultiplier: formModel.rolloverMultiplier,
+                    hasConversionCap: formModel.hasConversionCap,
+                    conversionCap: formModel.hasConversionCap ? formModel.conversionCap : undefined
                 })
 
                 if (res.code === 0) {
@@ -334,9 +410,63 @@ const handleSubmit = async () => {
 .value {
     font-weight: 500;
 }
-.wallet-info {
-    display: flex;
+.wallet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
     margin-top: 12px;
+}
+.wallet-group {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+}
+.wallet-group-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 8px;
+    white-space: nowrap;
+}
+.wallet-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.wallet-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.wallet-currency {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+.wallet-currency.gold {
+    background: #fffbe6;
+    color: #d48806;
+    border: 1px solid #ffe58f;
+}
+.wallet-currency.silver {
+    background: #f5f5f5;
+    color: #595959;
+    border: 1px solid #d9d9d9;
+}
+.wallet-currency.bronze {
+    background: #fff2e8;
+    color: #ad4e00;
+    border: 1px solid #ffbb96;
+}
+.wallet-balance {
+    font-size: 14px;
+    font-weight: 600;
+    color: #262626;
+    font-variant-numeric: tabular-nums;
 }
 .mb-4 {
     margin-bottom: 16px;

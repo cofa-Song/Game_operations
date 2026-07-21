@@ -4,7 +4,8 @@ import { RolloverEngine } from './engine' // Import Engine
 const generateWallets = (): Wallet[] => [
     { type: 'CASH', currency: 'GOLD', balance: Math.floor(Math.random() * 50000) },
     { type: 'CASH', currency: 'SILVER', balance: Math.floor(Math.random() * 10000) },
-    { type: 'BONUS', currency: 'SILVER', balance: Math.floor(Math.random() * 5000) },
+    { type: 'BONUS', currency: 'GOLD', balance: Math.floor(Math.random() * 5000) },
+    { type: 'BONUS', currency: 'SILVER', balance: Math.floor(Math.random() * 3000) },
     { type: 'GAME', currency: 'BRONZE', balance: Math.floor(Math.random() * 1000) },
     { type: 'SAFE', currency: 'GOLD', balance: Math.floor(Math.random() * 10000) }
 ]

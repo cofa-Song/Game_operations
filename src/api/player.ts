@@ -181,6 +181,16 @@ export const playerApi = {
         return { code: 0, msg: 'success' }
     },
 
+    async forceApproveBonus(id: string, reason: string = 'Admin Force Approve'): Promise<ApiResponse<void>> {
+        await delay(SIMULATE_DELAY)
+        const player = mockPlayers.find(p => p.id === id)
+        if (!player) return { code: 404, msg: 'Player not found' }
+
+        console.log(`[Audit] Force Approve Bonus ${id}. Reason: ${reason}`)
+        // The actual wallet transfer logic is handled by RolloverEngine in frontend for mock purposes
+        return { code: 0, msg: 'success' }
+    },
+
     async getAuditLogs(playerId: string, page: number = 1, pageSize: number = 10): Promise<ApiResponse<PaginatedResponse<PlayerAuditLog>>> {
         await delay(SIMULATE_DELAY)
         const allLogs = mockAuditLogs.filter(l => l.player_id === playerId)

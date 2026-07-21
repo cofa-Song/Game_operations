@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { 
   NCard, NTabs, NTabPane, NGrid, NGridItem, NDescriptions, NDescriptionsItem,
   NTag, NButton, NSpace, NAvatar, NStatistic, NList, NListItem, NThing,
-  NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage,
+  NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage, useDialog,
   NProgress, NDivider, NDatePicker, NInputNumber, NDataTable, NPagination,
   NRadioGroup, NRadio, NIcon
 } from 'naive-ui'
@@ -24,6 +24,7 @@ import { RolloverEngine } from '@/mocks/engine'
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const dialog = useDialog()
 const { t } = useI18n()
 
 const playerId = route.params.id as string
@@ -574,6 +575,29 @@ const submitAbandonBonus = async () => {
     }
 }
 
+const handleForceApproveBonus = () => {
+    dialog.warning({
+        title: '強制通過確認',
+        content: '確定要強制通過此獎勵卡任務嗎？剩餘點數將轉入儲值錢包。',
+        positiveText: '確認通過',
+        negativeText: '取消',
+        onPositiveClick: async () => {
+            try {
+                const res = await playerApi.forceApproveBonus(playerId, '管理員強制通過')
+                if (res.code === 0) {
+                    message.success('已強制通過')
+                    RolloverEngine.forceApproveBonus(player.value!, '管理員強制通過')
+                    fetchData()
+                } else {
+                    message.error(res.msg)
+                }
+            } catch (e) {
+                message.error('操作失敗')
+            }
+        }
+    })
+}
+
 const getWalletBalance = (type: string, currency?: string) => {
     if (!player.value) return 0
     const wallet = player.value.wallets.find(w => w.type === type && (!currency || w.currency === currency))
@@ -709,7 +733,10 @@ onMounted(() => {
                  <NGridItem class="col-span-2">
                     <NCard size="small" :title="t('player.list.rolloverMonitor')" class="mt-2">
                         <template #header-extra>
-                            <NButton size="tiny" type="error" ghost @click="handleAbandonBonus">放棄獎勵</NButton>
+                            <NSpace>
+                                <NButton size="tiny" type="primary" ghost @click="handleForceApproveBonus">強制通過</NButton>
+                                <NButton size="tiny" type="error" ghost @click="handleAbandonBonus">放棄獎勵</NButton>
+                            </NSpace>
                         </template>
                         
                         <div v-if="player.rollover_container?.status === 'ACTIVE'" class="mb-4">
