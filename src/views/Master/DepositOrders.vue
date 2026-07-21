@@ -4,8 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { 
   NGrid, NGridItem, NDataTable, NButton, NSpace, NTag, NCard,
   NForm, NFormItem, NInput, NInputNumber, NSelect, NDatePicker, NModal, 
-  NScrollbar, NIcon, useMessage, 
-  DataTableColumns 
+  NScrollbar, NIcon, useMessage, NUpload,
+  DataTableColumns, UploadFileInfo
 } from 'naive-ui'
 import { Search, FlashOutline, BarChartOutline, PieChartOutline, TimeOutline } from '@vicons/ionicons5'
 import * as echarts from 'echarts'
@@ -60,9 +60,8 @@ const channelOptions = [
 const showManualModal = ref(false)
 const currentOrderForManual = ref<string | null>(null)
 const manualForm = reactive({
-  externalId: '',
-  actualAmount: 0,
-  files: []
+  fileList: [] as UploadFileInfo[],
+  remarks: ''
 })
 
 const showLogModal = ref(false)
@@ -279,11 +278,11 @@ const handleSync = async (id: string) => {
 }
 
 const openManual = (id: string) => {
-  currentOrderForManual.value = id; manualForm.externalId = ''; manualForm.actualAmount = 0; showManualModal.value = true;
+  currentOrderForManual.value = id; manualForm.fileList = []; manualForm.remarks = ''; showManualModal.value = true;
 }
 
 const submitManual = async () => {
-  if (!manualForm.externalId || manualForm.actualAmount <= 0) { message.warning(t('common.fillRequired')); return; }
+  if (manualForm.fileList.length === 0 || !manualForm.remarks) { message.warning(t('common.fillRequired')); return; }
   const res = await depositOrderApi.manualComplete(currentOrderForManual.value!, manualForm)
   if (res.code === 0) { message.success(t('common.success')); showManualModal.value = false; loadData(); }
 }
@@ -477,11 +476,19 @@ onBeforeUnmount(() => {
     <!-- 彈窗維持亮色高端風 -->
     <NModal v-model:show="showManualModal" :title="$t('finance.depositOrder.modals.manualTitle')" preset="card" class="tech-modal-light" style="width: 500px">
       <NForm :model="manualForm" label-placement="top">
-        <NFormItem :label="$t('finance.depositOrder.modals.traceId')" required>
-          <NInput v-model:value="manualForm.externalId" placeholder="ID from third-party" class="tech-input-light" />
+        <NFormItem label="上傳圖片" required>
+          <NUpload
+            v-model:file-list="manualForm.fileList"
+            list-type="image-card"
+            :max="1"
+            accept="image/*"
+            @before-upload="({ file }) => { manualForm.fileList = [file]; return false }"
+          >
+            上傳
+          </NUpload>
         </NFormItem>
-        <NFormItem :label="$t('finance.depositOrder.modals.amount')" required>
-          <NInputNumber v-model:value="manualForm.actualAmount" :precision="2" class="w-full tech-number-light" />
+        <NFormItem label="備註說明" required>
+          <NInput v-model:value="manualForm.remarks" type="textarea" placeholder="請輸入人工補單的原因與說明..." class="tech-input-light" :rows="3" />
         </NFormItem>
       </NForm>
       <template #footer>

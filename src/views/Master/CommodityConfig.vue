@@ -97,26 +97,31 @@
 
                         <!-- 2. Content Configuration -->
                         <n-tab-pane name="content" tab="內容配置">
-                            <n-form-item label="有償幣 (Cash)" path="paidCoins">
-                                <n-input-number v-model:value="formModel.paidCoins" :min="0" />
-                            </n-form-item>
-                             <n-form-item label="無償幣 (Free)" path="freeCoins">
-                                <n-input-number v-model:value="formModel.freeCoins" :min="0" />
-                            </n-form-item>
-                             <n-form-item label="贈送道具">
-                                <n-dynamic-tags v-model:value="tempItems" />
-                                <n-text depth="3" class="tip">暫以標籤輸入道具 ID，後續對接道具系統</n-text>
-                            </n-form-item>
-                        </n-tab-pane>
+                             <n-form-item label="統一定價" path="price">
+                                 <n-input-number v-model:value="formModel.price" :min="0" placeholder="TWD 價格">
+                                     <template #prefix>$</template>
+                                 </n-input-number>
+                             </n-form-item>
 
-                        <!-- 3. Pricing -->
-                        <n-tab-pane name="pricing" tab="平台定價">
+                            <n-divider dashed>平台內容配置</n-divider>
+
                             <n-card size="small" title="Web 端" class="mb-2">
                                 <n-space align="center">
                                     <n-switch v-model:value="formModel.web.isEnabled" />
-                                    <n-input-number v-model:value="formModel.web.price" placeholder="TWD 價格" :disabled="!formModel.web.isEnabled">
-                                        <template #prefix>$</template>
-                                    </n-input-number>
+                                    <n-form-item label="內容類型" :show-feedback="false">
+                                        <n-select v-model:value="formModel.web.content.contentType" :options="contentTypeOptions" style="width: 150px" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="數量" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.web.content.contentAmount" placeholder="數量" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
+                                </n-space>
+                                <n-space v-if="formModel.web.content.contentType === 'ACTIVITY_COIN'" align="center" class="mt-2">
+                                    <n-form-item label="流水門檻倍率" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.web.content.contentTurnoverMultiplier" placeholder="倍率" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="轉換上限" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.web.content.contentConversionLimit" placeholder="上限" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
                                 </n-space>
                             </n-card>
 
@@ -124,24 +129,113 @@
                                 <n-space vertical>
                                     <n-space align="center">
                                         <n-switch v-model:value="formModel.ios.isEnabled" />
-                                        <n-input-number v-model:value="formModel.ios.price" placeholder="Tier 價格" :disabled="!formModel.ios.isEnabled" @blur="validateIosTier">
-                                            <template #prefix>$</template>
-                                        </n-input-number>
-                                        <n-input v-model:value="formModel.ios.productId" placeholder="Apple Product ID" :disabled="!formModel.ios.isEnabled" />
+                                        <n-form-item label="Apple Product ID" :show-feedback="false">
+                                            <n-input v-model:value="formModel.ios.productId" placeholder="Product ID" :disabled="!formModel.ios.isEnabled" />
+                                        </n-form-item>
                                     </n-space>
-                                    <n-alert type="warning" v-if="iosTierWarning" title="價格提示" closable>
-                                        iOS 價格建議設為 Apple Tier 標準 (如 33, 70, 100...)
-                                    </n-alert>
+                                    <n-space align="center" class="mt-2">
+                                        <n-form-item label="內容類型" :show-feedback="false">
+                                            <n-select v-model:value="formModel.ios.content.contentType" :options="contentTypeOptions" style="width: 150px" :disabled="!formModel.ios.isEnabled" />
+                                        </n-form-item>
+                                        <n-form-item label="數量" :show-feedback="false">
+                                            <n-input-number v-model:value="formModel.ios.content.contentAmount" placeholder="數量" :disabled="!formModel.ios.isEnabled" />
+                                        </n-form-item>
+                                    </n-space>
+                                    <n-space v-if="formModel.ios.content.contentType === 'ACTIVITY_COIN'" align="center" class="mt-2">
+                                        <n-form-item label="流水門檻倍率" :show-feedback="false">
+                                            <n-input-number v-model:value="formModel.ios.content.contentTurnoverMultiplier" placeholder="倍率" :disabled="!formModel.ios.isEnabled" />
+                                        </n-form-item>
+                                        <n-form-item label="轉換上限" :show-feedback="false">
+                                            <n-input-number v-model:value="formModel.ios.content.contentConversionLimit" placeholder="上限" :disabled="!formModel.ios.isEnabled" />
+                                        </n-form-item>
+                                    </n-space>
+                                </n-space>
+                            </n-card>
+
+                            <n-card size="small" title="Android 端" class="mb-2">
+                                <n-space vertical>
+                                    <n-space align="center">
+                                        <n-switch v-model:value="formModel.android.isEnabled" />
+                                        <n-form-item label="Google Product ID" :show-feedback="false">
+                                            <n-input v-model:value="formModel.android.productId" placeholder="Product ID" :disabled="!formModel.android.isEnabled" />
+                                        </n-form-item>
+                                    </n-space>
+                                    <n-space align="center" class="mt-2">
+                                        <n-form-item label="內容類型" :show-feedback="false">
+                                            <n-select v-model:value="formModel.android.content.contentType" :options="contentTypeOptions" style="width: 150px" :disabled="!formModel.android.isEnabled" />
+                                        </n-form-item>
+                                        <n-form-item label="數量" :show-feedback="false">
+                                            <n-input-number v-model:value="formModel.android.content.contentAmount" placeholder="數量" :disabled="!formModel.android.isEnabled" />
+                                        </n-form-item>
+                                    </n-space>
+                                    <n-space v-if="formModel.android.content.contentType === 'ACTIVITY_COIN'" align="center" class="mt-2">
+                                        <n-form-item label="流水門檻倍率" :show-feedback="false">
+                                            <n-input-number v-model:value="formModel.android.content.contentTurnoverMultiplier" placeholder="倍率" :disabled="!formModel.android.isEnabled" />
+                                        </n-form-item>
+                                        <n-form-item label="轉換上限" :show-feedback="false">
+                                            <n-input-number v-model:value="formModel.android.content.contentConversionLimit" placeholder="上限" :disabled="!formModel.android.isEnabled" />
+                                        </n-form-item>
+                                    </n-space>
+                                </n-space>
+                            </n-card>
+                        </n-tab-pane>
+
+                        <!-- 3. Bonus -->
+                        <n-tab-pane name="bonus" tab="優惠贈禮">
+                            <n-card size="small" title="Web 端" class="mb-2">
+                                <n-space align="center">
+                                    <n-form-item label="贈禮類型" :show-feedback="false">
+                                        <n-select v-model:value="formModel.web.bonus.bonusType" :options="bonusTypeOptions" style="width: 150px" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="數量" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.web.bonus.bonusAmount" placeholder="數量" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
+                                </n-space>
+                                <n-space align="center" class="mt-2">
+                                    <n-form-item label="流水門檻倍率" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.web.bonus.bonusTurnoverMultiplier" placeholder="倍率" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="轉換上限" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.web.bonus.bonusConversionLimit" placeholder="上限" :disabled="!formModel.web.isEnabled" />
+                                    </n-form-item>
+                                </n-space>
+                            </n-card>
+
+                            <n-card size="small" title="iOS 端" class="mb-2">
+                                <n-space align="center">
+                                    <n-form-item label="贈禮類型" :show-feedback="false">
+                                        <n-select v-model:value="formModel.ios.bonus.bonusType" :options="bonusTypeOptions" style="width: 150px" :disabled="!formModel.ios.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="數量" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.ios.bonus.bonusAmount" placeholder="數量" :disabled="!formModel.ios.isEnabled" />
+                                    </n-form-item>
+                                </n-space>
+                                <n-space align="center" class="mt-2">
+                                    <n-form-item label="流水門檻倍率" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.ios.bonus.bonusTurnoverMultiplier" placeholder="倍率" :disabled="!formModel.ios.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="轉換上限" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.ios.bonus.bonusConversionLimit" placeholder="上限" :disabled="!formModel.ios.isEnabled" />
+                                    </n-form-item>
                                 </n-space>
                             </n-card>
 
                             <n-card size="small" title="Android 端" class="mb-2">
                                 <n-space align="center">
-                                    <n-switch v-model:value="formModel.android.isEnabled" />
-                                    <n-input-number v-model:value="formModel.android.price" placeholder="價格" :disabled="!formModel.android.isEnabled">
-                                        <template #prefix>$</template>
-                                    </n-input-number>
-                                    <n-input v-model:value="formModel.android.productId" placeholder="Google Product ID" :disabled="!formModel.android.isEnabled" />
+                                    <n-form-item label="贈禮類型" :show-feedback="false">
+                                        <n-select v-model:value="formModel.android.bonus.bonusType" :options="bonusTypeOptions" style="width: 150px" :disabled="!formModel.android.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="數量" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.android.bonus.bonusAmount" placeholder="數量" :disabled="!formModel.android.isEnabled" />
+                                    </n-form-item>
+                                </n-space>
+                                <n-space align="center" class="mt-2">
+                                    <n-form-item label="流水門檻倍率" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.android.bonus.bonusTurnoverMultiplier" placeholder="倍率" :disabled="!formModel.android.isEnabled" />
+                                    </n-form-item>
+                                    <n-form-item label="轉換上限" :show-feedback="false">
+                                        <n-input-number v-model:value="formModel.android.bonus.bonusConversionLimit" placeholder="上限" :disabled="!formModel.android.isEnabled" />
+                                    </n-form-item>
                                 </n-space>
                             </n-card>
                         </n-tab-pane>
@@ -193,7 +287,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, h } from 'vue'
 import { useMessage, useDialog, NTag, NButton, NSpace, NSwitch, FormInst, FormRules, NCard, NDataTable, NModal, NForm, NFormItem, NInput, NDrawer, NDrawerContent, NTabs, NTabPane, NRadioGroup, NRadioButton, NRadio, NInputNumber, NDatePicker, NDynamicTags, NText, NAlert, NSelect, NIcon } from 'naive-ui'
-import { commodityApi, Commodity } from '@/api/commodity'
+import { commodityApi, Commodity, defaultPlatformConfig } from '@/api/commodity'
 import { badgeApi, MarketingBadge } from '@/api/badge'
 import { Add } from '@vicons/ionicons5'
 import placeholderImg from '@/assets/commodity_placeholder.png'
@@ -223,6 +317,16 @@ const iosTierWarning = ref(false)
 const vipThreshold = ref(0)
 const vipOptions = Array.from({ length: 11 }, (_, i) => ({ label: `VIP ${i} 及以上`, value: i }))
 
+const contentTypeOptions = [
+    { label: '儲值金幣', value: 'RECHARGE_COIN' },
+    { label: '活動金幣', value: 'ACTIVITY_COIN' }
+]
+
+const bonusTypeOptions = [
+    { label: '活動金幣', value: 'ACTIVITY_COIN' },
+    { label: '活動銀幣', value: 'ACTIVITY_SILVER' }
+]
+
 const formModel = reactive<Commodity>({
     id: '',
     name: '',
@@ -230,13 +334,10 @@ const formModel = reactive<Commodity>({
     badgeId: null,
     type: 'REGULAR',
     sortOrder: 0,
-    paidCoins: 0,
-    freeCoins: 0,
-    items: [],
-    rolloverMultiplier: 1,
-    web: { isEnabled: true, price: 0 },
-    ios: { isEnabled: false, price: 0, productId: '' },
-    android: { isEnabled: false, price: 0, productId: '' },
+    price: 0,
+    web: defaultPlatformConfig(),
+    ios: defaultPlatformConfig(),
+    android: defaultPlatformConfig(),
     limitRule: 'NONE',
     vipLevels: [0, 1, 2, 3]
 })
@@ -331,7 +432,7 @@ const rules: FormRules = {
     id: { required: true, message: '請輸入商品 ID', trigger: 'blur' },
     name: { required: true, message: '請輸入名稱', trigger: 'blur' },
     imageUrl: { required: true, message: '請輸入圖片 URL', trigger: 'blur' },
-    paidCoins: { required: true, type: 'number' as any, message: '請輸入數量', trigger: 'blur' }
+    price: { required: true, type: 'number' as any, message: '請輸入定價', trigger: 'blur' }
 }
 
 // --- Methods ---
@@ -392,10 +493,8 @@ const handleDeleteBadge = async (row: MarketingBadge) => {
 // Commodity Methods
 const openEditDrawer = (row: Commodity | null) => {
     isEdit.value = !!row
-    iosTierWarning.value = false
     if (row) {
         Object.assign(formModel, JSON.parse(JSON.stringify(row)))
-        tempItems.value = row.items?.map(i => i.id) || []
         // Convert date strings to timestamps for DatePicker
         if (row.startTime && row.endTime) {
             dateRange.value = [new Date(row.startTime).getTime(), new Date(row.endTime).getTime()]
@@ -410,16 +509,13 @@ const openEditDrawer = (row: Commodity | null) => {
         formModel.badgeId = null
         formModel.type = 'REGULAR'
         formModel.sortOrder = 0
-        formModel.paidCoins = 0
-        formModel.freeCoins = 0
-        formModel.items = []
-        formModel.web = { isEnabled: true, price: 0 }
-        formModel.ios = { isEnabled: false, price: 0, productId: '' }
-        formModel.android = { isEnabled: false, price: 0, productId: '' }
+        formModel.price = 0
+        formModel.web = defaultPlatformConfig()
+        formModel.ios = defaultPlatformConfig()
+        formModel.android = defaultPlatformConfig()
         formModel.limitRule = 'NONE' // Default
         formModel.vipLevels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         vipThreshold.value = 0
-        tempItems.value = []
         dateRange.value = null
     }
     
@@ -433,17 +529,6 @@ const openEditDrawer = (row: Commodity | null) => {
     showDrawer.value = true
 }
 
-const validateIosTier = () => {
-    const price = formModel.ios.price
-    // Simple check: Apple tiers usually aren't random integers like 35
-    const commonTiers = [33, 70, 100, 130, 170, 330] // Example TWD tiers
-    if (formModel.ios.isEnabled && price > 0 && !commonTiers.includes(price)) {
-        iosTierWarning.value = true
-    } else {
-        iosTierWarning.value = false
-    }
-}
-
 const handleSubmit = async () => {
     formRef.value?.validate(async (errors) => {
         if (!errors) {
@@ -455,8 +540,6 @@ const handleSubmit = async () => {
                 formModel.startTime = undefined
                 formModel.endTime = undefined
             }
-            // Processing Items (Mock)
-            formModel.items = tempItems.value.map(tid => ({ id: tid, name: 'Item'+tid, count: 1 }))
 
             // Processing VIP Levels (Threshold to Array)
             const levels = []
