@@ -157,7 +157,7 @@ const handleRemoveContinuousReward = (id: number) => {
           <NIcon :component="CalendarOutline" class="text-sky-500" />
           {{ t('dailySignIn.title') || '每日簽到獎勵設定' }}
         </h2>
-        <p class="text-sm text-slate-500 mt-1">設定玩家連續登入每日可領取的獎勵內容（30 天循環）</p>
+        <p class="text-sm text-slate-500 mt-1">設定玩家累積登入每日可領取的獎勵內容（30 天循環）</p>
       </div>
       <div class="flex gap-3">
         <NButton secondary @click="handleReset">
@@ -223,7 +223,7 @@ const handleRemoveContinuousReward = (id: number) => {
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <NIcon :component="GiftOutline" class="text-sky-500" />
-            {{ t('dailySignIn.continuousRewards') || '連續簽到里程碑' }}
+            {{ t('dailySignIn.continuousRewards') || '累積簽到里程碑' }}
           </h3>
           <NButton size="small" type="primary" dashed @click="handleAddContinuousReward">
             <template #icon>
@@ -236,7 +236,7 @@ const handleRemoveContinuousReward = (id: number) => {
 
       <div class="space-y-4">
         <div v-for="(reward, index) in continuousSettings" :key="reward.id" class="flex flex-wrap items-end gap-4 bg-slate-50/50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700 transition-all hover:border-sky-200">
-          <NFormItem :label="t('dailySignIn.continuousDays') || '連續天數'" class="mb-0 w-32">
+          <NFormItem :label="t('dailySignIn.continuousDays') || '累積天數'" class="mb-0 w-32">
             <NInputNumber v-model:value="reward.days" :min="1" />
           </NFormItem>
           <NFormItem :label="t('dailySignIn.rewardType') || '獎勵類型'" class="mb-0 w-40">
@@ -260,7 +260,7 @@ const handleRemoveContinuousReward = (id: number) => {
           </div>
         </div>
         <div v-if="continuousSettings.length === 0" class="text-center py-8 text-slate-400">
-          暫無連續簽到里程碑獎勵
+          暫無累積簽到里程碑獎勵
         </div>
       </div>
     </NCard>
