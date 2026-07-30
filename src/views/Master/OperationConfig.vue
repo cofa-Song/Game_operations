@@ -23,7 +23,7 @@
           :model="formModel"
           :rules="rules"
           label-placement="left"
-          label-width="180px"
+          label-width="200px"
         >
           <n-grid :cols="24" :x-gap="24">
             <!-- 營運與維護 -->
@@ -38,8 +38,23 @@
               </n-text>
             </n-form-item-gi>
 
-            <n-form-item-gi :span="12" label="強制踢線 (秒)" path="maintenance_kickout_delay_seconds">
-              <n-input-number v-model:value="formModel.maintenance_kickout_delay_seconds" :min="0" />
+            <n-form-item-gi :span="12" label="強制踢線時間" path="maintenance_kickout_at">
+              <n-date-picker
+                v-model:value="formModel.maintenance_kickout_at"
+                type="datetime"
+                placeholder="選擇強制踢線的絕對時間"
+                clearable
+                style="width: 100%"
+              />
+            </n-form-item-gi>
+
+            <n-form-item-gi :span="12" label="停服前提示時間 (分)" path="maintenance_warning_minutes">
+              <n-input-number
+                v-model:value="formModel.maintenance_warning_minutes"
+                :min="0"
+                placeholder="停服前幾分鐘開始在遊戲內提示"
+              />
+              <n-text depth="3" class="ml-2" style="font-size:12px">分鐘前開始顯示維護提示</n-text>
             </n-form-item-gi>
 
             <n-form-item-gi :span="24" label="維護公告內容" path="maintenance_message.zh">
@@ -76,35 +91,49 @@
               <n-select v-model:value="formModel.default_language" :options="languageOptions" />
             </n-form-item-gi>
 
-            <n-form-item-gi :span="12" label="時區設定" path="timezone">
-              <n-select v-model:value="formModel.timezone" :options="timezoneOptions" />
-            </n-form-item-gi>
-
             <!-- 推廣與財務參數 -->
             <n-form-item-gi :span="24">
               <n-divider title-placement="left">推廣與財務參數</n-divider>
             </n-form-item-gi>
 
-            <n-form-item-gi :span="12" label="P2P 交易手續費 (%)" path="p2p_transaction_fee">
-              <n-input-number v-model:value="formModel.p2p_transaction_fee" :precision="2" :min="0" :max="100" />
-            </n-form-item-gi>
-
-            <n-form-item-gi :span="12" label="活動錢包流水倍數 (M)" path="bonus_rollover_multiplier">
-              <n-input-number v-model:value="formModel.bonus_rollover_multiplier" :precision="1" :min="0" />
-              <template #feedback>
-                <n-text type="info" v-if="formModel.bonus_rollover_multiplier === 0">
-                  💡 設為 0 代表無需流水直接轉化
-                </n-text>
-              </template>
+            <n-form-item-gi :span="12" label="活動獎勵卡結算極小值" path="rollover_settlement_threshold">
+              <n-input-number v-model:value="formModel.rollover_settlement_threshold" :min="0" :step="0.01" />
             </n-form-item-gi>
 
             <n-form-item-gi :span="12" label="註冊贈點金額" path="registration_bonus_amount">
-              <n-input-number v-model:value="formModel.registration_bonus_amount" :min="0" />
+              <n-input-number v-model:value="formModel.registration_bonus_amount" :min="0" style="width: 100%" />
             </n-form-item-gi>
 
-            <n-form-item-gi :span="12" label="流水結算極小值" path="rollover_settlement_threshold">
-              <n-input-number v-model:value="formModel.rollover_settlement_threshold" :min="0" :step="0.01" />
+            <n-form-item-gi :span="12" label="註冊贈點幣別" path="registration_bonus_currency">
+              <n-select
+                v-model:value="formModel.registration_bonus_currency"
+                :options="currencyOptions"
+                style="width: 100%"
+              />
             </n-form-item-gi>
+
+            <template v-if="isActivityCurrency">
+              <n-form-item-gi :span="12" label="流水門檻倍率" path="registration_bonus_rollover_multiplier">
+                <n-input-number
+                  v-model:value="formModel.registration_bonus_rollover_multiplier"
+                  :min="0"
+                  :step="1"
+                  placeholder="倍率"
+                  style="width: 100%"
+                />
+              </n-form-item-gi>
+
+              <n-form-item-gi :span="12" label="轉換上限" path="registration_bonus_conversion_cap">
+                <n-input-number
+                  v-model:value="formModel.registration_bonus_conversion_cap"
+                  :min="0"
+                  placeholder="最高可轉換金額，0 表示無上限"
+                  style="width: 100%"
+                >
+                  <template #prefix>$</template>
+                </n-input-number>
+              </n-form-item-gi>
+            </template>
 
             <!-- 安全性設定 -->
             <n-form-item-gi :span="24">
@@ -115,20 +144,15 @@
               <n-input-number v-model:value="formModel.login_error_limit" :min="1" :max="20" />
             </n-form-item-gi>
 
-            <n-form-item-gi :span="12" label="驗證碼開關" path="captcha_enabled">
-              <n-switch v-model:value="formModel.captcha_enabled" />
-              <n-text depth="3" class="ml-2">登入與註冊頁面</n-text>
-            </n-form-item-gi>
-
             <n-form-item-gi :span="12" label="強制手機綁定" path="force_phone_binding">
               <n-switch v-model:value="formModel.force_phone_binding" />
             </n-form-item-gi>
 
-            <n-form-item-gi :span="24" label="白名單 IP" path="whitelist_ips">
+            <n-form-item-gi :span="24" label="前台黑名單 IP" path="blacklist_ips">
               <n-input
-                v-model:value="formModel.whitelist_ips"
+                v-model:value="formModel.blacklist_ips"
                 type="textarea"
-                placeholder="輸入允許跳過維護限制的 IP 範圍（每行一個）"
+                placeholder="輸入禁止前台訪問的 IP 或 IP 段（每行一個，例：192.168.1.1 或 10.0.0.0/24）"
                 :rows="3"
               />
             </n-form-item-gi>
@@ -177,7 +201,7 @@ import { useI18n } from 'vue-i18n'
 import {
   NCard, NButton, NSpin, NForm, NFormItem,
   NDivider, NSwitch, NText, NInput, NInputNumber, NSpace, NModal,
-  NSelect, NGrid, NFormItemGi,
+  NSelect, NGrid, NFormItemGi, NDatePicker,
   useMessage, useDialog
 } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
@@ -203,11 +227,19 @@ const languageOptions = [
   { label: 'English', value: 'en' }
 ]
 
-const timezoneOptions = [
-  { label: '(UTC+08:00) 台北', value: 'Asia/Taipei' },
-  { label: '(UTC+08:00) 北京', value: 'Asia/Shanghai' },
-  { label: '(UTC+00:00) 倫敦', value: 'UTC' }
+const currencyOptions = [
+  { label: '儲值金幣', value: 'CASH_GOLD' },
+  { label: '儲值銀幣', value: 'CASH_SILVER' },
+  { label: '活動金幣', value: 'BONUS_GOLD' },
+  { label: '活動銀幣', value: 'BONUS_SILVER' },
+  { label: '遊戲銅幣', value: 'GAME_BRONZE' }
 ]
+
+// 是否為活動幣別（需顯示流水與轉換上限）
+const isActivityCurrency = computed(() =>
+  formModel.registration_bonus_currency === 'BONUS_GOLD' ||
+  formModel.registration_bonus_currency === 'BONUS_SILVER'
+)
 
 // Calculate pending changes dynamically
 const pendingChanges = computed(() => {
@@ -236,35 +268,33 @@ const formModel = reactive({
   // 營運與維護
   maintenance_enabled: false,
   maintenance_message: { zh: '', 'zh-CN': '' },
-  maintenance_kickout_delay_seconds: 30,
+  maintenance_kickout_at: null as number | null,         // 絕對時間 timestamp (ms)
+  maintenance_warning_minutes: 15,                        // 停服前幾分鐘開始提示
   allow_test_login: true,
   registration_enabled: true,
 
   // 網站基礎設定
   site_title: '',
   default_language: 'zh-TW',
-  timezone: 'Asia/Taipei',
 
   // 推廣與財務參數
-  p2p_transaction_fee: 5.0,
-  bonus_rollover_multiplier: 20.0,
   registration_bonus_amount: 100,
+  registration_bonus_currency: 'CASH_GOLD' as string,
+  registration_bonus_rollover_multiplier: 1 as number,
+  registration_bonus_conversion_cap: 0 as number,
   rollover_settlement_threshold: 0.99,
 
   // 安全性設定
   login_error_limit: 5,
-  captcha_enabled: true,
   force_phone_binding: false,
-  whitelist_ips: ''
+  blacklist_ips: ''
 })
 
 const rules: FormRules = {
-  maintenance_kickout_delay_seconds: { type: 'number', min: 0, message: '請輸入有效的整數', trigger: ['blur', 'change'] },
   site_title: { required: true, message: '請輸入網站標題', trigger: 'blur' },
-  p2p_transaction_fee: { type: 'number', min: 0, max: 100, message: '手續費應在 0-100% 之間', trigger: ['blur', 'change'] },
-  bonus_rollover_multiplier: { type: 'number', min: 0, max: 100, message: '流水倍數應在 0-100 之間', trigger: ['blur', 'change'] },
   registration_bonus_amount: { type: 'number', min: 0, message: '金額不正確', trigger: ['blur', 'change'] },
-  login_error_limit: { type: 'number', min: 1, max: 20, message: '錯誤上限應在 1-20 之間', trigger: ['blur', 'change'] }
+  login_error_limit: { type: 'number', min: 1, max: 20, message: '錯誤上限應在 1-20 之間', trigger: ['blur', 'change'] },
+  maintenance_warning_minutes: { type: 'number', min: 0, message: '請輸入有效分鐘數', trigger: ['blur', 'change'] }
 }
 
 const loadConfig = async () => {
@@ -288,22 +318,6 @@ const loadConfig = async () => {
 const handleSave = async () => {
   try {
     await formRef.value?.validate()
-    
-    // Check if bonus_rollover_multiplier is 0
-    if (formModel.bonus_rollover_multiplier === 0 && config.value?.bonus_rollover_multiplier !== 0) {
-      const shouldProceed = await new Promise<boolean>((resolve) => {
-        dialog.warning({
-          title: '確認',
-          content: '您正在將流水倍數設為 0，這將使所有贈點預設無流水限制，確定要繼續嗎？',
-          positiveText: '確認',
-          negativeText: '取消',
-          onPositiveClick: () => resolve(true),
-          onNegativeClick: () => resolve(false),
-          onClose: () => resolve(false)
-        })
-      })
-      if (!shouldProceed) return
-    }
 
     if (pendingChangesCount.value === 0) {
       message.info('沒有任何變更')
@@ -359,7 +373,7 @@ loadConfig()
 }
 
 :deep(.n-form) {
-  max-width: 800px;
+  max-width: 900px;
 }
 
 :deep(.n-divider__title) {
