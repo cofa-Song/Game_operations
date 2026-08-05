@@ -230,7 +230,8 @@ const editForm = reactive({
   contact_info: '',
   sensitive_data_permission: false,
   remark: '',
-  change_reason: ''
+  change_reason: '',
+  group_id: '' as string | undefined
 })
 
 const createForm = reactive({
@@ -278,12 +279,84 @@ watch(() => createForm.group_id, (gid) => {
     createForm.flow_threshold = g.flow_threshold
 })
 
+const selectedEditGroup = computed(() => agentGroups.value.find(g => g.id === editForm.group_id) ?? null)
+
+watch(() => editForm.group_id, (gid) => {
+    if (!gid) return
+    const g = agentGroups.value.find(g => g.id === gid)
+    if (!g) return
+    editForm.cpa_enabled = g.cpa_enabled
+    editForm.cpa_price = g.cpa_price
+    editForm.deposit_commission_enabled = g.deposit_commission_enabled
+    editForm.deposit_commission_rate = g.deposit_commission_rate
+    editForm.data_binding_threshold = { ...g.data_binding_threshold }
+    editForm.deposit_threshold = g.deposit_threshold
+    editForm.flow_threshold = g.flow_threshold
+})
+
 const fetchGroups = async () => {
     try {
         const res = await agentGroupApi.getGroups()
         if (res.code === 0 && res.data) agentGroups.value = res.data
     } catch { /* ignore */ }
 }
+
+// ── 子代理繼承邏輯 ─────────────────────────────────────────────────────────────
+const createParentAgent = ref<Agent | null>(null)
+const editParentAgent   = ref<Agent | null>(null)
+
+// 新增：切換為子代理時清除群組選擇；切換離開時清除父代理
+watch(() => createForm.identity, (newVal) => {
+    if (newVal === 'SUB') {
+        createForm.group_id = ''
+    } else {
+        createParentAgent.value = null
+    }
+})
+watch(() => editForm.identity, (newVal) => {
+    if (newVal === 'SUB') {
+        editForm.group_id = ''
+    } else {
+        editParentAgent.value = null
+    }
+})
+
+// 新增：監聽 parent_id 變化，自動取得上級代理資料並套用繼承
+watch([() => createForm.parent_id, () => createForm.identity], async ([pid, identity]) => {
+    if (identity !== 'SUB' || !pid) { createParentAgent.value = null; return }
+    try {
+        const res = await agentApi.searchAgent(pid)
+        if (res.code === 0 && res.data) {
+            createParentAgent.value = res.data
+            createForm.cpa_enabled = res.data.cpa_enabled
+            createForm.cpa_price = res.data.cpa_price
+            createForm.deposit_commission_enabled = res.data.deposit_commission_enabled
+            createForm.data_binding_threshold = { ...res.data.data_binding_threshold }
+            createForm.deposit_threshold = res.data.deposit_threshold
+            createForm.flow_threshold = res.data.flow_threshold
+        } else {
+            createParentAgent.value = null
+        }
+    } catch { createParentAgent.value = null }
+})
+
+watch([() => editForm.parent_id, () => editForm.identity], async ([pid, identity]) => {
+    if (identity !== 'SUB' || !pid) { editParentAgent.value = null; return }
+    try {
+        const res = await agentApi.searchAgent(pid)
+        if (res.code === 0 && res.data) {
+            editParentAgent.value = res.data
+            editForm.cpa_enabled = res.data.cpa_enabled
+            editForm.cpa_price = res.data.cpa_price
+            editForm.deposit_commission_enabled = res.data.deposit_commission_enabled
+            editForm.data_binding_threshold = { ...res.data.data_binding_threshold }
+            editForm.deposit_threshold = res.data.deposit_threshold
+            editForm.flow_threshold = res.data.flow_threshold
+        } else {
+            editParentAgent.value = null
+        }
+    } catch { editParentAgent.value = null }
+})
 
 // Handlers
 
@@ -409,10 +482,16 @@ const openCreateModal = () => {
 
 const showEditModal = (agent: Agent) => {
   activeAgent.value = agent
+  // 子代理：從 path 解析上級代理帳號，自動觸發繼承監聽
+  let parsedParentId = ''
+  if (agent.identity === 'SUB') {
+    const parts = agent.path.split(' > ')
+    if (parts.length >= 2) parsedParentId = parts[parts.length - 2]
+  }
   Object.assign(editForm, {
     password: '',
     identity: agent.identity,
-    parent_id: '',
+    parent_id: parsedParentId,
     two_fa_enabled: agent.two_fa_enabled,
     cpa_enabled: agent.cpa_enabled,
     cpa_price: agent.cpa_price,
@@ -427,8 +506,10 @@ const showEditModal = (agent: Agent) => {
     contact_info: agent.contact_info,
     sensitive_data_permission: agent.sensitive_data_permission,
     remark: agent.remark,
-    change_reason: ''
+    change_reason: '',
+    group_id: agent.identity === 'SUB' ? '' : (agent.group_id || '')
   })
+  fetchGroups()
   showEdit.value = true
 }
 
@@ -618,7 +699,13 @@ onBeforeUnmount(() => {
                     </NGridItem>
                     <NGridItem v-if="createForm.identity !== 'ADMIN'">
                         <NFormItem label="所屬代理群組">
-                            <NSelect v-model:value="createForm.group_id" :options="groupOptions" placeholder="請選擇代理群組" clearable />
+                            <NSelect
+                                v-model:value="createForm.group_id"
+                                :options="groupOptions"
+                                :disabled="createForm.identity === 'SUB'"
+                                :placeholder="createForm.identity === 'SUB' ? '子代理繼承上級設定，不適用群組' : '請選擇代理群組'"
+                                clearable
+                            />
                         </NFormItem>
                     </NGridItem>
                     <NGridItem>
@@ -648,46 +735,56 @@ onBeforeUnmount(() => {
                         <NSpace align="center" :size="8">
                             <span>合作模式設定 (CPA 與儲值抽成)</span>
                             <NTag v-if="createForm.group_id" type="warning" size="small" round>已套用群組範本</NTag>
+                            <NTag v-else-if="createForm.identity === 'SUB'" type="info" size="small" round>繼承上級代理</NTag>
                         </NSpace>
                     </NDivider>
-                    
+
+                    <!-- 群組套用提示 -->
                     <NAlert v-if="createForm.group_id" type="warning" size="small" class="mb-4">
-                        目前已套用代理群組範本「{{ selectedGroup?.name }}」，合作模式與門檻設定將自動填寫並鎖定為唯讀狀態。若需自訂調整，請將所屬代理群組切換為「不使用群組（手動設定）」。
+                        目前已套用代理群組範本「{{ selectedGroup?.name }}」，合作模式與門檻設定將自動填寫並鎖定為唯讀狀態。
+                    </NAlert>
+                    <!-- 子代理繼承提示 -->
+                    <NAlert v-else-if="createForm.identity === 'SUB'" :type="createParentAgent ? 'info' : 'warning'" size="small" class="mb-4">
+                        <span v-if="createParentAgent">
+                            已連結上級代理「<strong>{{ createParentAgent.username }}</strong>」，CPA 設定、抽成開關及進階門檻已繼承上級設定（唯讀）。<br/>
+                            儲值抽成比率可依需求自行設定。
+                        </span>
+                        <span v-else>請先在上方填入並確認上級代理ID，系統將自動繼承其合作模式與門檻設定。</span>
                     </NAlert>
 
                     <NGrid :cols="2" :x-gap="24">
                         <NGridItem>
                             <NFormItem label="CPA 結算開關">
-                                <NSwitch v-model:value="createForm.cpa_enabled" :disabled="!!createForm.group_id" />
+                                <NSwitch v-model:value="createForm.cpa_enabled" :disabled="!!createForm.group_id || createForm.identity === 'SUB'" />
                             </NFormItem>
                         </NGridItem>
                         <NGridItem>
                             <NFormItem label="儲值抽成開關">
-                                <NSwitch v-model:value="createForm.deposit_commission_enabled" :disabled="!!createForm.group_id" />
+                                <NSwitch v-model:value="createForm.deposit_commission_enabled" :disabled="!!createForm.group_id || createForm.identity === 'SUB'" />
                             </NFormItem>
                         </NGridItem>
-                        
+
                         <NGridItem v-if="createForm.cpa_enabled">
                             <NFormItem label="CPA 單價">
-                                <NInputNumber v-model:value="createForm.cpa_price" :min="0" :disabled="!!createForm.group_id" style="width: 100%" />
+                                <NInputNumber v-model:value="createForm.cpa_price" :min="0" :disabled="!!createForm.group_id || createForm.identity === 'SUB'" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
-                        
+
                         <NGridItem v-if="createForm.deposit_commission_enabled">
                             <NFormItem :label="t('agent.edit.commissionRate')">
                                 <NInputNumber v-model:value="createForm.deposit_commission_rate" :min="0" :max="100" :disabled="!!createForm.group_id" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                     </NGrid>
-                    
+
                     <NDivider title-placement="left" class="mt-6">進階門檻設定</NDivider>
-                    
+
                     <NFormItem :label="t('agent.edit.bindingThreshold')">
                         <NSpace>
-                            <NTag checkable v-model:checked="createForm.data_binding_threshold.phone" :disabled="!!createForm.group_id" type="primary">
+                            <NTag checkable v-model:checked="createForm.data_binding_threshold.phone" :disabled="!!createForm.group_id || createForm.identity === 'SUB'" type="primary">
                                 {{ t('agent.edit.phoneBinding') }}
                             </NTag>
-                            <NTag checkable v-model:checked="createForm.data_binding_threshold.google" :disabled="!!createForm.group_id" type="error">
+                            <NTag checkable v-model:checked="createForm.data_binding_threshold.google" :disabled="!!createForm.group_id || createForm.identity === 'SUB'" type="error">
                                 Google綁定
                             </NTag>
                         </NSpace>
@@ -696,12 +793,12 @@ onBeforeUnmount(() => {
                     <NGrid :cols="2" :x-gap="24">
                         <NGridItem>
                             <NFormItem :label="t('agent.edit.depositThreshold')">
-                                <NInputNumber v-model:value="createForm.deposit_threshold" :min="0" :disabled="!!createForm.group_id" style="width: 100%" />
+                                <NInputNumber v-model:value="createForm.deposit_threshold" :min="0" :disabled="!!createForm.group_id || createForm.identity === 'SUB'" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                         <NGridItem>
                             <NFormItem :label="t('agent.edit.flowThreshold')">
-                                <NInputNumber v-model:value="createForm.flow_threshold" :min="0" :disabled="!!createForm.group_id" style="width: 100%" />
+                                <NInputNumber v-model:value="createForm.flow_threshold" :min="0" :disabled="!!createForm.group_id || createForm.identity === 'SUB'" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                     </NGrid>
@@ -790,6 +887,17 @@ onBeforeUnmount(() => {
                              <NInput v-model:value="editForm.parent_id" placeholder="若要轉移體系請輸入，否則留空" />
                         </NFormItem>
                     </NGridItem>
+                    <NGridItem v-if="activeAgent?.identity !== 'ADMIN'">
+                        <NFormItem label="所屬代理群組">
+                            <NSelect
+                                v-model:value="editForm.group_id"
+                                :options="groupOptions"
+                                :disabled="activeAgent?.identity === 'SUB'"
+                                :placeholder="activeAgent?.identity === 'SUB' ? '子代理繼承上級設定，不適用群組' : '請選擇代理群組'"
+                                clearable
+                            />
+                        </NFormItem>
+                    </NGridItem>
                     <NGridItem>
                         <NFormItem :label="t('agent.list.promoCode')">
                              <NInput :value="activeAgent?.promo_code" disabled />
@@ -808,41 +916,60 @@ onBeforeUnmount(() => {
                 </NGrid>
 
                 <template v-if="activeAgent?.identity !== 'ADMIN'">
-                    <NDivider title-placement="left">合作模式設定 (CPA 與儲值抽成)</NDivider>
-                    
+                    <NDivider title-placement="left">
+                        <NSpace align="center" :size="8">
+                            <span>合作模式設定 (CPA 與儲值抽成)</span>
+                            <NTag v-if="editForm.group_id" type="warning" size="small" round>已套用群組範本</NTag>
+                            <NTag v-else-if="activeAgent?.identity === 'SUB'" type="info" size="small" round>繼承上級代理</NTag>
+                        </NSpace>
+                    </NDivider>
+
+                    <!-- 群組套用提示 -->
+                    <NAlert v-if="editForm.group_id" type="warning" size="small" class="mb-4">
+                        目前已套用代理群組範本「{{ selectedEditGroup?.name }}」，合作模式與門檻設定將自動填寫並鎖定為唯讀狀態。
+                    </NAlert>
+                    <!-- 子代理繼承提示 -->
+                    <NAlert v-else-if="activeAgent?.identity === 'SUB'" :type="editParentAgent ? 'info' : 'warning'" size="small" class="mb-4">
+                        <span v-if="editParentAgent">
+                            已連結上級代理「<strong>{{ editParentAgent.username }}</strong>」，CPA 設定、抽成開關及進階門檻已繼承上級設定（唯讀）。<br/>
+                            儲值抽成比率可依需求自行設定。
+                        </span>
+                        <span v-else>正在載入上級代理資訊...</span>
+                    </NAlert>
+
                     <NGrid :cols="2" :x-gap="24">
                         <NGridItem>
                             <NFormItem label="CPA 結算開關">
-                                <NSwitch v-model:value="editForm.cpa_enabled" />
+                                <NSwitch v-model:value="editForm.cpa_enabled" :disabled="!!editForm.group_id || activeAgent?.identity === 'SUB'" />
                             </NFormItem>
                         </NGridItem>
                         <NGridItem>
                             <NFormItem label="儲值抽成開關">
-                                <NSwitch v-model:value="editForm.deposit_commission_enabled" />
+                                <NSwitch v-model:value="editForm.deposit_commission_enabled" :disabled="!!editForm.group_id || activeAgent?.identity === 'SUB'" />
                             </NFormItem>
                         </NGridItem>
-                        
+
                         <NGridItem v-if="editForm.cpa_enabled">
                             <NFormItem label="CPA 單價">
-                                <NInputNumber v-model:value="editForm.cpa_price" :min="0" style="width: 100%" />
+                                <NInputNumber v-model:value="editForm.cpa_price" :min="0" :disabled="!!editForm.group_id || activeAgent?.identity === 'SUB'" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
-                        
+
                         <NGridItem v-if="editForm.deposit_commission_enabled">
                             <NFormItem :label="t('agent.edit.commissionRate')">
-                                <NInputNumber v-model:value="editForm.deposit_commission_rate" :min="0" :max="100" style="width: 100%" />
+                                <NInputNumber v-model:value="editForm.deposit_commission_rate" :min="0" :max="100" :disabled="!!editForm.group_id" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                     </NGrid>
 
                     <NDivider title-placement="left" class="mt-6">進階門檻設定</NDivider>
-                    
+
                     <NFormItem :label="t('agent.edit.bindingThreshold')">
                         <NSpace>
-                            <NTag checkable v-model:checked="editForm.data_binding_threshold.phone" type="primary">
+                            <NTag checkable v-model:checked="editForm.data_binding_threshold.phone" :disabled="!!editForm.group_id || activeAgent?.identity === 'SUB'" type="primary">
                                 {{ t('agent.edit.phoneBinding') }}
                             </NTag>
-                            <NTag checkable v-model:checked="editForm.data_binding_threshold.google" type="error">
+                            <NTag checkable v-model:checked="editForm.data_binding_threshold.google" :disabled="!!editForm.group_id || activeAgent?.identity === 'SUB'" type="error">
                                 Google綁定
                             </NTag>
                         </NSpace>
@@ -851,12 +978,12 @@ onBeforeUnmount(() => {
                     <NGrid :cols="2" :x-gap="24">
                         <NGridItem>
                             <NFormItem :label="t('agent.edit.depositThreshold')">
-                                <NInputNumber v-model:value="editForm.deposit_threshold" :min="0" style="width: 100%" />
+                                <NInputNumber v-model:value="editForm.deposit_threshold" :min="0" :disabled="!!editForm.group_id || activeAgent?.identity === 'SUB'" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                         <NGridItem>
                             <NFormItem :label="t('agent.edit.flowThreshold')">
-                                <NInputNumber v-model:value="editForm.flow_threshold" :min="0" style="width: 100%" />
+                                <NInputNumber v-model:value="editForm.flow_threshold" :min="0" :disabled="!!editForm.group_id || activeAgent?.identity === 'SUB'" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                     </NGrid>
