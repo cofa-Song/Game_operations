@@ -281,5 +281,16 @@ export const playerApi = {
         
         record.status = 'CANCELED'
         return { code: 0, msg: 'success' }
+    },
+
+    async getInvitedPlayers(playerId: string): Promise<ApiResponse<{ list: Player[]; total: number }>> {
+        await delay(SIMULATE_DELAY)
+        const player = mockPlayers.find(p => p.id === playerId)
+        if (!player || !player.invite_code) {
+            return { code: 0, msg: 'success', data: { list: [], total: 0 } }
+        }
+
+        const list = mockPlayers.filter(p => p.invited_by_code === player.invite_code)
+        return { code: 0, msg: 'success', data: { list, total: list.length } }
     }
 }

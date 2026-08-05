@@ -315,7 +315,7 @@ const dateRange = ref<[number, number] | null>(null)
 const tempItems = ref<string[]>([]) // Mock for item IDs
 const iosTierWarning = ref(false)
 const vipThreshold = ref(0)
-const vipOptions = Array.from({ length: 11 }, (_, i) => ({ label: `VIP ${i} 及以上`, value: i }))
+const vipOptions = Array.from({ length: 16 }, (_, i) => ({ label: `VIP ${i} 及以上`, value: i }))
 
 const contentTypeOptions = [
     { label: '儲值金幣', value: 'RECHARGE_COIN' },

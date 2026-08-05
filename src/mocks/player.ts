@@ -26,7 +26,8 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
         promo_code: i % 5 === 1 ? `A${20000 + i}` : undefined,
         agent_id: i % 5 === 1 ? `${20000 + i}` : undefined, // Mock agent ID for affiliated players
         agent_name: i % 5 === 1 ? `agent_${20000 + i}` : undefined, // Mock agent name for affiliated players
-        invite_code: i % 5 === 1 ? `INV${20000 + i}` : undefined, // Mock invite code
+        invite_code: `INV${10000 + i}`, // Unique invite code for every player
+        invited_by_code: i > 0 && i % 3 === 1 ? `INV10000` : (i > 0 && i % 4 === 2 ? `INV10002` : undefined), // Mock invited by relation
         rtp: parseFloat((Math.random() * 40 + 70).toFixed(2)), // Random RTP between 80.00 and 120.00
         register_source: i % 3 === 0 ? 'Admin_Manual' : 'SEO_Google',
         register_ip: `192.168.1.${i % 255}`,

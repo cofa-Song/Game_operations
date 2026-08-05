@@ -102,7 +102,7 @@ const dateOptions = Array.from({ length: 31 }, (_, i) => ({
   value: i + 1
 }))
 
-const vipOptions = Array.from({ length: 11 }, (_, i) => ({
+const vipOptions = Array.from({ length: 16 }, (_, i) => ({
   label: `VIP ${i}`,
   value: `VIP${i}`
 }))

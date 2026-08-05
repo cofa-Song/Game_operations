@@ -155,6 +155,76 @@ const mockVIPLevels: VIPLevel[] = [
         retain_active_days: 24,
         gift_fee_rate: 0,
         rebate_rate: 0.8
+    },
+    {
+        rank: 11,
+        name: '皇冠',
+        promotion_desc: '1. 儲值150,000\n2. 流水3,000,000金幣',
+        retention_desc: '1. 儲值80,000\n2. 流水1,500,000金幣\n3. 每月活躍天數26天',
+        promo_deposit: 150000,
+        promo_turnover: 300000000,
+        is_perpetual: false,
+        retain_deposit: 80000,
+        retain_turnover: 150000000,
+        retain_active_days: 26,
+        gift_fee_rate: 0,
+        rebate_rate: 0.9
+    },
+    {
+        rank: 12,
+        name: '王者',
+        promotion_desc: '1. 儲值200,000\n2. 流水4,000,000金幣',
+        retention_desc: '1. 儲值100,000\n2. 流水2,000,000金幣\n3. 每月活躍天數26天',
+        promo_deposit: 200000,
+        promo_turnover: 400000000,
+        is_perpetual: false,
+        retain_deposit: 100000,
+        retain_turnover: 200000000,
+        retain_active_days: 26,
+        gift_fee_rate: 0,
+        rebate_rate: 1.0
+    },
+    {
+        rank: 13,
+        name: '帝王',
+        promotion_desc: '1. 儲值300,000\n2. 流水6,000,000金幣',
+        retention_desc: '1. 儲值150,000\n2. 流水3,000,000金幣\n3. 每月活躍天數28天',
+        promo_deposit: 300000,
+        promo_turnover: 600000000,
+        is_perpetual: false,
+        retain_deposit: 150000,
+        retain_turnover: 300000000,
+        retain_active_days: 28,
+        gift_fee_rate: 0,
+        rebate_rate: 1.1
+    },
+    {
+        rank: 14,
+        name: '至尊',
+        promotion_desc: '1. 儲值500,000\n2. 流水10,000,000金幣',
+        retention_desc: '1. 儲值250,000\n2. 流水5,000,000金幣\n3. 每月活躍天數28天',
+        promo_deposit: 500000,
+        promo_turnover: 1000000000,
+        is_perpetual: false,
+        retain_deposit: 250000,
+        retain_turnover: 500000000,
+        retain_active_days: 28,
+        gift_fee_rate: 0,
+        rebate_rate: 1.2
+    },
+    {
+        rank: 15,
+        name: '無極',
+        promotion_desc: '1. 儲值1,000,000\n2. 流水20,000,000金幣',
+        retention_desc: '1. 儲值500,000\n2. 流水10,000,000金幣\n3. 每月活躍天數30天',
+        promo_deposit: 1000000,
+        promo_turnover: 2000000000,
+        is_perpetual: false,
+        retain_deposit: 500000,
+        retain_turnover: 1000000000,
+        retain_active_days: 30,
+        gift_fee_rate: 0,
+        rebate_rate: 1.5
     }
 ]
 

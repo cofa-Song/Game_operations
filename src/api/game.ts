@@ -333,3 +333,46 @@ export const gameListApi = {
     }
 }
 
+// --- Game Copywriting API ---
+import type { GameCopywriting } from '@/types/game'
+
+const mockCopywritings: Record<string, GameCopywriting> = {
+    'G001': {
+        game_id: 'G001',
+        lang_type: ['zh-TW', 'en', 'zh-CN'],
+        game_banners: [
+            'https://cdn.example.com/games/mahjong2/banner1.jpg',
+            'https://cdn.example.com/games/mahjong2/banner2.jpg'
+        ],
+        locales: {
+            'zh-TW': {
+                game_name: '麻將胡了2',
+                game_introduce: '最受歡迎的麻將主題老虎機，體驗東方魅力！',
+                game_volatility: '中高',
+                high_hit: '3000倍',
+                game_details: '麻將胡了2是PG Soft旗下最具人氣的亞洲主題老虎機遊戲。結合傳統麻將元素與現代老虎機玩法，提供最高3000倍的驚人賠率。遊戲內含免費旋轉與乘數功能，讓您在東方美學的視覺饗宴中贏取豐厚獎金。'
+            },
+            'en': {
+                game_name: 'Mahjong Ways 2',
+                game_introduce: 'The most popular Mahjong-themed slot game, experience the charm of the East!',
+                game_volatility: 'Medium-High',
+                high_hit: '3000x',
+                game_details: 'Mahjong Ways 2 is the most popular Asian-themed slot by PG Soft. Combining traditional mahjong elements with modern slot mechanics, it offers an astounding max multiplier of 3000x.'
+            }
+        }
+    }
+}
+
+export const gameCopywritingApi = {
+    async get(gameId: string): Promise<{ code: number; msg: string; data: GameCopywriting | null }> {
+        await delay(200)
+        const data = mockCopywritings[gameId] || null
+        return { code: 0, msg: 'success', data: data ? JSON.parse(JSON.stringify(data)) : null }
+    },
+
+    async save(gameId: string, copywriting: GameCopywriting): Promise<{ code: number; msg: string }> {
+        await delay(300)
+        mockCopywritings[gameId] = JSON.parse(JSON.stringify(copywriting))
+        return { code: 0, msg: 'success' }
+    }
+}

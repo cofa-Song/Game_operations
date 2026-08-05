@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount, h, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns, NCollapseTransition, NImage, NUpload } from 'naive-ui'
-import { SearchOutline, RefreshOutline, CreateOutline, AddOutline, ChevronDownOutline, ChevronUpOutline } from '@vicons/ionicons5'
-import { gameListApi } from '@/api/game'
+import { NCard, NForm, NFormItem, NInput, NSelect, NButton, NDataTable, NTag, NModal, NCheckboxGroup, NCheckbox, NInputNumber, NGrid, NGridItem, NDatePicker, NSpace, NRadioGroup, NRadio, useMessage, DataTableColumns, NCollapseTransition, NImage, NUpload, NTabs, NTabPane, NDynamicTags, NDivider, NSpin } from 'naive-ui'
+import { SearchOutline, RefreshOutline, CreateOutline, AddOutline, ChevronDownOutline, ChevronUpOutline, DocumentTextOutline } from '@vicons/ionicons5'
+import { gameListApi, gameCopywritingApi } from '@/api/game'
 import { providerApi } from '@/api/provider'
 import { configApi } from '@/api/config'
-import type { Game, GameListSearchParams, GameUpdateRequest, MarketingTag, GameStatus, GameType, ThirdPartyGame } from '@/types/game'
+import type { Game, GameListSearchParams, GameUpdateRequest, MarketingTag, GameStatus, GameType, ThirdPartyGame, GameCopywriting, GameCopywritingLocale } from '@/types/game'
 import type { GameProvider } from '@/types/game'
 
 const { t } = useI18n()
@@ -81,7 +81,7 @@ const editForm = ref<GameUpdateRequest>({
     profit_rate: 5.0
 })
 
-const vipOptions = Array.from({ length: 11 }, (_, i) => ({
+const vipOptions = Array.from({ length: 16 }, (_, i) => ({
     label: `VIP ${i}`,
     value: i
 }))
@@ -342,9 +342,14 @@ const columns: DataTableColumns<Game> = [
     {
         title: t('common.action'),
         key: 'actions',
-        width: 80,
+        width: 140,
         fixed: 'right',
-        render: (row) => h(NButton, { size: 'small', secondary: true, onClick: () => handleEdit(row) }, { icon: () => h(CreateOutline) })
+        render: (row) => h(NSpace, { size: 'small' }, {
+            default: () => [
+                h(NButton, { size: 'small', secondary: true, onClick: () => handleEdit(row) }, { icon: () => h(CreateOutline) }),
+                h(NButton, { size: 'small', tertiary: true, type: 'info', onClick: () => handleOpenCopywriting(row) }, { icon: () => h(DocumentTextOutline), default: () => '文案' })
+            ]
+        })
     }
 ]
 
@@ -522,6 +527,139 @@ const handleSubmit = async () => {
         message.error(t('common.error'))
     }
 }
+
+// --- Game Copywriting ---
+const showCopywritingModal = ref(false)
+const copywritingLoading = ref(false)
+const copywritingSaving = ref(false)
+const copywritingGameId = ref('')
+const copywritingGameName = ref('')
+const activeLang = ref('zh-TW')
+
+const availableLangs = [
+    { label: '繁體中文', value: 'zh-TW' },
+    { label: '簡體中文', value: 'zh-CN' },
+    { label: 'English', value: 'en' },
+    { label: '日本語', value: 'ja' },
+    { label: '한국어', value: 'ko' },
+    { label: 'Tiếng Việt', value: 'vi' },
+    { label: 'ไทย', value: 'th' }
+]
+
+const emptyLocale = (): GameCopywritingLocale => ({
+    game_name: '',
+    game_introduce: '',
+    game_volatility: '',
+    high_hit: '',
+    game_details: ''
+})
+
+const copywritingForm = reactive<GameCopywriting>({
+    game_id: '',
+    lang_type: [],
+    game_banners: [],
+    locales: {}
+})
+
+const bannerPreviewUrls = ref<Record<string, string>>({})
+const processedFileIds = new Set<string>()
+
+const handleBannerUpload = (data: { file: UploadFileInfo; fileList: UploadFileInfo[] }) => {
+    const file = data.file
+    if (!file) return
+    
+    // Check if we already processed this unique file upload lifecycle item
+    if (processedFileIds.has(file.id)) return
+    processedFileIds.add(file.id)
+
+    const raw = file.file
+    if (raw) {
+        const localUrl = URL.createObjectURL(raw)
+        const cdnUrl = `https://cdn.gameplatform.com/banners/game_${copywritingGameId.value}_${Date.now()}_${file.name}`
+        copywritingForm.game_banners.push(cdnUrl)
+        bannerPreviewUrls.value[cdnUrl] = localUrl
+        message.success('圖片上傳成功，已生成 CDN 連結')
+    }
+}
+
+const handleRemoveBanner = (index: number) => {
+    const url = copywritingForm.game_banners[index]
+    if (bannerPreviewUrls.value[url]) {
+        URL.revokeObjectURL(bannerPreviewUrls.value[url])
+        delete bannerPreviewUrls.value[url]
+    }
+    copywritingForm.game_banners.splice(index, 1)
+}
+
+const handleOpenCopywriting = async (game: Game) => {
+    copywritingGameId.value = game.id
+    copywritingGameName.value = `${game.name} (${game.name_en})`
+    activeLang.value = 'zh-TW'
+    copywritingLoading.value = true
+    showCopywritingModal.value = true
+    processedFileIds.clear()
+
+    try {
+        const res = await gameCopywritingApi.get(game.id)
+        if (res.code === 0 && res.data) {
+            Object.assign(copywritingForm, res.data)
+            // Ensure all lang_types have a locale initialized
+            copywritingForm.lang_type.forEach(lang => {
+                if (!copywritingForm.locales[lang]) {
+                    copywritingForm.locales[lang] = emptyLocale()
+                }
+            })
+        } else {
+            // Initialize empty
+            copywritingForm.game_id = game.id
+            copywritingForm.lang_type = ['zh-TW']
+            copywritingForm.game_banners = []
+            copywritingForm.locales = { 'zh-TW': emptyLocale() }
+        }
+    } catch {
+        message.error('載入文案失敗')
+    } finally {
+        copywritingLoading.value = false
+    }
+}
+
+const handleAddLang = (lang: string) => {
+    if (!copywritingForm.locales[lang]) {
+        copywritingForm.locales[lang] = emptyLocale()
+    }
+    if (!copywritingForm.lang_type.includes(lang)) {
+        copywritingForm.lang_type.push(lang)
+    }
+    activeLang.value = lang
+}
+
+const handleRemoveLang = (lang: string) => {
+    delete copywritingForm.locales[lang]
+    copywritingForm.lang_type = copywritingForm.lang_type.filter(l => l !== lang)
+    if (activeLang.value === lang) {
+        activeLang.value = copywritingForm.lang_type[0] || 'zh-TW'
+    }
+}
+
+const handleSaveCopywriting = async () => {
+    copywritingSaving.value = true
+    try {
+        const res = await gameCopywritingApi.save(copywritingGameId.value, copywritingForm)
+        if (res.code === 0) {
+            message.success('文案儲存成功')
+            showCopywritingModal.value = false
+        } else {
+            message.error(res.msg || '儲存失敗')
+        }
+    } catch {
+        message.error('儲存失敗')
+    } finally {
+        copywritingSaving.value = false
+    }
+}
+
+// Available langs that haven't been added yet
+const unusedLangs = computed(() => availableLangs.filter(l => !copywritingForm.lang_type.includes(l.value)))
 
 </script>
 
@@ -812,6 +950,106 @@ const handleSubmit = async () => {
             :negative-text="t('common.cancel')"
             @positive-click="handleBatchSave"
         />
+
+        <!-- Game Copywriting Modal -->
+        <NModal v-model:show="showCopywritingModal" preset="card" title="遊戲文案編輯" style="width: 750px; max-width: 95vw;">
+            <div class="mb-3 p-3 bg-gray-50 rounded flex justify-between items-center">
+                <div>
+                    <div class="font-semibold">{{ copywritingGameName }}</div>
+                    <div class="text-xs text-gray-500">ID: {{ copywritingGameId }}</div>
+                </div>
+                <div v-if="unusedLangs.length > 0">
+                    <NSelect
+                        placeholder="新增語系"
+                        :options="unusedLangs"
+                        style="width: 140px"
+                        @update:value="handleAddLang"
+                        :value="null"
+                        size="small"
+                    />
+                </div>
+            </div>
+
+            <template v-if="!copywritingLoading">
+                <!-- Banner Management -->
+                <NDivider title-placement="left" dashed>遊戲示範圖片 (game_banners)</NDivider>
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <NUpload
+                            action="#"
+                            :show-file-list="false"
+                            @change="handleBannerUpload"
+                            accept="image/png, image/jpeg, image/webp"
+                        >
+                            <NButton size="small" type="primary">上傳示範圖片</NButton>
+                        </NUpload>
+                        <span class="text-xs text-gray-400">（上傳後將自動生成 CDN 示範連結）</span>
+                    </div>
+                    <div v-for="(url, idx) in copywritingForm.game_banners" :key="idx" class="flex items-center gap-2 mb-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <NImage :src="bannerPreviewUrls[url] || url" width="60" height="40" object-fit="cover" class="rounded border flex-shrink-0" />
+                        <span class="text-xs text-gray-600 dark:text-gray-300 truncate flex-1">{{ url }}</span>
+                        <NButton size="tiny" type="error" quaternary @click="handleRemoveBanner(idx)">移除</NButton>
+                    </div>
+                    <div v-if="copywritingForm.game_banners.length === 0" class="text-center text-gray-400 text-sm py-2">尚未上傳任何圖片</div>
+                </div>
+
+                <!-- Language Type Display -->
+                <NDivider title-placement="left" dashed>語系種類 (lang_type)</NDivider>
+                <div class="mb-4">
+                    <NSpace>
+                        <NTag v-for="lang in copywritingForm.lang_type" :key="lang" closable @close="handleRemoveLang(lang)" type="info" size="small">
+                            {{ availableLangs.find(l => l.value === lang)?.label || lang }}
+                        </NTag>
+                    </NSpace>
+                </div>
+
+                <!-- Multi-language Tabs -->
+                <NDivider title-placement="left" dashed>多語系文案內容</NDivider>
+                <NTabs v-if="copywritingForm.lang_type.length > 0" v-model:value="activeLang" type="card" size="small">
+                    <NTabPane
+                        v-for="lang in copywritingForm.lang_type"
+                        :key="lang"
+                        :name="lang"
+                        :tab="availableLangs.find(l => l.value === lang)?.label || lang"
+                    >
+                        <NForm v-if="copywritingForm.locales[lang]" label-placement="left" label-width="120" size="small">
+                            <NFormItem label="遊戲名稱">
+                                <NInput v-model:value="copywritingForm.locales[lang].game_name" placeholder="前台顯示的遊戲名稱" />
+                            </NFormItem>
+                            <NFormItem label="簡短介紹">
+                                <NInput v-model:value="copywritingForm.locales[lang].game_introduce" type="textarea" :rows="2" placeholder="簡短遊戲介紹（短文）" />
+                            </NFormItem>
+                            <NGrid :cols="2" :x-gap="12">
+                                <NGridItem>
+                                    <NFormItem label="波動性">
+                                        <NInput v-model:value="copywritingForm.locales[lang].game_volatility" placeholder="例如：中高" />
+                                    </NFormItem>
+                                </NGridItem>
+                                <NGridItem>
+                                    <NFormItem label="最大倍率">
+                                        <NInput v-model:value="copywritingForm.locales[lang].high_hit" placeholder="例如：3000倍" />
+                                    </NFormItem>
+                                </NGridItem>
+                            </NGrid>
+                            <NFormItem label="詳細介紹">
+                                <NInput v-model:value="copywritingForm.locales[lang].game_details" type="textarea" :rows="5" placeholder="遊戲介紹詳情（長文）" />
+                            </NFormItem>
+                        </NForm>
+                    </NTabPane>
+                </NTabs>
+                <div v-else class="text-center text-gray-400 py-8">請先新增語系</div>
+            </template>
+            <div v-else class="text-center py-12">
+                <NSpin />
+            </div>
+
+            <template #footer>
+                <div class="flex justify-end gap-2">
+                    <NButton @click="showCopywritingModal = false">{{ t('common.cancel') }}</NButton>
+                    <NButton type="primary" @click="handleSaveCopywriting" :loading="copywritingSaving">儲存文案</NButton>
+                </div>
+            </template>
+        </NModal>
     </div>
 </template>
 

@@ -37,6 +37,7 @@ export interface Player {
     agent_id?: string // 歸屬代理 ID
     agent_name?: string // 代理帳號 (所屬)
     invite_code?: string // 邀請碼
+    invited_by_code?: string // 註冊時所填寫的邀請碼
     rtp?: number // RPT (Return To Player)
     register_source: string // 註冊來源 (e.g., SEO, Admin_Manual)
     register_ip: string

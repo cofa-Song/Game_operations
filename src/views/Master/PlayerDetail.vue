@@ -415,6 +415,44 @@ const gameColumns = [
     { title: '盈虧', key: 'net_amount', align: 'right' as const, render: (row: GameLog) => h(NSpace, { align: 'center', justify: 'end', size: 4 }, { default: () => [h('span', { class: row.net_amount >= 0 ? 'text-green-600' : 'text-red-600' }, row.net_amount), renderCurrencyIcon(row.currency, true)] }) }
 ]
 
+const inviteColumns = [
+    { title: '玩家 ID', key: 'id', width: 100 },
+    { title: '帳號', key: 'username', width: 150 },
+    { title: '顯示名稱', key: 'display_name', width: 150 },
+    { 
+        title: '狀態', 
+        key: 'status', 
+        width: 100,
+        render: (row: Player) => {
+            const typeMap: Record<PlayerStatus, 'success' | 'error' | 'warning' | 'default'> = {
+                'ACTIVE': 'success',
+                'LOCKED': 'error',
+                'FROZEN': 'warning',
+                'SUSPENDED': 'default'
+            }
+            return h(NTag, { size: 'small', type: typeMap[row.status] }, { default: () => row.status })
+        }
+    },
+    { 
+        title: '註冊時間', 
+        key: 'register_at', 
+        width: 180,
+        render: (row: Player) => row.register_at.replace('T', ' ').split('.')[0]
+    }
+]
+
+const invitedPlayers = ref<Player[]>([])
+const invitedTotal = ref(0)
+const invitedPagination = reactive({
+    page: 1,
+    pageSize: 10,
+    itemCount: 0,
+    onChange: (page: number) => {
+        invitedPagination.page = page
+        fetchHistory()
+    }
+})
+
 const renderCurrencyIcon = (currency: string, small = false) => {
     const config: Record<string, { color: string; label: string; icon: string }> = {
         GOLD: { color: '#f0a020', label: '金', icon: '🟡' },
@@ -466,6 +504,15 @@ const fetchHistory = async () => {
             if (res.code === 0 && res.data) {
                 auditLogs.value = res.data.items
                 auditPagination.itemCount = res.data.total
+            }
+        } else if (currentTab.value === 'invite') {
+            const res = await playerApi.getInvitedPlayers(playerId)
+            if (res.code === 0 && res.data) {
+                const all = res.data.list
+                invitedTotal.value = res.data.total
+                invitedPagination.itemCount = res.data.total
+                const start = (invitedPagination.page - 1) * invitedPagination.pageSize
+                invitedPlayers.value = all.slice(start, start + invitedPagination.pageSize)
             }
         }
     } catch (e) {
@@ -932,7 +979,7 @@ onMounted(() => {
                             <template #header>
                                 <span class="font-bold">轉線排程：{{ record.id }}</span>
                                 <NTag class="ml-2" size="small" :type="record.status === 'SUCCESS' ? 'success' : record.status === 'PENDING' ? 'warning' : record.status === 'CANCELED' ? 'error' : 'default'">
-                                    {{ record.status }}
+                                     {{ record.status }}
                                 </NTag>
                             </template>
                             <template #header-extra>
@@ -949,6 +996,30 @@ onMounted(() => {
                         </NThing>
                     </NListItem>
                 </NList>
+            </NTabPane>
+
+            <!-- Invite Details Tab -->
+            <NTabPane name="invite" tab="邀請明細">
+                <div class="mb-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg flex items-center justify-between border border-gray-100 dark:border-gray-700">
+                    <div>
+                        <span class="text-xs text-gray-500 block mb-1">自身邀請碼</span>
+                        <span class="text-lg font-bold text-blue-600 font-mono">{{ player.invite_code || '-' }}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-500 block mb-1">成功邀請人數</span>
+                        <NSpace align="baseline" justify="end" :size="2">
+                            <span class="text-2xl font-bold text-slate-800 dark:text-white">{{ invitedTotal }}</span>
+                            <span class="text-xs text-gray-400">人</span>
+                        </NSpace>
+                    </div>
+                </div>
+                <NDataTable
+                    :columns="inviteColumns"
+                    :data="invitedPlayers"
+                    :loading="historyLoading"
+                    :pagination="invitedPagination"
+                    size="small"
+                />
             </NTabPane>
           </NTabs>
         </NCard>

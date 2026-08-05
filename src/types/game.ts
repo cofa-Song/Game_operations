@@ -171,5 +171,18 @@ export interface MarketingTagUpdateRequest {
     description?: string
 }
 
+// Game Copywriting (multi-language)
+export interface GameCopywritingLocale {
+    game_name: string           // 遊戲在前台顯示的名稱
+    game_introduce: string      // 簡短遊戲介紹(短文)
+    game_volatility: string     // 波動性，例如：中高
+    high_hit: string            // 最大倍率，例如：3000倍
+    game_details: string        // 遊戲介紹詳情(長文)
+}
 
-
+export interface GameCopywriting {
+    game_id: string
+    lang_type: string[]                                    // 遊戲內提供的多語系種類
+    game_banners: string[]                                 // 遊戲示範圖片 url 陣列（CDN）
+    locales: Record<string, GameCopywritingLocale>          // key = lang code (e.g. 'zh-TW', 'en')
+}
