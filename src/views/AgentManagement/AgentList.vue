@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, h, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, h, computed, watch } from 'vue'
 import { 
   NCard, NInput, NSelect, NDatePicker, NButton, NDataTable, NSpace, NTag,
   NModal, NForm, NFormItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NSwitch, NInputNumber,
-  NGrid, NGridItem, NIcon, NDivider
+  NGrid, NGridItem, NIcon, NDivider, NAlert
 } from 'naive-ui'
 import { 
   SearchOutline, CreateOutline, CashOutline, InformationCircleOutline,
-  PeopleOutline, AddOutline, SwapHorizontalOutline
+  PeopleOutline, AddOutline, SwapHorizontalOutline, LayersOutline
 } from '@vicons/ionicons5'
-import { agentApi } from '@/api/agent'
-import { Agent, AgentSearchParams, AgentStatus, AgentIdentity } from '@/types/agent'
+import { agentApi, agentGroupApi } from '@/api/agent'
+import { Agent, AgentSearchParams, AgentStatus, AgentIdentity, AgentGroup } from '@/types/agent'
 import { useI18n } from 'vue-i18n'
 
 const message = useMessage()
@@ -221,7 +221,7 @@ const editForm = reactive({
   cpa_price: 0,
   deposit_commission_enabled: true,
   deposit_commission_rate: 0,
-  data_binding_threshold: { phone: false },
+  data_binding_threshold: { phone: false, google: false },
   deposit_threshold: 0,
   flow_threshold: 0,
   status: 'NORMAL' as AgentStatus,
@@ -244,7 +244,7 @@ const createForm = reactive({
     cpa_price: 0,
     deposit_commission_enabled: true,
     deposit_commission_rate: 0,
-    data_binding_threshold: { phone: false },
+    data_binding_threshold: { phone: false, google: false },
     deposit_threshold: 0,
     flow_threshold: 0,
     status: 'NORMAL' as AgentStatus,
@@ -252,8 +252,38 @@ const createForm = reactive({
     phone: '',
     contact_info: '',
     sensitive_data_permission: false,
-    remark: ''
+    remark: '',
+    group_id: '' as string | undefined
 })
+
+// Agent Groups for create form
+const agentGroups = ref<AgentGroup[]>([])
+const selectedGroup = computed(() => agentGroups.value.find(g => g.id === createForm.group_id) ?? null)
+const groupOptions = computed(() => [
+    { label: '不使用群組（手動設定）', value: '' },
+    ...agentGroups.value.map(g => ({ label: g.name, value: g.id }))
+])
+
+// When group selection changes, auto-fill form fields
+watch(() => createForm.group_id, (gid) => {
+    if (!gid) return
+    const g = agentGroups.value.find(g => g.id === gid)
+    if (!g) return
+    createForm.cpa_enabled = g.cpa_enabled
+    createForm.cpa_price = g.cpa_price
+    createForm.deposit_commission_enabled = g.deposit_commission_enabled
+    createForm.deposit_commission_rate = g.deposit_commission_rate
+    createForm.data_binding_threshold = { ...g.data_binding_threshold }
+    createForm.deposit_threshold = g.deposit_threshold
+    createForm.flow_threshold = g.flow_threshold
+})
+
+const fetchGroups = async () => {
+    try {
+        const res = await agentGroupApi.getGroups()
+        if (res.code === 0 && res.data) agentGroups.value = res.data
+    } catch { /* ignore */ }
+}
 
 // Handlers
 
@@ -362,7 +392,7 @@ const openCreateModal = () => {
         cpa_price: 0,
         deposit_commission_enabled: true,
         deposit_commission_rate: 0,
-        data_binding_threshold: { phone: false },
+        data_binding_threshold: { phone: false, google: false },
         deposit_threshold: 0,
         flow_threshold: 0,
         status: 'NORMAL',
@@ -370,8 +400,10 @@ const openCreateModal = () => {
         phone: '',
         contact_info: '',
         sensitive_data_permission: false,
-        remark: ''
+        remark: '',
+        group_id: ''
     })
+    fetchGroups()
     showCreate.value = true
 }
 
@@ -584,6 +616,11 @@ onBeforeUnmount(() => {
                             <NSelect v-model:value="createForm.identity" :options="identityOptions" />
                         </NFormItem>
                     </NGridItem>
+                    <NGridItem v-if="createForm.identity !== 'ADMIN'">
+                        <NFormItem label="所屬代理群組">
+                            <NSelect v-model:value="createForm.group_id" :options="groupOptions" placeholder="請選擇代理群組" clearable />
+                        </NFormItem>
+                    </NGridItem>
                     <NGridItem>
                         <NFormItem :label="t('agent.list.promoCode')">
                              <NInput v-model:value="createForm.promo_code" placeholder="請輸入推廣碼 (選填)" />
@@ -607,29 +644,38 @@ onBeforeUnmount(() => {
                 </NGrid>
 
                 <template v-if="createForm.identity !== 'ADMIN'">
-                    <NDivider title-placement="left">合作模式設定 (CPA 與儲值抽成)</NDivider>
+                    <NDivider title-placement="left">
+                        <NSpace align="center" :size="8">
+                            <span>合作模式設定 (CPA 與儲值抽成)</span>
+                            <NTag v-if="createForm.group_id" type="warning" size="small" round>已套用群組範本</NTag>
+                        </NSpace>
+                    </NDivider>
                     
+                    <NAlert v-if="createForm.group_id" type="warning" size="small" class="mb-4">
+                        目前已套用代理群組範本「{{ selectedGroup?.name }}」，合作模式與門檻設定將自動填寫並鎖定為唯讀狀態。若需自訂調整，請將所屬代理群組切換為「不使用群組（手動設定）」。
+                    </NAlert>
+
                     <NGrid :cols="2" :x-gap="24">
                         <NGridItem>
                             <NFormItem label="CPA 結算開關">
-                                <NSwitch v-model:value="createForm.cpa_enabled" />
+                                <NSwitch v-model:value="createForm.cpa_enabled" :disabled="!!createForm.group_id" />
                             </NFormItem>
                         </NGridItem>
                         <NGridItem>
                             <NFormItem label="儲值抽成開關">
-                                <NSwitch v-model:value="createForm.deposit_commission_enabled" />
+                                <NSwitch v-model:value="createForm.deposit_commission_enabled" :disabled="!!createForm.group_id" />
                             </NFormItem>
                         </NGridItem>
                         
                         <NGridItem v-if="createForm.cpa_enabled">
                             <NFormItem label="CPA 單價">
-                                <NInputNumber v-model:value="createForm.cpa_price" :min="0" style="width: 100%" />
+                                <NInputNumber v-model:value="createForm.cpa_price" :min="0" :disabled="!!createForm.group_id" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                         
                         <NGridItem v-if="createForm.deposit_commission_enabled">
                             <NFormItem :label="t('agent.edit.commissionRate')">
-                                <NInputNumber v-model:value="createForm.deposit_commission_rate" :min="0" :max="100" style="width: 100%" />
+                                <NInputNumber v-model:value="createForm.deposit_commission_rate" :min="0" :max="100" :disabled="!!createForm.group_id" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                     </NGrid>
@@ -638,8 +684,11 @@ onBeforeUnmount(() => {
                     
                     <NFormItem :label="t('agent.edit.bindingThreshold')">
                         <NSpace>
-                            <NTag checkable v-model:checked="createForm.data_binding_threshold.phone" type="primary">
+                            <NTag checkable v-model:checked="createForm.data_binding_threshold.phone" :disabled="!!createForm.group_id" type="primary">
                                 {{ t('agent.edit.phoneBinding') }}
+                            </NTag>
+                            <NTag checkable v-model:checked="createForm.data_binding_threshold.google" :disabled="!!createForm.group_id" type="error">
+                                Google綁定
                             </NTag>
                         </NSpace>
                     </NFormItem>
@@ -647,12 +696,12 @@ onBeforeUnmount(() => {
                     <NGrid :cols="2" :x-gap="24">
                         <NGridItem>
                             <NFormItem :label="t('agent.edit.depositThreshold')">
-                                <NInputNumber v-model:value="createForm.deposit_threshold" :min="0" style="width: 100%" />
+                                <NInputNumber v-model:value="createForm.deposit_threshold" :min="0" :disabled="!!createForm.group_id" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                         <NGridItem>
                             <NFormItem :label="t('agent.edit.flowThreshold')">
-                                <NInputNumber v-model:value="createForm.flow_threshold" :min="0" style="width: 100%" />
+                                <NInputNumber v-model:value="createForm.flow_threshold" :min="0" :disabled="!!createForm.group_id" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                     </NGrid>
@@ -792,6 +841,9 @@ onBeforeUnmount(() => {
                         <NSpace>
                             <NTag checkable v-model:checked="editForm.data_binding_threshold.phone" type="primary">
                                 {{ t('agent.edit.phoneBinding') }}
+                            </NTag>
+                            <NTag checkable v-model:checked="editForm.data_binding_threshold.google" type="error">
+                                Google綁定
                             </NTag>
                         </NSpace>
                     </NFormItem>

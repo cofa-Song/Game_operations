@@ -25,12 +25,16 @@ export interface Agent {
   contact_info: string
   data_binding_threshold: {
     phone: boolean
+    google: boolean
   }
   deposit_threshold: number
   flow_threshold: number
   sensitive_data_permission: boolean
   remark: string
   two_fa_enabled: boolean
+
+  // Group
+  group_id?: string
 }
 
 export interface AgentSearchParams {
@@ -107,4 +111,37 @@ export interface AgentTransferSearchParams {
   status?: TransferScheduleStatus | 'ALL'
   page: number
   page_size: number
+}
+
+// ── Agent Group ───────────────────────────────────────────────────────────────
+
+export interface AgentGroup {
+  id: string
+  name: string
+  description: string
+  cpa_enabled: boolean
+  cpa_price: number
+  deposit_commission_enabled: boolean
+  deposit_commission_rate: number
+  data_binding_threshold: { phone: boolean; google: boolean }
+  deposit_threshold: number
+  flow_threshold: number
+  created_at: string
+  agent_count: number
+}
+
+export interface CreateAgentGroupParams {
+  name: string
+  description: string
+  cpa_enabled: boolean
+  cpa_price: number
+  deposit_commission_enabled: boolean
+  deposit_commission_rate: number
+  data_binding_threshold: { phone: boolean; google: boolean }
+  deposit_threshold: number
+  flow_threshold: number
+}
+
+export interface UpdateAgentGroupParams extends CreateAgentGroupParams {
+  id: string
 }

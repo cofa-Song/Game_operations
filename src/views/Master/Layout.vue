@@ -131,7 +131,9 @@ const menuKeyToRoute: Record<string, string> = {
   'article-manager': '/admin/articles',
   'seo-writer': '/admin/seo-writer',
   'agent-list': '/admin/agent-list',
+  'agent-group': '/admin/agent-group',
   'agent-withdrawal-audit': '/admin/agent-withdrawal-audit',
+  'agent-transfer-schedule': '/admin/agent-transfer-schedule',
   'vip-settings': '/admin/vip-settings',
   'vip-stats': '/admin/vip-stats',
   'agent-report': '/admin/agent-report',
@@ -233,6 +235,11 @@ const menuOptions = computed(() => [
         label: t('navigation.agentList'),
         key: 'agent-list',
         icon: renderIcon(ListOutline)
+      },
+      {
+        label: '代理群組',
+        key: 'agent-group',
+        icon: renderIcon(LayersOutline)
       },
       {
         label: t('navigation.agentWithdrawalAudit'),

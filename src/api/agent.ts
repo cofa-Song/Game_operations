@@ -1,5 +1,5 @@
 import { ApiResponse, PaginatedResponse } from '@/types'
-import { Agent, AgentSearchParams, UpdateAgentParams, CreateAgentParams } from '@/types/agent'
+import { Agent, AgentSearchParams, UpdateAgentParams, CreateAgentParams, AgentGroup, CreateAgentGroupParams, UpdateAgentGroupParams } from '@/types/agent'
 import { mockAgents } from '@/mocks/agent'
 
 const SIMULATE_DELAY = 500
@@ -264,6 +264,50 @@ export const agentApi = {
     if (req.status !== 'PENDING') return { code: 400, msg: '只能取消待執行狀態的排程' }
     req.status = 'CANCELED'
     console.log(`[Audit] Cancel Transfer Schedule ${id}`)
+    return { code: 0, msg: 'success' }
+  }
+}
+
+// ── Agent Group API ───────────────────────────────────────────────────────────
+
+export const agentGroupApi = {
+  async getGroups(): Promise<ApiResponse<AgentGroup[]>> {
+    await delay(SIMULATE_DELAY)
+    const { mockAgentGroups } = await import('@/mocks/agentGroup')
+    return { code: 0, msg: 'success', data: [...mockAgentGroups] }
+  },
+
+  async createGroup(params: CreateAgentGroupParams): Promise<ApiResponse<AgentGroup>> {
+    await delay(SIMULATE_DELAY)
+    const { mockAgentGroups } = await import('@/mocks/agentGroup')
+    const newGroup: AgentGroup = {
+      ...params,
+      id: `GRP${String(Date.now()).slice(-6)}`,
+      created_at: new Date().toISOString(),
+      agent_count: 0
+    }
+    mockAgentGroups.unshift(newGroup)
+    return { code: 0, msg: 'success', data: newGroup }
+  },
+
+  async updateGroup(params: UpdateAgentGroupParams): Promise<ApiResponse<void>> {
+    await delay(SIMULATE_DELAY)
+    const { mockAgentGroups } = await import('@/mocks/agentGroup')
+    const index = mockAgentGroups.findIndex(g => g.id === params.id)
+    if (index === -1) return { code: 404, msg: '找不到群組' }
+    mockAgentGroups[index] = { ...mockAgentGroups[index], ...params }
+    return { code: 0, msg: 'success' }
+  },
+
+  async deleteGroup(id: string): Promise<ApiResponse<void>> {
+    await delay(SIMULATE_DELAY)
+    const { mockAgentGroups } = await import('@/mocks/agentGroup')
+    const index = mockAgentGroups.findIndex(g => g.id === id)
+    if (index === -1) return { code: 404, msg: '找不到群組' }
+    if (mockAgentGroups[index].agent_count > 0) {
+      return { code: 400, msg: `此群組尚有 ${mockAgentGroups[index].agent_count} 個代理使用中，無法刪除` }
+    }
+    mockAgentGroups.splice(index, 1)
     return { code: 0, msg: 'success' }
   }
 }

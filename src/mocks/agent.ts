@@ -22,7 +22,8 @@ export const mockAgents: Agent[] = [
     phone: '0912345678',
     contact_info: 'WeChat: wdming88',
     data_binding_threshold: {
-      phone: true
+      phone: true,
+      google: false
     },
     deposit_threshold: 100,
     flow_threshold: 500,
@@ -51,7 +52,8 @@ export const mockAgents: Agent[] = [
     phone: '0987654321',
     contact_info: 'Telegram: @huanhua',
     data_binding_threshold: {
-      phone: false
+      phone: false,
+      google: false
     },
     deposit_threshold: 50,
     flow_threshold: 200,
@@ -80,7 +82,8 @@ export const mockAgents: Agent[] = [
     phone: '0900111222',
     contact_info: 'Email: admin@test.com',
     data_binding_threshold: {
-      phone: true
+      phone: true,
+      google: true
     },
     deposit_threshold: 0,
     flow_threshold: 0,

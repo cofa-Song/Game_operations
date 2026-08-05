@@ -317,6 +317,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '代理列表' }
       },
       {
+        path: 'agent-group',
+        name: 'AgentGroup',
+        component: () => import('@/views/AgentManagement/AgentGroup.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '代理群組' }
+      },
+      {
         path: 'agent-withdrawal-audit',
         name: 'AgentWithdrawalAudit',
         component: () => import('@/views/AgentManagement/AgentWithdrawalAudit.vue'),
