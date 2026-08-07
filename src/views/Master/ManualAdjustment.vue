@@ -3,31 +3,26 @@
         <!-- 頂部浮動搜尋區塊 -->
         <div class="sticky top-0 z-30 transition-all duration-300" :class="{ 'pt-2': isSticky }">
             <NCard 
-                title="人工存提 (Manual Adjustment)" 
+                title="人工存提紀錄"
                 size="small"
                 class="rounded-xl shadow-sm border-0 premium-card transition-all duration-300" 
                 :class="{ 'premium-glass shadow-xl mx-2': isSticky }"
             >
                 <template #header-extra>
                     <div class="flex items-center gap-2">
-                        <n-tag v-if="player" type="success" size="small" round>
-                            <template #icon><n-icon :component="PersonIcon" /></template>
-                            已鎖定: {{ player.username }}
-                        </n-tag>
+                        <n-button type="primary" @click="openAdjustmentModal">人工存提</n-button>
                     </div>
                 </template>
-                <n-form-item :show-label="false" :show-feedback="false">
-                    <n-input-group>
-                        <n-input v-model:value="searchId" placeholder="輸入玩家 ID" @keydown.enter="handleSearch" class="tech-input-light" />
-                        <n-button type="primary" @click="handleSearch" :loading="searching">
-                            鎖定對象
-                        </n-button>
-                    </n-input-group>
-                </n-form-item>
             </NCard>
         </div>
 
-        <div class="flex flex-col gap-6 relative z-10">
+        <n-modal v-model:show="showAdjustmentModal" preset="card" title="人工存提操作" style="width: min(720px, calc(100vw - 32px))" :mask-closable="false">
+            <n-form-item :show-label="false" :show-feedback="false" class="mb-4">
+                <n-input-group>
+                    <n-input v-model:value="searchId" placeholder="輸入玩家 ID" @keydown.enter="handleSearch" class="tech-input-light" />
+                    <n-button type="primary" @click="handleSearch" :loading="searching">鎖定對象</n-button>
+                </n-input-group>
+            </n-form-item>
             <!-- 玩家資訊展示 -->
             <n-card v-if="player" class="rounded-xl shadow-sm border-0 premium-card">
                 <n-alert type="info" title="當前鎖定玩家" class="mb-4">
@@ -126,12 +121,7 @@
                     </n-form-item>
 
                     <n-form-item label="幣別" path="currency">
-                        <n-radio-group v-model:value="formModel.currency" name="currency">
-                            <n-space>
-                                <n-radio value="GOLD">金幣</n-radio>
-                                <n-radio value="SILVER">銀幣</n-radio>
-                            </n-space>
-                        </n-radio-group>
+                        <n-select v-model:value="formModel.currency" :options="currencyOptions" />
                     </n-form-item>
 
                     <n-form-item label="調整金額" path="amount">
@@ -190,20 +180,67 @@
 
                 </n-form>
             </n-card>
+
+        </n-modal>
+
+        <div class="relative z-10">
+            <n-card class="rounded-xl shadow-sm border-0 premium-card" content-class="p-0">
+                <template #header-extra>
+                    <n-tag type="info" round>共 {{ adjustmentTotal }} 筆</n-tag>
+                </template>
+                <div class="p-4 border-b border-slate-100">
+                    <n-form inline :show-feedback="false" label-placement="left">
+                        <n-form-item label="時間區間">
+                            <n-date-picker
+                                v-model:value="adjustmentQuery.timeRange"
+                                type="datetimerange"
+                                clearable
+                                format="yyyy-MM-dd HH:mm"
+                                style="width: 320px"
+                            />
+                        </n-form-item>
+                        <n-form-item label="操作類型">
+                            <n-select
+                                v-model:value="adjustmentQuery.type"
+                                :options="adjustmentTypeOptions"
+                                clearable
+                                placeholder="全部"
+                                style="width: 140px"
+                            />
+                        </n-form-item>
+                        <n-form-item label="玩家 ID">
+                            <n-input v-model:value="adjustmentQuery.playerId" clearable placeholder="輸入玩家 ID" style="width: 160px" />
+                        </n-form-item>
+                        <n-space>
+                            <n-button type="primary" :loading="adjustmentLoading" @click="handleAdjustmentSearch">查詢</n-button>
+                            <n-button @click="resetAdjustmentSearch">重設</n-button>
+                        </n-space>
+                    </n-form>
+                </div>
+                <n-data-table
+                    :columns="adjustmentColumns"
+                    :data="adjustmentRecords"
+                    :loading="adjustmentLoading"
+                    :bordered="false"
+                    :row-key="(row) => row.id"
+                />
+            </n-card>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
-import { useMessage, FormInst, FormRules, NCard, NGrid, NGi, NFormItem, NInputGroup, NInput, NButton, NAlert, NIcon, NTag, NDivider, NStatistic, NForm, NRadioGroup, NSpace, NRadio, NSelect, NInputNumber, NUpload, NSwitch } from 'naive-ui'
+import { ref, computed, reactive, watch, onMounted, onBeforeUnmount, h } from 'vue'
+import { useMessage, FormInst, FormRules, NCard, NGrid, NGi, NFormItem, NInputGroup, NInput, NButton, NAlert, NIcon, NTag, NDivider, NStatistic, NForm, NRadioGroup, NSpace, NRadio, NSelect, NInputNumber, NUpload, NSwitch, NDatePicker, NDataTable, NModal } from 'naive-ui'
 import { PersonOutline as PersonIcon } from '@vicons/ionicons5'
 import { playerApi } from '@/api/player'
 import { adjustmentApi, ADJUSTMENT_REASONS } from '@/api/adjustment'
 import type { Player } from '@/types/player'
 import type { UploadFileInfo } from 'naive-ui'
+import type { AdjustmentRecord } from '@/api/adjustment'
 
 const message = useMessage()
+const showAdjustmentModal = ref(false)
 
 const isSticky = ref(false)
 const handleScroll = (e: Event) => {
@@ -212,6 +249,7 @@ const handleScroll = (e: Event) => {
 }
 
 onMounted(() => {
+  fetchAdjustmentRecords()
   const container = document.getElementById('main-scroll-container')
   if (container) {
     container.addEventListener('scroll', handleScroll)
@@ -230,6 +268,76 @@ const searchId = ref('')
 const searching = ref(false)
 const player = ref<Player | null>(null)
 
+const openAdjustmentModal = () => {
+    searchId.value = ''
+    player.value = null
+    showAdjustmentModal.value = true
+}
+
+const getDefaultAdjustmentRange = (): [number, number] => {
+    const end = new Date()
+    const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000)
+    return [start.getTime(), end.getTime()]
+}
+
+const adjustmentLoading = ref(false)
+const adjustmentRecords = ref<AdjustmentRecord[]>([])
+const adjustmentTotal = ref(0)
+const adjustmentQuery = reactive({
+    timeRange: getDefaultAdjustmentRange() as [number, number] | null,
+    type: null as 'DEPOSIT' | 'WITHDRAW' | null,
+    playerId: ''
+})
+
+const adjustmentTypeOptions = [
+    { label: '人工加點', value: 'DEPOSIT' },
+    { label: '人工扣點', value: 'WITHDRAW' }
+]
+
+const walletLabels: Record<AdjustmentRecord['walletType'], string> = {
+    CASH: '儲值錢包', BONUS: '活動錢包', SAFE: '保險箱', GAME: '遊戲錢包'
+}
+const adjustmentCurrencyLabels: Record<AdjustmentRecord['currency'], string> = {
+    GOLD: '金幣', SILVER: '銀幣', BRONZE: '銅幣'
+}
+
+const adjustmentColumns = [
+    { title: '時間', key: 'createdAt', width: 170, render: (row: AdjustmentRecord) => row.createdAt.replace('T', ' ').slice(0, 16) },
+    { title: '玩家', key: 'playerName', width: 150, render: (row: AdjustmentRecord) => h('div', [h('div', { class: 'font-medium' }, row.playerName), h('div', { class: 'text-xs text-gray-500' }, row.playerId)]) },
+    { title: '操作', key: 'type', width: 110, render: (row: AdjustmentRecord) => h(NTag, { type: row.type === 'DEPOSIT' ? 'success' : 'error', bordered: false }, { default: () => row.type === 'DEPOSIT' ? '人工加點' : '人工扣點' }) },
+    { title: '目標錢包', key: 'walletType', width: 120, render: (row: AdjustmentRecord) => walletLabels[row.walletType] },
+    { title: '幣別', key: 'currency', width: 90, render: (row: AdjustmentRecord) => adjustmentCurrencyLabels[row.currency] },
+    { title: '金額', key: 'amount', align: 'right' as const, render: (row: AdjustmentRecord) => h('span', { class: row.type === 'DEPOSIT' ? 'text-green-600 font-bold' : 'text-red-600 font-bold' }, `${row.type === 'DEPOSIT' ? '+' : '-'}${row.amount.toLocaleString()}`) },
+    { title: '原因', key: 'reason', width: 150 },
+    { title: '備註', key: 'note', ellipsis: true }
+]
+
+const fetchAdjustmentRecords = async () => {
+    adjustmentLoading.value = true
+    try {
+        const res = await adjustmentApi.getAdjustments({
+            startAt: adjustmentQuery.timeRange?.[0], endAt: adjustmentQuery.timeRange?.[1],
+            type: adjustmentQuery.type || undefined, playerId: adjustmentQuery.playerId || undefined
+        })
+        if (res.code === 0 && res.data) {
+            adjustmentRecords.value = res.data.list
+            adjustmentTotal.value = res.data.total
+        } else message.error(res.msg || '查詢人工存提紀錄失敗')
+    } catch (e) {
+        message.error('查詢人工存提紀錄失敗')
+    } finally {
+        adjustmentLoading.value = false
+    }
+}
+
+const handleAdjustmentSearch = () => fetchAdjustmentRecords()
+const resetAdjustmentSearch = () => {
+    adjustmentQuery.timeRange = getDefaultAdjustmentRange()
+    adjustmentQuery.type = null
+    adjustmentQuery.playerId = ''
+    fetchAdjustmentRecords()
+}
+
 // Form State
 const formRef = ref<FormInst | null>(null)
 const submitting = ref(false)
@@ -238,7 +346,7 @@ const fileList = ref<UploadFileInfo[]>([])
 const formModel = reactive({
     type: 'DEPOSIT',
     walletType: 'CASH',
-    currency: 'GOLD' as 'GOLD' | 'SILVER',
+    currency: 'GOLD' as 'GOLD' | 'SILVER' | 'BRONZE',
     amount: null as number | null,
     reason: null as string | null,
     note: '',
@@ -250,10 +358,55 @@ const formModel = reactive({
 })
 
 // Options
-const walletOptions = [
-    { label: '儲值錢包 (Cash)', value: 'CASH' },
-    { label: '活動錢包 (Bonus)', value: 'BONUS' }
-]
+type AdjustmentType = 'DEPOSIT' | 'WITHDRAW'
+type WalletType = 'CASH' | 'BONUS' | 'SAFE' | 'GAME'
+type Currency = 'GOLD' | 'SILVER' | 'BRONZE'
+
+const walletConfigurations: Record<AdjustmentType, { label: string; value: WalletType; currencies: Currency[] }[]> = {
+    DEPOSIT: [
+        { label: '儲值錢包 (Cash)', value: 'CASH', currencies: ['GOLD', 'SILVER'] },
+        { label: '活動錢包 (Bonus)', value: 'BONUS', currencies: ['SILVER'] },
+        { label: '保險箱 (Safe)', value: 'SAFE', currencies: ['GOLD'] },
+        { label: '遊戲錢包 (Game)', value: 'GAME', currencies: ['BRONZE'] }
+    ],
+    WITHDRAW: [
+        { label: '儲值錢包 (Cash)', value: 'CASH', currencies: ['GOLD', 'SILVER'] },
+        { label: '保險箱 (Safe)', value: 'SAFE', currencies: ['GOLD'] },
+        { label: '遊戲錢包 (Game)', value: 'GAME', currencies: ['BRONZE'] }
+    ]
+}
+
+const currencyLabels: Record<Currency, string> = {
+    GOLD: '金幣',
+    SILVER: '銀幣',
+    BRONZE: '銅幣'
+}
+
+const selectedWalletConfig = computed(() =>
+    walletConfigurations[formModel.type as AdjustmentType].find(wallet => wallet.value === formModel.walletType)
+)
+const walletOptions = computed(() =>
+    walletConfigurations[formModel.type as AdjustmentType].map(({ label, value }) => ({ label, value }))
+)
+const currencyOptions = computed(() =>
+    (selectedWalletConfig.value?.currencies ?? []).map(value => ({ label: currencyLabels[value], value }))
+)
+
+watch(
+    () => [formModel.type, formModel.walletType] as const,
+    () => {
+        const availableWallets = walletConfigurations[formModel.type as AdjustmentType]
+        if (!availableWallets.some(wallet => wallet.value === formModel.walletType)) {
+            formModel.walletType = availableWallets[0].value
+        }
+        const currencies = walletConfigurations[formModel.type as AdjustmentType]
+            .find(wallet => wallet.value === formModel.walletType)?.currencies ?? []
+        if (!currencies.includes(formModel.currency)) {
+            formModel.currency = currencies[0]
+        }
+    },
+    { immediate: true }
+)
 
 const reasonOptions = ADJUSTMENT_REASONS
 
@@ -268,9 +421,7 @@ const bonusSilver = computed(() => getWallet('BONUS', 'SILVER'))
 const safeGold = computed(() => getWallet('SAFE', 'GOLD'))
 const gameBronze = computed(() => getWallet('GAME', 'BRONZE'))
 
-// Legacy computed (still used by form validation)
-const cashBalance = computed(() => cashGold.value + cashSilver.value)
-const bonusBalance = computed(() => bonusGold.value + bonusSilver.value)
+const selectedWalletBalance = computed(() => getWallet(formModel.walletType, formModel.currency))
 
 // Validation Rules
 const rules: FormRules = {
@@ -283,8 +434,7 @@ const rules: FormRules = {
                 if (value <= 0) return new Error('金額必須大於 0')
                 // Withdrawal check
                 if (formModel.type === 'WITHDRAW' && player.value) {
-                    const currentBalance = formModel.walletType === 'CASH' ? cashBalance.value : bonusBalance.value
-                    if (value > currentBalance) return new Error('餘額不足以扣除')
+                    if (value > selectedWalletBalance.value) return new Error('餘額不足')
                 }
                 return true
             },
@@ -351,8 +501,9 @@ const handleSubmit = async () => {
             try {
                 const res = await adjustmentApi.createAdjustment({
                     playerId: player.value!.id,
+                    playerName: player.value!.username,
                     type: formModel.type as 'DEPOSIT' | 'WITHDRAW',
-                    walletType: formModel.walletType as 'CASH' | 'BONUS',
+                    walletType: formModel.walletType as WalletType,
                     currency: formModel.currency,
                     amount: formModel.amount!,
                     reason: formModel.reason!,
@@ -366,6 +517,8 @@ const handleSubmit = async () => {
 
                 if (res.code === 0) {
                     message.success('操作成功')
+                    fetchAdjustmentRecords()
+                    showAdjustmentModal.value = false
                     // Refresh player data to update balance
                     handleSearch()
                     // Reset form partially
