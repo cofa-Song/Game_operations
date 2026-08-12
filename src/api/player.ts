@@ -14,6 +14,8 @@ import {
 
 import { mockPlayers, mockAuditLogs, mockPlayerTransfers } from '@/mocks/player' // We will create this next
 import { mockAgents } from '@/mocks/agent'
+import { RolloverEngine } from '@/mocks/engine'
+import { BonusCard } from '@/types/bonus'
 
 const SIMULATE_DELAY = 500
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -137,6 +139,9 @@ export const playerApi = {
             is_online: false
         }
         mockPlayers.unshift(newPlayer)
+        if (data.reissue_past_vip_rewards) {
+            console.log(`[VIP Reward] Reissue past promotion rewards for newly created player ${newPlayer.id}`)
+        }
         return { code: 0, msg: 'success', data: newPlayer }
     },
 
@@ -147,6 +152,9 @@ export const playerApi = {
 
         // Log the change (Mock)
         console.log(`[Audit] Update Player ${id}:`, data, `Reason: ${reason}`)
+        if (data.reissue_past_vip_rewards) {
+            console.log(`[VIP Reward] Reissue past promotion rewards for player ${id}`)
+        }
 
         mockPlayers[playerIndex] = { ...mockPlayers[playerIndex], ...data }
         return { code: 0, msg: 'success' }
@@ -164,6 +172,73 @@ export const playerApi = {
         }
 
         console.log(`[Audit] Update Status ${id} -> ${status}: ${reason}`)
+        return { code: 0, msg: 'success' }
+    },
+
+    async activateBonusCard(id: string, cardId: string): Promise<ApiResponse<void>> {
+        await delay(SIMULATE_DELAY)
+        const player = mockPlayers.find(p => p.id === id)
+        const cardIndex = player?.bonus_queue?.findIndex(card => card.id === cardId) ?? -1
+        if (!player || cardIndex < 0) return { code: 404, msg: '找不到獎勵卡' }
+        const card = player.bonus_queue![cardIndex]
+        if (!RolloverEngine.activateBonus(player, card)) return { code: 400, msg: '目前已有進行中的獎勵卡' }
+        player.bonus_queue!.splice(cardIndex, 1)
+        return { code: 0, msg: 'success' }
+    },
+
+    async deactivateBonusCard(id: string): Promise<ApiResponse<void>> {
+        await delay(SIMULATE_DELAY)
+        const player = mockPlayers.find(p => p.id === id)
+        if (!player || !RolloverEngine.deactivateBonus(player)) return { code: 400, msg: '目前沒有啟用中的獎勵卡' }
+        return { code: 0, msg: 'success' }
+    },
+
+    async setBonusCardStatus(id: string, cardId: string, enabled: boolean): Promise<ApiResponse<void>> {
+        await delay(SIMULATE_DELAY)
+        const card = mockPlayers.find(p => p.id === id)?.bonus_queue?.find(item => item.id === cardId)
+        if (!card) return { code: 404, msg: '找不到待處理的獎勵卡' }
+        card.status = enabled ? 'PENDING' : 'DISABLED'
+        return { code: 0, msg: 'success' }
+    },
+
+    async mergeBonusCards(id: string, cardIds: string[]): Promise<ApiResponse<BonusCard>> {
+        await delay(SIMULATE_DELAY)
+        const player = mockPlayers.find(p => p.id === id)
+        const selected = player?.bonus_queue?.filter(card => cardIds.includes(card.id)) ?? []
+        if (!player || selected.length < 2) return { code: 400, msg: '請至少選擇兩張未啟用的獎勵卡' }
+        const merged = RolloverEngine.createBonusCard(
+            selected.reduce((sum, card) => sum + card.lave_amount, 0),
+            1,
+            selected.reduce((sum, card) => sum + card.cap, 0),
+            Math.max(...selected.map(card => Math.ceil((new Date(card.end_time).getTime() - Date.now()) / 86400000)), 1)
+        )
+        merged.target_current = selected.reduce((sum, card) => sum + card.target_current, 0)
+        merged.current_wagering = selected.reduce((sum, card) => sum + (card.current_wagering || 0), 0)
+        merged.multiplier = merged.lave_amount ? merged.target_current / merged.lave_amount : 0
+        merged.created_at = new Date().toISOString()
+        player.bonus_queue = player.bonus_queue!.filter(card => !cardIds.includes(card.id))
+        player.bonus_queue.push(merged)
+        return { code: 0, msg: 'success', data: merged }
+    },
+
+    async forceApproveInactiveBonusCard(id: string, cardId: string): Promise<ApiResponse<void>> {
+        await delay(SIMULATE_DELAY)
+        const player = mockPlayers.find(p => p.id === id)
+        const cardIndex = player?.bonus_queue?.findIndex(card => card.id === cardId) ?? -1
+        if (!player || cardIndex < 0) return { code: 404, msg: '找不到未啟用的獎勵卡' }
+        const card = player.bonus_queue![cardIndex]
+        const cashWallet = player.wallets.find(wallet => wallet.type === 'CASH' && wallet.currency === 'GOLD')
+        if (cashWallet) cashWallet.balance += Math.min(card.lave_amount, card.cap)
+        player.bonus_queue!.splice(cardIndex, 1)
+        return { code: 0, msg: 'success' }
+    },
+
+    async abandonInactiveBonusCard(id: string, cardId: string): Promise<ApiResponse<void>> {
+        await delay(SIMULATE_DELAY)
+        const player = mockPlayers.find(p => p.id === id)
+        const cardIndex = player?.bonus_queue?.findIndex(card => card.id === cardId) ?? -1
+        if (!player || cardIndex < 0) return { code: 404, msg: '找不到未啟用的獎勵卡' }
+        player.bonus_queue!.splice(cardIndex, 1)
         return { code: 0, msg: 'success' }
     },
 

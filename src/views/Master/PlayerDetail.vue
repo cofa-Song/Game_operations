@@ -6,8 +6,8 @@ import {
   NCard, NTabs, NTabPane, NGrid, NGridItem, NDescriptions, NDescriptionsItem,
   NTag, NButton, NSpace, NAvatar, NStatistic, NList, NListItem, NThing,
   NModal, NForm, NFormItem, NInput, NSelect, NSwitch, useMessage, useDialog,
-  NProgress, NDivider, NDatePicker, NInputNumber, NDataTable, NPagination,
-  NRadioGroup, NRadio, NIcon
+  NProgress, NDivider, NDatePicker, NInputNumber, NDataTable, NPagination, NText,
+  NRadioGroup, NRadio, NIcon, NCheckbox, NAlert
 } from 'naive-ui'
 import { 
   WalletOutline, AlertCircleOutline, SearchOutline, SwapHorizontalOutline
@@ -17,6 +17,7 @@ import { agentApi } from '@/api/agent'
 import { logApi } from '@/api/log'
 import { gameApi } from '@/api/game'
 import { Player, PlayerAuditLog, UpdatePlayerRequest, PlayerStatus, WalletType, PlayerTransferRecord } from '@/types/player'
+import { BonusCard } from '@/types/bonus'
 import { AssetLog } from '@/types/log'
 import { GameLog } from '@/types/game'
 import { RolloverEngine } from '@/mocks/engine'
@@ -100,10 +101,15 @@ const gameFilter = reactive({
 const historyLoading = ref(false)
 const currentTab = ref('wallet')
 const loading = ref(false)
+const selectedBonusCardIds = ref<string[]>([])
+const bonusCardLoading = ref(false)
+const bonusTableKey = ref(0)
 
 // Edit State
 const showEditModal = ref(false)
 const editModel = reactive<UpdatePlayerRequest>({})
+const showVipRewardConfirmModal = ref(false)
+const reissuePastVipRewards = ref(false)
 
 // Status Change State
 const showStatusModal = ref(false)
@@ -289,7 +295,10 @@ const fetchData = async () => {
   try {
     const res = await playerApi.getPlayerDetail(playerId)
     if (res.code === 0 && res.data) {
-      player.value = res.data
+      // The mock API keeps player records by reference. Clone the response so Vue
+      // always receives a new value and immediately redraws card status changes.
+      player.value = JSON.parse(JSON.stringify(res.data))
+      bonusTableKey.value += 1
     } else {
       message.error(res.msg)
       router.push('/admin/players')
@@ -312,6 +321,7 @@ const fetchData = async () => {
 
 const handleEdit = () => {
     if (!player.value) return
+    delete editModel.reissue_past_vip_rewards
     editModel.display_name = player.value.display_name
     editModel.phone = player.value.phone
     // Handle legacy boolean is_muted values
@@ -328,6 +338,15 @@ const handleEdit = () => {
 }
 
 const submitEdit = async () => {
+    if (player.value && (editModel.vip_level ?? player.value.vip_level) > player.value.vip_level) {
+        reissuePastVipRewards.value = false
+        showVipRewardConfirmModal.value = true
+        return
+    }
+    await savePlayerEdit()
+}
+
+const savePlayerEdit = async () => {
     try {
         const res = await playerApi.updatePlayer(playerId, editModel, 'Admin Edit')
         if (res.code === 0) {
@@ -340,6 +359,12 @@ const submitEdit = async () => {
     } catch (e) {
         message.error('更新失敗')
     }
+}
+
+const confirmVipPromotion = async () => {
+    editModel.reissue_past_vip_rewards = reissuePastVipRewards.value
+    await savePlayerEdit()
+    showVipRewardConfirmModal.value = false
 }
 
 // History Loaders & Search
@@ -645,6 +670,71 @@ const handleForceApproveBonus = () => {
     })
 }
 
+const bonusCards = computed(() => {
+    const queued = player.value?.bonus_queue || []
+    return player.value?.active_bonus_card ? [player.value.active_bonus_card, ...queued] : queued
+})
+
+const isBonusCardActive = (card: BonusCard) =>
+    player.value?.rollover_container?.status === 'ACTIVE'
+    && player.value.rollover_container.active_card_id === card.id
+
+const bonusCardColumns = [
+    { type: 'selection' as const, disabled: (row: BonusCard) => isBonusCardActive(row) },
+    { title: '獎勵卡', key: 'id', width: 150, render: (row: BonusCard) => row.id },
+    { title: '狀態', key: 'status', width: 100, render: (row: BonusCard) => h(NTag, { type: isBonusCardActive(row) ? 'success' : 'default', bordered: false }, { default: () => isBonusCardActive(row) ? '啟用中' : '未啟用' }) },
+    { title: '餘額', key: 'lave_amount', align: 'right' as const, render: (row: BonusCard) => formatAmount(row.lave_amount) },
+    { title: '流水門檻', key: 'target_current', align: 'right' as const, render: (row: BonusCard) => formatAmount(row.target_current) },
+    { title: '累計流水', key: 'current', align: 'right' as const, render: (row: BonusCard) => formatAmount(isBonusCardActive(row) ? player.value?.rollover_container?.current_wagering || 0 : row.current_wagering || 0) },
+    { title: '轉換上限', key: 'cap', align: 'right' as const, render: (row: BonusCard) => formatAmount(row.cap) },
+    { title: '操作', key: 'actions', width: 250, render: (row: BonusCard) => h(NSpace, { size: 'small' }, { default: () => [
+        isBonusCardActive(row)
+            ? h(NButton, { size: 'tiny', type: 'warning', onClick: () => deactivateBonusCard() }, { default: () => '停用' })
+            : h(NButton, { size: 'tiny', type: 'success', onClick: () => activateBonusCard(row) }, { default: () => '啟用' }),
+        !isBonusCardActive(row) ? h(NButton, { size: 'tiny', type: 'warning', onClick: () => forceApproveInactiveBonusCard(row) }, { default: () => '強制通過' }) : null,
+        !isBonusCardActive(row) ? h(NButton, { size: 'tiny', type: 'error', onClick: () => abandonInactiveBonusCard(row) }, { default: () => '放棄獎勵' }) : null
+    ].filter(Boolean) as any }) }
+]
+
+const deactivateBonusCard = async () => {
+    bonusCardLoading.value = true
+    try {
+        const res = await playerApi.deactivateBonusCard(playerId)
+        if (res.code === 0) { message.success('已停用獎勵卡'); selectedBonusCardIds.value = []; await fetchData() }
+        else message.error(res.msg)
+    } finally { bonusCardLoading.value = false }
+}
+
+const activateBonusCard = async (card: BonusCard) => {
+    bonusCardLoading.value = true
+    try {
+        const res = await playerApi.activateBonusCard(playerId, card.id)
+        if (res.code === 0) { message.success('獎勵卡已啟用'); selectedBonusCardIds.value = []; await fetchData() } else message.error(res.msg)
+    } finally { bonusCardLoading.value = false }
+}
+
+const forceApproveInactiveBonusCard = (card: BonusCard) => {
+    dialog.warning({ title: '強制通過確認', content: '確定要強制通過此未啟用獎勵卡嗎？可轉換金額將轉入儲值錢包。', positiveText: '確認通過', negativeText: '取消', onPositiveClick: async () => {
+        const res = await playerApi.forceApproveInactiveBonusCard(playerId, card.id)
+        if (res.code === 0) { message.success('已強制通過'); selectedBonusCardIds.value = []; fetchData() } else message.error(res.msg)
+    } })
+}
+
+const abandonInactiveBonusCard = (card: BonusCard) => {
+    dialog.warning({ title: '放棄獎勵確認', content: '確定要放棄此未啟用獎勵卡嗎？此操作無法復原。', positiveText: '確認放棄', negativeText: '取消', onPositiveClick: async () => {
+        const res = await playerApi.abandonInactiveBonusCard(playerId, card.id)
+        if (res.code === 0) { message.success('已放棄獎勵'); selectedBonusCardIds.value = []; fetchData() } else message.error(res.msg)
+    } })
+}
+
+const mergeSelectedBonusCards = () => {
+    if (selectedBonusCardIds.value.length < 2) { message.warning('請至少勾選兩張待啟用的獎勵卡'); return }
+    dialog.warning({ title: '確認合併獎勵卡', content: '將加總餘額、流水門檻、轉換上限與累計流水，並建立一張新的獎勵卡。', positiveText: '確認合併', negativeText: '取消', onPositiveClick: async () => {
+        const res = await playerApi.mergeBonusCards(playerId, selectedBonusCardIds.value)
+        if (res.code === 0) { message.success('獎勵卡已合併'); selectedBonusCardIds.value = []; fetchData() } else message.error(res.msg)
+    } })
+}
+
 const getWalletBalance = (type: string, currency?: string) => {
     if (!player.value) return 0
     const wallet = player.value.wallets.find(w => w.type === type && (!currency || w.currency === currency))
@@ -711,34 +801,17 @@ onMounted(() => {
             <NDescriptionsItem :label="t('player.list.registerIp')">{{ player.register_ip }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('player.list.lastLoginDate')">{{ player.last_login_at?.split('T')[0] || '-' }}</NDescriptionsItem>
             <NDescriptionsItem :label="t('player.list.lastLoginIp')">{{ player.last_login_ip || '-' }}</NDescriptionsItem>
+            <NDescriptionsItem label="連續簽到天數">{{ player.consecutive_check_in_days || 0 }} 天</NDescriptionsItem>
           </NDescriptions>
         </NCard>
         
-        <NCard title="帳號權限" size="small">
-             <NDescriptions :column="1" label-placement="left">
-                <NDescriptionsItem :label="t('player.list.muteStatus')">
-                    <NTag :type="(player.is_muted === 'NONE' || player.is_muted === false) ? 'success' : 'error'">
-                        {{ (player.is_muted === 'NONE' || player.is_muted === false) ? '正常' : t(`player.muteOptions.${player.is_muted}`) }}
-                    </NTag>
-                </NDescriptionsItem>
-                <NDescriptionsItem :label="t('player.list.giftStatus')">
-                    <NTag :type="player.is_gift_disabled ? 'error' : 'success'">{{ player.is_gift_disabled ? '開啟' : '關閉' }}</NTag>
-                </NDescriptionsItem>
-                <NDescriptionsItem :label="t('player.list.depositStatus')">
-                    <NTag :type="player.is_deposit_disabled ? 'error' : 'success'">{{ player.is_deposit_disabled ? '開啟' : '關閉' }}</NTag>
-                </NDescriptionsItem>
-                <NDescriptionsItem :label="t('player.list.playStatus')">
-                    <NTag :type="player.is_play_disabled ? 'error' : 'success'">{{ player.is_play_disabled ? '開啟' : '關閉' }}</NTag>
-                </NDescriptionsItem>
-             </NDescriptions>
-        </NCard>
       </NGridItem>
       
       <!-- Right Column: Details Tabs -->
       <NGridItem span="2">
         <NCard content-style="padding: 0;">
           <NTabs v-model:value="currentTab" type="line" animated>
-            <NTabPane name="wallet" :tab="t('player.list.walletMonitor')">
+            <NTabPane name="wallet" tab="即時資料">
               <NGrid cols="2" :x-gap="12" :y-gap="12">
                  <NGridItem>
                     <NCard size="small" :title="t('player.list.depositWallet')">
@@ -778,67 +851,32 @@ onMounted(() => {
                     </NCard>
                  </NGridItem>
                  <NGridItem class="col-span-2">
-                    <NCard size="small" :title="t('player.list.rolloverMonitor')" class="mt-2">
-                        <template #header-extra>
-                            <NSpace>
-                                <NButton size="tiny" type="primary" ghost @click="handleForceApproveBonus">強制通過</NButton>
-                                <NButton size="tiny" type="error" ghost @click="handleAbandonBonus">放棄獎勵</NButton>
-                            </NSpace>
-                        </template>
-                        
-                        <div v-if="player.rollover_container?.status === 'ACTIVE'" class="mb-4">
-                            <div class="flex justify-between text-xs text-gray-500 mb-1">
-                                <span>流水監控 ({{ player.rollover_container.active_card_id }})</span>
-                                <span>{{ player.rollover_container.current_wagering }} / {{ player.rollover_container.target_wagering }}</span>
-                            </div>
-                            <NProgress 
-                                type="line" 
-                                :percentage="Math.min(100, Math.round((player.rollover_container.current_wagering / player.rollover_container.target_wagering) * 100))" 
-                                :color="player.rollover_container.current_wagering >= player.rollover_container.target_wagering ? '#18a058' : '#f0a020'"
-                            />
-                            <NGrid cols="3" class="mt-3 text-center">
-                                <NGridItem>
-                                    <div class="text-xs text-gray-400">當前餘額</div>
-                                    <div class="text-lg font-bold">$ {{ formatAmount(player.rollover_container.lave_balance) }}</div>
-                                </NGridItem>
-                                <NGridItem>
-                                    <div class="text-xs text-gray-400">初始金額</div>
-                                    <div class="text-md">$ {{ formatAmount(player.rollover_container.start_balance) }}</div>
-                                </NGridItem>
-                                <NGridItem>
-                                    <div class="text-xs text-gray-400">轉出上限</div>
-                                    <div class="text-md">$ {{ formatAmount(player.rollover_container.cap) }}</div>
-                                </NGridItem>
-                            </NGrid>
-                        </div>
-                        <div v-else class="py-8 text-center text-gray-400">
-                            <AlertCircleOutline class="w-8 h-8 mb-2 mx-auto op-50" />
-                            <div>當前無進行中活動</div>
-                        </div>
-
-                        <NDivider class="my-2" />
-                        
-                        <div class="text-xs font-bold mb-2">待領取列表 (Queue)</div>
-                        <NList size="small">
-                             <NListItem v-for="card in player.bonus_queue" :key="card.id">
-                                 <div class="flex justify-between items-center">
-                                     <div>
-                                         <NTag size="small" type="warning" class="mr-2">{{ t(`common.${card.currency.toLowerCase()}`) }}</NTag>
-                                         <span class="text-xs">{{ card.id }}</span>
-                                         <div class="text-xs text-gray-400">
-                                            Roll: {{ card.multiplier }}x | Cap: $ {{ formatAmount(card.cap) }} | Exp: {{ card.end_time.split('T')[0] }}
-                                         </div>
-                                     </div>
-                                     <div class="font-bold">$ +{{ formatAmount(card.lave_amount) }}</div>
-                                 </div>
-                             </NListItem>
-                             <NListItem v-if="!player.bonus_queue?.length">
-                                 <div class="text-center text-gray-400 text-xs">列表為空</div>
-                             </NListItem>
-                        </NList>
+                    <NCard size="small" title="帳號權限" class="mt-2">
+                        <NDescriptions :column="2" label-placement="left" bordered>
+                            <NDescriptionsItem :label="t('player.list.muteStatus')"><NTag :type="(player.is_muted === 'NONE' || player.is_muted === false) ? 'success' : 'error'">{{ (player.is_muted === 'NONE' || player.is_muted === false) ? '正常' : t(`player.muteOptions.${player.is_muted}`) }}</NTag></NDescriptionsItem>
+                            <NDescriptionsItem :label="t('player.list.giftStatus')"><NTag :type="player.is_gift_disabled ? 'error' : 'success'">{{ player.is_gift_disabled ? '開啟' : '關閉' }}</NTag></NDescriptionsItem>
+                            <NDescriptionsItem :label="t('player.list.depositStatus')"><NTag :type="player.is_deposit_disabled ? 'error' : 'success'">{{ player.is_deposit_disabled ? '開啟' : '關閉' }}</NTag></NDescriptionsItem>
+                            <NDescriptionsItem :label="t('player.list.playStatus')"><NTag :type="player.is_play_disabled ? 'error' : 'success'">{{ player.is_play_disabled ? '開啟' : '關閉' }}</NTag></NDescriptionsItem>
+                        </NDescriptions>
                     </NCard>
                  </NGridItem>
               </NGrid>
+            </NTabPane>
+
+            <NTabPane name="promotion" tab="優惠紀錄">
+                <div class="mb-4 flex items-center justify-between">
+                    <NText depth="3">進行操作或合併前請先停用獎勵卡。</NText>
+                    <NButton type="primary" :disabled="selectedBonusCardIds.length < 2" @click="mergeSelectedBonusCards">合併已選獎勵卡</NButton>
+                </div>
+                <NDataTable
+                    :key="bonusTableKey"
+                    :columns="bonusCardColumns"
+                    :data="bonusCards"
+                    :loading="bonusCardLoading"
+                    :row-key="(row: BonusCard) => row.id"
+                    v-model:checked-row-keys="selectedBonusCardIds"
+                    :bordered="false"
+                />
             </NTabPane>
             
             <NTabPane name="audit" :tab="t('player.list.auditHistory')">
@@ -1070,6 +1108,22 @@ onMounted(() => {
             <div class="flex justify-end gap-2">
                 <NButton @click="showEditModal = false">取消</NButton>
                 <NButton type="primary" @click="submitEdit">儲存</NButton>
+            </div>
+        </template>
+    </NModal>
+
+    <NModal v-model:show="showVipRewardConfirmModal" preset="card" title="確認 VIP 等級調整" style="width: 460px" :mask-closable="false">
+        <NAlert type="warning" class="mb-4">
+            此操作將手動提升玩家 VIP 等級。請確認是否依照各 VIP 等級的設定，補發玩家尚未取得的過往升級獎勵。
+        </NAlert>
+        <NCheckbox v-model:checked="reissuePastVipRewards">
+            補發過往獎勵
+        </NCheckbox>
+        <p class="mt-2 text-xs text-gray-500">例如：新玩家手動提升至 VIP 10 時，勾選後將依設定派發 VIP 1 至 VIP 10 的升級獎勵。</p>
+        <template #footer>
+            <div class="flex justify-end gap-2">
+                <NButton @click="showVipRewardConfirmModal = false">取消</NButton>
+                <NButton type="primary" @click="confirmVipPromotion">確認調整</NButton>
             </div>
         </template>
     </NModal>

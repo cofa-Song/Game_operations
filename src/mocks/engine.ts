@@ -52,9 +52,11 @@ export class RolloverEngine {
             lave_amount: amount,
             multiplier: multiplier,
             target_current: amount * multiplier,
+            current_wagering: 0,
             cap: cap,
             end_time: endTime.toISOString(),
-            created_at: now.toISOString()
+            created_at: now.toISOString(),
+            status: 'PENDING'
         }
     }
 
@@ -84,6 +86,8 @@ export class RolloverEngine {
 
         // Setup Container
         container.status = ContainerStatus.ACTIVE
+        card.status = 'ACTIVE'
+        player.active_bonus_card = card
         container.active_card_id = card.id
         container.start_balance = card.lave_amount
         container.lave_balance = card.lave_amount
@@ -99,6 +103,25 @@ export class RolloverEngine {
             this.createLog(player, 'CLAIM', 'BONUS', card.lave_amount, 0, card.id)
         }
 
+        return true
+    }
+
+    // Pause an active card and return it to the queue without losing its progress.
+    static deactivateBonus(player: Player): boolean {
+        const container = player.rollover_container
+        const card = player.active_bonus_card
+        if (!container || container.status !== ContainerStatus.ACTIVE || !card) return false
+
+        card.status = 'DISABLED'
+        card.lave_amount = container.lave_balance
+        card.current_wagering = container.current_wagering
+        card.target_current = container.target_wagering
+        card.cap = container.cap
+        player.bonus_queue = [...(player.bonus_queue || []), card]
+
+        const bonusWallet = this.getWallet(player, 'BONUS')
+        if (bonusWallet) bonusWallet.balance = 0
+        this.resetContainer(player)
         return true
     }
 
@@ -130,6 +153,7 @@ export class RolloverEngine {
 
             // Increase Wagering Progress
             container.current_wagering += amount
+            if (player.active_bonus_card) player.active_bonus_card.current_wagering = container.current_wagering
             validTurnover = amount // It is valid for Bonus bet
 
             this.createLog(player, 'BET', 'BONUS', -amount, validTurnover)
@@ -272,14 +296,18 @@ export class RolloverEngine {
             player.rollover_container.lave_balance = 0
             player.rollover_container.start_balance = 0
             player.rollover_container.target_wagering = 0
+            player.active_bonus_card = undefined
         }
     }
 
     private static tryActivateNext(player: Player) {
         if (player.bonus_queue && player.bonus_queue.length > 0) {
-            const nextCard = player.bonus_queue.shift()!
-            console.log(`[Engine] Auto-activating next card: ${nextCard.id}`)
-            this.activateBonus(player, nextCard)
+            const nextCardIndex = player.bonus_queue.findIndex(card => card.status !== 'DISABLED')
+            if (nextCardIndex >= 0) {
+                const nextCard = player.bonus_queue.splice(nextCardIndex, 1)[0]
+                console.log(`[Engine] Auto-activating next card: ${nextCard.id}`)
+                this.activateBonus(player, nextCard)
+            }
         }
     }
 

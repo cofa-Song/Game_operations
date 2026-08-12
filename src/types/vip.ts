@@ -16,6 +16,16 @@ export interface VIPLevel {
     promo_special?: string // 特殊晉升條件 (e.g. 綁定手機號碼)
     bind_data?: 'none' | 'phone' | 'email' // 綁定資料
 
+    // First-time promotion reward
+    upgrade_reward_currency?: 'SILVER' | 'BRONZE'
+    upgrade_reward_amount?: number
+    upgrade_reward_turnover_multiplier?: number // Silver reward only
+    upgrade_reward_conversion_cap?: number // Silver reward only
+    upgrade_reward_desc?: string // Default/fallback copy
+    upgrade_reward_desc_zh_tw?: string
+    upgrade_reward_desc_zh_cn?: string
+    upgrade_reward_desc_en?: string
+
     // Retention Criteria
     is_perpetual: boolean // 無條件保級
     retain_deposit: number // 月累計儲值

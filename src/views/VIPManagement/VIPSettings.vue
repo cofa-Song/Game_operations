@@ -33,6 +33,18 @@ const fetchVIPData = async () => {
     }
 }
 
+const getUpgradeRewardDisplay = (level: VIPLevel) => {
+    if (level.upgrade_reward_desc_zh_tw || level.upgrade_reward_desc) {
+        return level.upgrade_reward_desc_zh_tw || level.upgrade_reward_desc || '-'
+    }
+    if (!level.upgrade_reward_amount || !level.upgrade_reward_currency) return '-'
+    const currency = level.upgrade_reward_currency === 'SILVER' ? '銀幣' : '銅幣'
+    const details = level.upgrade_reward_currency === 'SILVER'
+        ? `，流水 ${level.upgrade_reward_turnover_multiplier || 0} 倍，轉換上限 ${level.upgrade_reward_conversion_cap || 0}`
+        : ''
+    return `${currency} ${level.upgrade_reward_amount.toLocaleString()}${details}`
+}
+
 // Table Columns
 const columns: DataTableColumns<VIPLevel> = [
     { 
@@ -82,6 +94,14 @@ const columns: DataTableColumns<VIPLevel> = [
         minWidth: 200,
         render(row) {
             return h('div', { class: 'text-xs text-gray-500 whitespace-pre-wrap' }, row.retention_desc)
+        }
+    },
+    {
+        title: '升級獎勵',
+        key: 'upgrade_reward_desc',
+        minWidth: 190,
+        render(row) {
+            return h('div', { class: 'text-xs text-gray-500 whitespace-pre-wrap' }, getUpgradeRewardDisplay(row))
         }
     },
     { 
@@ -142,9 +162,17 @@ const editingLevel = reactive<VIPLevel>({
     retention_desc_zh_tw: '',
     retention_desc_zh_cn: '',
     retention_desc_en: '',
+    upgrade_reward_desc: '',
+    upgrade_reward_desc_zh_tw: '',
+    upgrade_reward_desc_zh_cn: '',
+    upgrade_reward_desc_en: '',
     promo_deposit: 0,
     promo_turnover: 0,
     bind_data: 'none',
+    upgrade_reward_currency: 'SILVER',
+    upgrade_reward_amount: 0,
+    upgrade_reward_turnover_multiplier: 0,
+    upgrade_reward_conversion_cap: 0,
     is_perpetual: false,
     retain_deposit: 0,
     retain_turnover: 0,
@@ -161,6 +189,10 @@ const settingsLevel = reactive<VIPLevel>({
     promo_deposit: 0,
     promo_turnover: 0,
     bind_data: 'none',
+    upgrade_reward_currency: 'SILVER',
+    upgrade_reward_amount: 0,
+    upgrade_reward_turnover_multiplier: 0,
+    upgrade_reward_conversion_cap: 0,
     is_perpetual: false,
     retain_deposit: 0,
     retain_turnover: 0,
@@ -175,6 +207,11 @@ const bindDataOptions = [
     { label: '信箱', value: 'email' }
 ]
 
+const upgradeRewardCurrencyOptions = [
+    { label: '銀幣', value: 'SILVER' },
+    { label: '銅幣', value: 'BRONZE' }
+]
+
 const handleEdit = (row: VIPLevel) => {
     Object.assign(editingLevel, {
         promotion_desc_zh_tw: row.promotion_desc_zh_tw || row.promotion_desc,
@@ -183,6 +220,9 @@ const handleEdit = (row: VIPLevel) => {
         retention_desc_zh_tw: row.retention_desc_zh_tw || row.retention_desc,
         retention_desc_zh_cn: row.retention_desc_zh_cn || '',
         retention_desc_en: row.retention_desc_en || '',
+        upgrade_reward_desc_zh_tw: row.upgrade_reward_desc_zh_tw || row.upgrade_reward_desc || '',
+        upgrade_reward_desc_zh_cn: row.upgrade_reward_desc_zh_cn || '',
+        upgrade_reward_desc_en: row.upgrade_reward_desc_en || '',
         ...JSON.parse(JSON.stringify(row))
     })
     showEditModal.value = true
@@ -291,6 +331,9 @@ onMounted(fetchVIPData)
                             <NFormItem label="保級條件說明">
                                 <NInput v-model:value="editingLevel.retention_desc_zh_tw" type="textarea" :disabled="editingLevel.is_perpetual" :placeholder="editingLevel.is_perpetual ? '無條件保級，無需特別說明' : '請填寫保級條件說明'" />
                             </NFormItem>
+                            <NFormItem label="升級獎勵">
+                                <NInput v-model:value="editingLevel.upgrade_reward_desc_zh_tw" type="textarea" placeholder="例如：首次升級即可獲得銀幣 100" />
+                            </NFormItem>
                         </NTabPane>
                         <NTabPane name="zh-CN" tab="簡體中文">
                             <NFormItem label="升級條件說明">
@@ -299,6 +342,9 @@ onMounted(fetchVIPData)
                             <NFormItem label="保級條件說明">
                                 <NInput v-model:value="editingLevel.retention_desc_zh_cn" type="textarea" :disabled="editingLevel.is_perpetual" :placeholder="editingLevel.is_perpetual ? '無條件保級，無需特別說明' : '請填寫保級條件說明'" />
                             </NFormItem>
+                            <NFormItem label="升級獎勵">
+                                <NInput v-model:value="editingLevel.upgrade_reward_desc_zh_cn" type="textarea" placeholder="例如：首次升级即可获得银币 100" />
+                            </NFormItem>
                         </NTabPane>
                         <NTabPane name="en" tab="English">
                             <NFormItem label="升級條件說明">
@@ -306,6 +352,9 @@ onMounted(fetchVIPData)
                             </NFormItem>
                             <NFormItem label="保級條件說明">
                                 <NInput v-model:value="editingLevel.retention_desc_en" type="textarea" :disabled="editingLevel.is_perpetual" :placeholder="editingLevel.is_perpetual ? '無條件保級，無需特別說明' : '請填寫保級條件說明'" />
+                            </NFormItem>
+                            <NFormItem label="升級獎勵">
+                                <NInput v-model:value="editingLevel.upgrade_reward_desc_en" type="textarea" placeholder="e.g. Receive 100 Silver Coins upon first promotion" />
                             </NFormItem>
                         </NTabPane>
                     </NTabs>
@@ -345,12 +394,12 @@ onMounted(fetchVIPData)
                     <NDivider title-placement="left">升級條件</NDivider>
                     <NGrid :cols="3" :x-gap="24">
                         <NGridItem>
-                            <NFormItem label="月累計儲值">
+                            <NFormItem label="終生累計儲值">
                                 <NInputNumber v-model:value="settingsLevel.promo_deposit" :min="0" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
                         <NGridItem>
-                            <NFormItem label="月累計流水">
+                            <NFormItem label="終生累計流水">
                                 <NInputNumber v-model:value="settingsLevel.promo_turnover" :min="0" style="width: 100%" />
                             </NFormItem>
                         </NGridItem>
@@ -359,6 +408,32 @@ onMounted(fetchVIPData)
                                 <NSelect v-model:value="settingsLevel.bind_data" :options="bindDataOptions" />
                             </NFormItem>
                         </NGridItem>
+                    </NGrid>
+
+                    <NDivider title-placement="left">升級獎勵</NDivider>
+                    <NGrid :cols="2" :x-gap="24">
+                        <NGridItem>
+                            <NFormItem label="幣別">
+                                <NSelect v-model:value="settingsLevel.upgrade_reward_currency" :options="upgradeRewardCurrencyOptions" />
+                            </NFormItem>
+                        </NGridItem>
+                        <NGridItem>
+                            <NFormItem label="數量">
+                                <NInputNumber v-model:value="settingsLevel.upgrade_reward_amount" :min="0" style="width: 100%" />
+                            </NFormItem>
+                        </NGridItem>
+                        <template v-if="settingsLevel.upgrade_reward_currency === 'SILVER'">
+                            <NGridItem>
+                                <NFormItem label="流水門檻倍率">
+                                    <NInputNumber v-model:value="settingsLevel.upgrade_reward_turnover_multiplier" :min="0" :step="1" style="width: 100%" />
+                                </NFormItem>
+                            </NGridItem>
+                            <NGridItem>
+                                <NFormItem label="轉換上限">
+                                    <NInputNumber v-model:value="settingsLevel.upgrade_reward_conversion_cap" :min="0" style="width: 100%" />
+                                </NFormItem>
+                            </NGridItem>
+                        </template>
                     </NGrid>
 
                     <NDivider title-placement="left">

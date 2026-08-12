@@ -56,7 +56,9 @@ export interface Player {
 
     // OPE-202 Bonus Engine
     bonus_queue?: BonusCard[]
+    active_bonus_card?: BonusCard
     rollover_container?: RolloverContainer
+    consecutive_check_in_days?: number
 
     // Permissions
     is_muted: string // 禁言 (NONE, 15M, 1H, 1D, PERMANENT)
@@ -103,6 +105,7 @@ export interface CreatePlayerRequest {
     birthday?: string
     email?: string
     vip_level?: number
+    reissue_past_vip_rewards?: boolean // Apply configured VIP rewards on admin-created player
     is_muted?: string
     is_gift_disabled?: boolean
     is_deposit_disabled?: boolean
@@ -126,4 +129,5 @@ export interface UpdatePlayerRequest {
     birthday?: string
     email?: string
     is_retention_active?: boolean
+    reissue_past_vip_rewards?: boolean // Manual VIP promotion only
 }

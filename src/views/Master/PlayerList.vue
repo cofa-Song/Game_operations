@@ -3,7 +3,7 @@ import { ref, reactive, onMounted, onBeforeUnmount, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   NCard, NInput, NSelect, NDatePicker, NButton, NDataTable, NSpace, NTag,
-  NBadge, NModal, NForm, NFormItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NSwitch, NInputNumber, NCollapseTransition
+  NBadge, NModal, NForm, NFormItem, useMessage, DataTableColumns, NRadioGroup, NRadio, NSwitch, NInputNumber, NCollapseTransition, NCheckbox, NAlert
 } from 'naive-ui'
 import { 
   SearchOutline, AddOutline, EyeOutline, ListOutline, GameControllerOutline, PricetagOutline,
@@ -197,6 +197,8 @@ const fetchData = async () => {
 
 // Create Player Modal
 const showCreateModal = ref(false)
+const showVipRewardConfirmModal = ref(false)
+const reissuePastVipRewards = ref(false)
 const createModel = reactive({
   username: '',
   display_name: '',
@@ -218,7 +220,17 @@ const handleCreate = async () => {
         message.warning(t('common.fillRequired'))
         return
     }
-    
+
+    if (createModel.vip_level > 0) {
+      reissuePastVipRewards.value = false
+      showVipRewardConfirmModal.value = true
+      return
+    }
+
+    await createPlayer()
+}
+
+const createPlayer = async () => {
     try {
     const res = await playerApi.createPlayer({
       username: createModel.username,
@@ -229,6 +241,7 @@ const handleCreate = async () => {
       birthday: createModel.birthday,
       email: createModel.email,
       vip_level: createModel.vip_level,
+      reissue_past_vip_rewards: createModel.vip_level > 0 && reissuePastVipRewards.value,
       is_muted: createModel.is_muted,
       is_gift_disabled: createModel.is_gift_disabled,
       is_retention_active: createModel.is_retention_active,
@@ -238,6 +251,7 @@ const handleCreate = async () => {
         if(res.code === 0) {
             message.success(t('player.list.createSuccess'))
             showCreateModal.value = false
+            reissuePastVipRewards.value = false
             fetchData()
         } else {
             message.error(res.msg)
@@ -245,6 +259,11 @@ const handleCreate = async () => {
     } catch (e) {
         message.error(t('player.list.createFailed'))
     }
+}
+
+const confirmCreateWithVipRewards = async () => {
+  await createPlayer()
+  showVipRewardConfirmModal.value = false
 }
 
 const genderOptions = [
@@ -437,6 +456,20 @@ onBeforeUnmount(() => {
                 <NButton type="primary" @click="handleCreate">{{ t('common.create') }}</NButton>
             </div>
         </template>
+    </NModal>
+
+    <NModal v-model:show="showVipRewardConfirmModal" preset="card" title="確認初始 VIP 等級" style="width: 460px" :mask-closable="false">
+      <NAlert type="warning" class="mb-4">
+        此玩家將以高於 VIP 0 的等級建立。請確認是否依照各 VIP 等級的設定，補發過往升級獎勵。
+      </NAlert>
+      <NCheckbox v-model:checked="reissuePastVipRewards">補發過往獎勵</NCheckbox>
+      <p class="mt-2 text-xs text-gray-500">例如：新玩家設定為 VIP 10 時，勾選後將依設定派發 VIP 1 至 VIP 10 的升級獎勵。</p>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <NButton @click="showVipRewardConfirmModal = false">取消</NButton>
+          <NButton type="primary" @click="confirmCreateWithVipRewards">確認建立</NButton>
+        </div>
+      </template>
     </NModal>
 
     <!-- Tag Drawer -->

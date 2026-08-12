@@ -45,10 +45,14 @@ export const mockPlayers: Player[] = Array.from({ length: 50 }).map((_, i) => {
         birthday: '1990-01-01',
         email: `player${i}@example.com`,
         is_retention_active: i % 2 === 0,
+        consecutive_check_in_days: i % 9,
         // Init Bonus Queue
         bonus_queue: i % 4 === 0 ? [
             RolloverEngine.createBonusCard(100, 10, 500, 7),
-            RolloverEngine.createBonusCard(50, 5, 200, 3)
+            RolloverEngine.createBonusCard(50, 5, 200, 3),
+            RolloverEngine.createBonusCard(80, 8, 400, 5),
+            RolloverEngine.createBonusCard(120, 12, 600, 10),
+            RolloverEngine.createBonusCard(30, 3, 150, 2)
         ] : [],
         // Init Container (Every 5th player has active bonus)
         rollover_container: undefined

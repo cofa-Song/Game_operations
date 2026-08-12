@@ -14,9 +14,11 @@ export interface BonusCard {
     lave_amount: number
     multiplier: number
     target_current: number
+    current_wagering?: number
     cap: number
     end_time: string
     created_at: string
+    status?: 'PENDING' | 'ACTIVE' | 'DISABLED'
 }
 
 export interface RolloverContainer {
