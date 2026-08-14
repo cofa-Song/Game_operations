@@ -135,6 +135,7 @@ const menuKeyToRoute: Record<string, string> = {
   'agent-withdrawal-audit': '/admin/agent-withdrawal-audit',
   'agent-transfer-schedule': '/admin/agent-transfer-schedule',
   'vip-settings': '/admin/vip-settings',
+  'player-achievements': '/admin/player-achievements',
   'vip-stats': '/admin/vip-stats',
   'agent-report': '/admin/agent-report',
   'daily-sign-in': '/admin/daily-sign-in',
@@ -218,6 +219,11 @@ const menuOptions = computed(() => [
         label: t('navigation.vipSettings'),
         key: 'vip-settings',
         icon: renderIcon(SettingsOutline)
+      },
+      {
+        label: '玩家成就',
+        key: 'player-achievements',
+        icon: renderIcon(GiftOutline)
       },
       {
         label: t('navigation.bonusHistory'),

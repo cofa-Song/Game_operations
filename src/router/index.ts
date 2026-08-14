@@ -49,6 +49,12 @@ const masterRoutes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER', 'USER'], breadcrumb: '詳情' }
       },
       {
+        path: 'player-achievements',
+        name: 'PlayerAchievements',
+        component: () => import('@/views/Master/PlayerAchievements.vue'),
+        meta: { requiresAuth: true, roles: ['DEVELOPER', 'MANAGER'], breadcrumb: '玩家成就' }
+      },
+      {
         path: 'logs',
         name: 'OperationLog',
         component: () => import('@/views/Master/OperationLog.vue'),
